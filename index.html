@@ -52,28 +52,46 @@
 
   <section class="section" id="product">
     <div class="container">
-      <div class="intro-grid">
-        <div class="card">
-          <div class="card-pad">
-            <div class="kicker">Why this direction works</div>
-            <h2>Big motion up front. Clean product story below.</h2>
-            <div class="body-copy">
-              This approach gives you the immersive opening feel of the Whoop site while still letting
-              the rest of the page shift into a clean medical-product layout. The hero can eventually become
-              a real slow-motion product video or a tightly art-directed looping render.
+      <div class="card">
+        <div class="card-pad">
+          <div class="kicker">Product in use</div>
+          <h2>In-procedure calm, shown in real settings.</h2>
+        </div>
+        <div class="procedure-carousel" aria-label="Clinical usage testimonials">
+          <div class="carousel-slide is-active" aria-hidden="false">
+            <img src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1600&q=80" alt="Clinical team preparing a patient for treatment">
+            <div class="slide-overlay">
+              <blockquote>
+                “Patients settle faster when visual distractions are reduced before treatment begins.”
+              </blockquote>
+              <p>— Dental Assistant, Atlanta</p>
             </div>
-
-            <div class="feature-list">
-              <div class="feature"><div class="feature-dot"></div><div>Strong first impression with full-screen motion.</div></div>
-              <div class="feature"><div class="feature-dot"></div><div>Big headline layered directly over product media.</div></div>
-              <div class="feature"><div class="feature-dot"></div><div>Easy to swap placeholder footage for a future product video.</div></div>
+          </div>
+          <div class="carousel-slide" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?auto=format&fit=crop&w=1600&q=80" alt="Clinician guiding a patient through a procedure">
+            <div class="slide-overlay">
+              <blockquote>
+                “It helps us create a calmer setup in the chair without adding complexity to our routine.”
+              </blockquote>
+              <p>— Clinic Lead, Seattle</p>
+            </div>
+          </div>
+          <div class="carousel-slide" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=1600&q=80" alt="Patient and provider during a clinical procedure">
+            <div class="slide-overlay">
+              <blockquote>
+                “We now have a consistent comfort step that patients notice right away.”
+              </blockquote>
+              <p>— Hygienist, Austin</p>
             </div>
           </div>
         </div>
-
-        <div class="card">
-          <div class="image-wrap">
-            <img src="fig10_crop.png" alt="Akoya eyewear product drawing">
+        <div class="carousel-controls" aria-label="Carousel controls">
+          <button class="carousel-play" type="button" id="carouselPlayPause" aria-label="Pause automatic slide rotation">❚❚</button>
+          <div class="carousel-dots" role="tablist" aria-label="Select testimonial slide">
+            <button class="carousel-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show slide 1"></button>
+            <button class="carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show slide 2"></button>
+            <button class="carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show slide 3"></button>
           </div>
         </div>
       </div>
