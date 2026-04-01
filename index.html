@@ -3,97 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Akoya Medical — Product Focused Homepage</title>
+  <title>Akoya Medical — Video Hero Concept</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css" />
+
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Primary">
-      <a class="brand" href="#top">AKOYA</a>
-      <div class="nav-links">
-        <a href="#pictures">Pictures</a>
-        <a href="#specifications">Specifications</a>
-        <a href="#testimonials">Testimonials</a>
-        <a class="nav-buy" href="#buy">Buy Now</a>
+  <div class="top-banner">
+    <div>Discover a calmer clinical experience with Akoya Medical.</div>
+    <a href="#contact">Learn More</a>
+  </div>
+
+  <header>
+    <div class="nav">
+      <div class="hamburger" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
-    </nav>
+      <div class="brand">AKOYA</div>
+      <div></div>
+    </div>
   </header>
 
-  <main id="top">
-    <section class="hero" id="hero">
-      <div class="hero-media-placeholder" role="img" aria-label="Hero product video placeholder">
-        <div class="placeholder-grid"></div>
-        <p>Hero product video placeholder</p>
-      </div>
+  <section class="hero">
+    <div class="hero-media">
+      <video class="hero-video" autoplay muted loop playsinline poster="fig10_crop.png">
+        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+      </video>
       <div class="hero-overlay"></div>
+    </div>
 
-      <div class="hero-content">
-        <h1>A more comfortable patient experience</h1>
-        <div class="hero-statements" aria-live="polite">
-          <p class="statement is-visible">More reliable testing results</p>
-          <p class="statement">A better overall medical experience</p>
-        </div>
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <div class="eyebrow">Patient comfort eyewear</div>
+        <h1>The visual shield built for calmer procedures.</h1>
+        <p>
+          Lower-field vision blocking eyewear designed to reduce visual stress during treatment while
+          preserving upper visibility. This is a placeholder video hero built in the style you liked.
+        </p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="#buy">Buy Now</a>
-          <a class="btn btn-secondary" href="#buy">Request Samples</a>
+          <a class="btn btn-primary" href="#contact">Request info</a>
+          <a class="btn btn-secondary" href="#product">View product</a>
+        </div>
+        <div class="hero-meta">Video hero placeholder • Patent pending • Product-first landing page direction</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="product">
+    <div class="container">
+      <div class="intro-grid">
+        <div class="card">
+          <div class="card-pad">
+            <div class="kicker">Why this direction works</div>
+            <h2>Big motion up front. Clean product story below.</h2>
+            <div class="body-copy">
+              This approach gives you the immersive opening feel of the Whoop site while still letting
+              the rest of the page shift into a clean medical-product layout. The hero can eventually become
+              a real slow-motion product video or a tightly art-directed looping render.
+            </div>
+
+            <div class="feature-list">
+              <div class="feature"><div class="feature-dot"></div><div>Strong first impression with full-screen motion.</div></div>
+              <div class="feature"><div class="feature-dot"></div><div>Big headline layered directly over product media.</div></div>
+              <div class="feature"><div class="feature-dot"></div><div>Easy to swap placeholder footage for a future product video.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="image-wrap">
+            <img src="fig10_crop.png" alt="Akoya eyewear product drawing">
+          </div>
         </div>
       </div>
-    </section>
 
-    <section class="section understanding" id="pictures">
-      <div class="understanding-media" role="img" aria-label="Product in use placeholder media">
-        <div class="media-glow"></div>
-        <span>Product-in-use visual placeholder</span>
-      </div>
-      <div class="understanding-copy">
-        <p class="eyebrow">Simple product. Clear purpose.</p>
-        <h2>Understand it in seconds.</h2>
-        <ul class="callouts" id="specifications">
-          <li>Blocks lower field of vision</li>
-          <li>Leaves upper field of vision intact</li>
-          <li>Comfortable to wear</li>
-          <li>Easy to fit</li>
-          <li>Totally opaque</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="section details" id="buy">
-      <div class="details-head">
-        <p class="eyebrow" id="testimonials">Product details and ordering</p>
-        <h2>Built for clinical focus.</h2>
-        <p>Designed for use in select interventional and procedure-based settings.</p>
-      </div>
-
-      <div class="details-grid">
-        <article class="still-card">
-          <div class="still-placeholder">Still product image placeholder</div>
-          <ul class="component-labels">
-            <li>Upper visibility window</li>
-            <li>Opaque lower shield</li>
-            <li>Comfort-fit interface</li>
-          </ul>
-        </article>
-
-        <article class="still-card">
-          <div class="still-placeholder">Packaging / 360 view placeholder</div>
-          <div class="ordering-options">
-            <p>Box of 25</p>
-            <p>Box of 50</p>
+      <div class="two-up">
+        <div class="card">
+          <div class="card-pad">
+            <div class="kicker">How it works</div>
+            <h2>Simple by design.</h2>
+            <div class="steps">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="body-copy">Place the eyewear on the patient before the procedure begins.</div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="body-copy">The lower portion blocks direct downward viewing.</div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="body-copy">The upper area remains visually open for comfort and orientation.</div>
+              </div>
+            </div>
           </div>
-        </article>
+        </div>
+
+        <div class="card">
+          <div class="image-wrap">
+            <img src="fig8_crop.png" alt="Conforming interface detail">
+          </div>
+        </div>
       </div>
 
-      <div class="cta-row details-cta">
-        <a class="btn btn-primary" href="#">Buy Now</a>
-        <a class="btn btn-secondary" href="#">Request Samples / Contact</a>
+      <div class="cta-block" id="contact">
+        <div>
+          <h2 style="color:white; margin-bottom:10px;">Next step: swap in your real hero footage.</h2>
+          <p>
+            Right now this uses placeholder video just to establish the experience. Once you have product footage,
+            this exact structure can stay and the site will immediately feel much more premium.
+          </p>
+        </div>
+        <a class="btn btn-primary" href="#">Contact Akoya</a>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
+  <footer class="section">
+    <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
+  </footer>
   <script src="main.js" defer></script>
 </body>
 </html>

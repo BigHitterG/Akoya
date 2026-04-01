@@ -1,11 +1,7 @@
+/**
+ * Akoya starter script file.
+ * Keep lightweight behavior here as the landing page evolves.
+ */
 document.addEventListener('DOMContentLoaded', () => {
-  const statements = [...document.querySelectorAll('.statement')];
-  if (statements.length < 2) return;
-
-  let index = 0;
-  window.setInterval(() => {
-    statements[index].classList.remove('is-visible');
-    index = (index + 1) % statements.length;
-    statements[index].classList.add('is-visible');
-  }, 3200);
+  // Placeholder for future interactive enhancements.
 });
