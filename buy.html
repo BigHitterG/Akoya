@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Akoya Medical — Buy Now</title>
+  <title>Akoya Medical — Buy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,63 +23,36 @@
     </div>
   </header>
 
-  <section class="hero order-hero">
-    <div class="hero-media">
-      <img class="hero-video" src="assets/images/Product%20Image%201.JPG" alt="Akoya product hero view" />
-      <div class="hero-overlay"></div>
-    </div>
-
-    <div class="hero-inner">
-      <div class="hero-copy">
-        <div class="eyebrow">Buy now</div>
-        <h1>Order in clear, fixed box quantities.</h1>
-        <p>
-          Every order is sold in <strong>boxes of 15 units</strong>. Unit price is <strong>$12 each</strong>,
-          so each box totals <strong>$180</strong>. Choose how many boxes you need and review the pricing summary below.
-        </p>
-      </div>
-    </div>
-  </section>
-
   <section class="section" id="order">
     <div class="container order-grid">
       <div class="card">
         <div class="card-pad">
           <div class="kicker">Product images</div>
-          <h2>Packaged and ready to order.</h2>
-          <p class="body-copy">Images are shown in your requested sequence.</p>
+          <h2>Akoya lower-field vision blocking eyewear.</h2>
+          <p class="body-copy">Designed to support a calmer treatment environment while preserving upper-field orientation and comfort.</p>
         </div>
         <div class="product-gallery">
-          <img src="assets/images/Product%20Image%201.JPG" alt="Product image 1">
-          <img src="assets/images/Product%20Image%202.JPG" alt="Product image 2">
-          <img src="assets/images/Product%20Image%203.JPG" alt="Product image 3">
-          <img src="assets/images/Product%20Image%204.JPG" alt="Product image 4">
+          <img src="assets/images/Product%20Image%201.JPG" alt="Akoya eyewear product image 1">
+          <img src="assets/images/Product%20Image%202.JPG" alt="Akoya eyewear product image 2">
+          <img src="assets/images/Product%20Image%203.JPG" alt="Akoya eyewear product image 3">
+          <img src="assets/images/Product%20Image%204.JPG" alt="Akoya eyewear product image 4">
         </div>
       </div>
 
       <div class="card order-card">
         <div class="card-pad">
-          <div class="kicker">Order builder</div>
-          <h2>Choose number of boxes.</h2>
+          <div class="kicker">Purchase details</div>
+          <h2>Purchase options.</h2>
 
-          <div class="quantity-card" data-order-calculator>
-            <label class="quantity-label" for="boxCount">Boxes (15 units each)</label>
-            <div class="quantity-controls">
-              <button type="button" class="qty-btn" data-action="decrease" aria-label="Decrease box quantity">−</button>
-              <input id="boxCount" class="qty-input" type="number" min="1" step="1" value="1" inputmode="numeric" />
-              <button type="button" class="qty-btn" data-action="increase" aria-label="Increase box quantity">+</button>
-            </div>
-
+          <div class="purchase-card">
             <div class="order-summary">
               <div><span>Units per box</span><strong>15</strong></div>
               <div><span>Price per unit</span><strong>$12.00</strong></div>
-              <div><span>Price per box</span><strong id="pricePerBox">$180.00</strong></div>
-              <div><span>Total units</span><strong id="totalUnits">15</strong></div>
-              <div class="order-total"><span>Order total</span><strong id="orderTotal">$180.00</strong></div>
+              <div><span>Price per box</span><strong>$180.00</strong></div>
             </div>
 
-            <button type="button" class="btn btn-primary order-cta" id="startCheckout">Continue to checkout</button>
-            <p class="checkout-note">Checkout button is UI-only for now and ready to connect to Stripe next.</p>
+            <a href="request-invoice.html" class="btn btn-secondary order-cta">Request Invoice</a>
+            <a href="https://buy.stripe.com/fZu3cvdrs8SdaygfUl0Ba00" class="btn btn-primary order-cta" target="_blank" rel="noopener noreferrer">Buy Now</a>
           </div>
         </div>
       </div>
@@ -89,7 +62,5 @@
   <footer class="section">
     <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
   </footer>
-
-  <script src="order.js" defer></script>
 </body>
 </html>

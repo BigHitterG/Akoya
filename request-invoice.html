@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akoya Medical — Request Invoice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="top-banner">
+    <div>Request invoicing support for clinics, hospitals, and bulk purchasing teams.</div>
+    <a href="buy.html">Back to Buy</a>
+  </div>
+
+  <header>
+    <div class="nav">
+      <a class="nav-back" href="buy.html" aria-label="Return to buy page">←</a>
+      <div class="brand">AKOYA</div>
+      <div></div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container invoice-layout">
+      <div class="card">
+        <div class="card-pad">
+          <div class="kicker">Invoice requests</div>
+          <h2>Request Invoice</h2>
+          <p class="body-copy">Hospitals, clinics, and bulk purchasers can submit a request below and the Akoya team will follow up with invoice details.</p>
+
+          <form id="invoiceForm" class="invoice-form" novalidate>
+            <div class="invoice-grid">
+              <label>Full Name*
+                <input type="text" name="fullName" required>
+              </label>
+              <label>Job Title*
+                <input type="text" name="jobTitle" required>
+              </label>
+              <label>Hospital / Clinic / Business Name*
+                <input type="text" name="businessName" required>
+              </label>
+              <label>Email Address*
+                <input type="email" name="email" required>
+              </label>
+              <label>Phone Number*
+                <input type="tel" name="phone" required>
+              </label>
+              <label>Quantity Requested*
+                <input type="number" min="1" step="1" name="quantityRequested" required>
+              </label>
+            </div>
+
+            <label>Shipping Address*
+              <textarea name="shippingAddress" rows="3" required></textarea>
+            </label>
+
+            <label>Billing Address*
+              <textarea name="billingAddress" rows="3" required></textarea>
+            </label>
+
+            <label>PO Number (optional)
+              <input type="text" name="poNumber">
+            </label>
+
+            <label>Notes / Special Instructions
+              <textarea name="notes" rows="4"></textarea>
+            </label>
+
+            <p class="form-feedback" id="formFeedback" aria-live="polite"></p>
+
+            <div class="cta-row">
+              <button type="submit" class="btn btn-primary">Submit Invoice Request</button>
+              <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="section">
+    <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('invoiceForm');
+      const feedback = document.getElementById('formFeedback');
+
+      const fields = [
+        ['Full Name', 'fullName'],
+        ['Job Title', 'jobTitle'],
+        ['Hospital / Clinic / Business Name', 'businessName'],
+        ['Email Address', 'email'],
+        ['Phone Number', 'phone'],
+        ['Quantity Requested', 'quantityRequested'],
+        ['Shipping Address', 'shippingAddress'],
+        ['Billing Address', 'billingAddress'],
+        ['PO Number', 'poNumber'],
+        ['Notes / Special Instructions', 'notes']
+      ];
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        if (!form.checkValidity()) {
+          feedback.textContent = 'Please complete all required fields before submitting.';
+          feedback.classList.add('is-error');
+          form.reportValidity();
+          return;
+        }
+
+        feedback.textContent = '';
+        feedback.classList.remove('is-error');
+
+        const body = fields
+          .map(([label, name]) => {
+            const value = form.elements[name]?.value?.trim() || 'N/A';
+            return `${label}: ${value}`;
+          })
+          .join('\n');
+
+        const recipients = 'tgoetz@akoyamedical.com,tgoetz.sr@akoyamedical.com,dzaun@akoyamedical.com';
+        const subject = encodeURIComponent('Akoya Invoice Request');
+        const encodedBody = encodeURIComponent(body);
+        const mailtoUrl = `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
+
+        window.location.href = mailtoUrl;
+      });
+    });
+  </script>
+</body>
+</html>
