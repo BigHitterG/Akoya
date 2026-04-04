@@ -3,6 +3,45 @@
  * Keep lightweight behavior here as the landing page evolves.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  const galleryImages = Array.from(document.querySelectorAll('.product-gallery img'));
+  const lightbox = document.getElementById('productLightbox');
+  const lightboxImage = lightbox?.querySelector('.lightbox-image');
+  const lightboxCloseButton = lightbox?.querySelector('.lightbox-close');
+
+  const closeLightbox = () => {
+    if (!lightbox || !lightboxImage) {
+      return;
+    }
+
+    lightbox.classList.remove('is-open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    lightboxImage.src = '';
+    lightboxImage.alt = '';
+  };
+
+  if (galleryImages.length && lightbox && lightboxImage && lightboxCloseButton) {
+    galleryImages.forEach((image) => {
+      image.addEventListener('click', () => {
+        lightboxImage.src = image.src;
+        lightboxImage.alt = image.alt;
+        lightbox.classList.add('is-open');
+        lightbox.setAttribute('aria-hidden', 'false');
+      });
+    });
+
+    lightboxCloseButton.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (event) => {
+      if (event.target === lightbox) {
+        closeLightbox();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeLightbox();
+      }
+    });
+  }
+
   const slides = Array.from(document.querySelectorAll('.carousel-slide'));
   const dots = Array.from(document.querySelectorAll('.carousel-dot'));
   const playPauseButton = document.getElementById('carouselPlayPause');
