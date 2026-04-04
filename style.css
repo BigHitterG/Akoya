@@ -471,8 +471,26 @@
       background: #f9fcff;
     }
 
+    .purchase-header {
+      margin-bottom: 8px;
+    }
+
+    .purchase-brand {
+      color: #29445a;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .purchase-subtitle {
+      color: #102435;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
     .order-summary {
-      border-top: 1px solid #dbe5ed;
       margin-top: 2px;
       padding-top: 10px;
       display: grid;
@@ -494,6 +512,12 @@
     .order-cta {
       width: 100%;
       margin-top: 18px;
+    }
+
+    .purchase-card .btn-secondary {
+      background: #17324a;
+      border: 1px solid #17324a;
+      color: #ffffff;
     }
 
     .invoice-layout {
