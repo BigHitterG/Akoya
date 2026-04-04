@@ -29,7 +29,7 @@
         <div class="card-pad">
           <div class="kicker">Invoice requests</div>
           <h2>Request Invoice</h2>
-          <p class="body-copy">Hospitals, clinics, and bulk purchasers can submit a request below and the Akoya team will follow up with invoice details.</p>
+          <p class="body-copy">Hospitals, clinics, and bulk purchasers can submit a request below and the Akoya team will follow up with invoice details. Standard orders are 15 glasses per box. Box pricing is pre-tax, and shipping is added separately.</p>
 
           <form id="invoiceForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
@@ -122,10 +122,12 @@
             return `${label}: ${value}`;
           })
           .join('\n');
+        const invoiceNotes = '\n\nStandard Order: 15 glasses per box\nPricing Note: Box price is pre-tax; shipping is billed separately.';
+        const fullBody = `${body}${invoiceNotes}`;
 
-        const recipients = 'tgoetz@akoyamedical.com,tgoetz.sr@akoyamedical.com,dzaun@akoyamedical.com';
+        const recipients = 'tgoetz@akoyamedical.com;tgoetz.sr@akoyamedical.com;dzaun@akoyamedical.com';
         const subject = encodeURIComponent('Akoya Invoice Request');
-        const encodedBody = encodeURIComponent(body);
+        const encodedBody = encodeURIComponent(fullBody);
         const mailtoUrl = `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
 
         window.location.href = mailtoUrl;
