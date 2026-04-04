@@ -435,11 +435,6 @@
       color: #ffffff;
     }
 
-    .order-hero .hero-video {
-      object-fit: cover;
-      object-position: center;
-    }
-
     .order-grid {
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
@@ -468,50 +463,12 @@
       top: 96px;
     }
 
-    .quantity-card {
+    .purchase-card {
       margin-top: 14px;
       border: 1px solid #dce5ec;
       border-radius: 20px;
       padding: 18px;
       background: #f9fcff;
-    }
-
-    .quantity-label {
-      display: block;
-      font-size: 0.88rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #5b6b78;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-
-    .quantity-controls {
-      display: grid;
-      grid-template-columns: 48px 1fr 48px;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .qty-btn {
-      border: 1px solid #c9d6e1;
-      border-radius: 14px;
-      font-size: 1.45rem;
-      background: #ffffff;
-      color: #22384d;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .qty-input {
-      border: 1px solid #c9d6e1;
-      border-radius: 14px;
-      text-align: center;
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #12283a;
-      min-height: 52px;
-      width: 100%;
     }
 
     .order-summary {
@@ -534,27 +491,67 @@
       font-size: 1rem;
     }
 
-    .order-total {
-      border-top: 1px solid #dbe5ed;
-      padding-top: 12px;
-      margin-top: 2px;
-      font-weight: 700;
-    }
-
-    .order-total strong {
-      font-size: 1.26rem;
-      letter-spacing: -0.01em;
-    }
-
     .order-cta {
       width: 100%;
       margin-top: 18px;
     }
 
-    .checkout-note {
-      margin-top: 10px;
+    .invoice-layout {
+      max-width: 900px;
+    }
+
+    .invoice-form {
+      margin-top: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .invoice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .invoice-form label {
+      display: grid;
+      gap: 8px;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5b6b78;
+      font-weight: 700;
+    }
+
+    .invoice-form input,
+    .invoice-form textarea {
+      border: 1px solid #c9d6e1;
+      border-radius: 14px;
+      font-size: 1rem;
+      color: #12283a;
+      padding: 14px;
+      font-family: inherit;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 500;
+      background: #ffffff;
+    }
+
+    .invoice-form textarea {
+      resize: vertical;
+      min-height: 96px;
+    }
+
+    .form-feedback {
+      min-height: 1.2em;
       color: #5f6f7d;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 500;
+    }
+
+    .form-feedback.is-error {
+      color: #c33838;
     }
 
     @media (max-width: 900px) {
@@ -564,5 +561,9 @@
 
       .order-card {
         position: static;
+      }
+
+      .invoice-grid {
+        grid-template-columns: 1fr;
       }
     }
