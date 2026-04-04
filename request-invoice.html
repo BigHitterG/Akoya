@@ -49,7 +49,10 @@
                 <input type="tel" name="phone" required>
               </label>
               <label>Quantity Requested*
-                <input type="number" min="1" step="1" name="quantityRequested" required>
+                <div class="quantity-requested-row">
+                  <input id="quantityRequested" type="number" min="1" step="1" name="quantityRequested" required>
+                  <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">Enter boxes to see total units.</p>
+                </div>
               </label>
             </div>
 
@@ -89,6 +92,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('invoiceForm');
       const feedback = document.getElementById('formFeedback');
+      const quantityInput = document.getElementById('quantityRequested');
+      const quantityPreview = document.getElementById('quantityRequestedPreview');
+      const unitsPerBox = 15;
 
       const fields = [
         ['Full Name', 'fullName'],
@@ -102,6 +108,21 @@
         ['PO Number', 'poNumber'],
         ['Notes / Special Instructions', 'notes']
       ];
+
+      const updateQuantityPreview = () => {
+        const quantity = Number.parseInt(quantityInput.value, 10);
+        if (!Number.isFinite(quantity) || quantity < 1) {
+          quantityPreview.textContent = 'Enter boxes to see total units.';
+          return;
+        }
+
+        const unitCount = quantity * unitsPerBox;
+        const boxLabel = quantity === 1 ? 'box' : 'boxes';
+        quantityPreview.textContent = `${quantity} ${boxLabel} (${unitCount} units)`;
+      };
+
+      quantityInput.addEventListener('input', updateQuantityPreview);
+      updateQuantityPreview();
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -122,7 +143,7 @@
             return `${label}: ${value}`;
           })
           .join('\n');
-        const invoiceNotes = '\n\nStandard Order: 15 glasses per box\nPricing Note: Box price is pre-tax; shipping is billed separately.';
+        const invoiceNotes = `\n\nStandard Order: ${unitsPerBox} glasses per box\nPricing Note: Box price is pre-tax; shipping is billed separately.`;
         const fullBody = `${body}${invoiceNotes}`;
 
         const recipients = 'tgoetz@akoyamedical.com;tgoetz.sr@akoyamedical.com;dzaun@akoyamedical.com';

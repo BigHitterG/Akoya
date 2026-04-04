@@ -572,6 +572,22 @@
       background: #ffffff;
     }
 
+    .quantity-requested-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quantity-requested-preview {
+      color: #2a4a63;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: normal;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
     .invoice-form textarea {
       resize: vertical;
       min-height: 96px;
@@ -640,5 +656,14 @@
 
       .invoice-grid {
         grid-template-columns: 1fr;
+      }
+
+      .quantity-requested-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .quantity-requested-preview {
+        white-space: normal;
       }
     }
