@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Akoya Medical — Request Invoice</title>
+  <title>Akoya Medical — Order Now (Invoice)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="top-banner">
-    <div>Request invoicing support for clinics, hospitals, and bulk purchasing teams.</div>
+    <div>Order now with invoice support for clinics, hospitals, and bulk purchasing teams.</div>
     <a href="buy.html">Back to Buy</a>
   </div>
 
@@ -27,9 +27,9 @@
     <div class="container invoice-layout">
       <div class="card">
         <div class="card-pad">
-          <div class="kicker">Invoice requests</div>
-          <h2>Request Invoice</h2>
-          <p class="body-copy">Hospitals, clinics, and bulk purchasers can submit a request below and the Akoya team will follow up with invoice details. Standard orders are 15 glasses per box. Box pricing is pre-tax, and shipping is added separately.</p>
+          <div class="kicker">Order now</div>
+          <h2>Order Now (Invoice)</h2>
+          <p class="body-copy">Hospitals, clinics, and bulk purchasers can submit a request below and the Akoya team will follow up with invoice details.</p>
 
           <form id="invoiceForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
@@ -51,7 +51,10 @@
               <label>Quantity Requested*
                 <div class="quantity-requested-row">
                   <input id="quantityRequested" type="number" min="1" step="1" name="quantityRequested" required>
-                  <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">Enter boxes to see total units.</p>
+                  <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
+                    <span class="quantity-requested-preview-line1">Enter boxes to see total units.</span>
+                    <span class="quantity-requested-preview-line2"></span>
+                  </p>
                 </div>
               </label>
             </div>
@@ -75,7 +78,7 @@
             <p class="form-feedback" id="formFeedback" aria-live="polite"></p>
 
             <div class="cta-row">
-              <button type="submit" class="btn btn-primary">Submit Invoice Request</button>
+              <button type="submit" class="btn btn-primary">Order Now (Invoice)</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
           </form>
@@ -94,7 +97,10 @@
       const feedback = document.getElementById('formFeedback');
       const quantityInput = document.getElementById('quantityRequested');
       const quantityPreview = document.getElementById('quantityRequestedPreview');
+      const quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
+      const quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
       const unitsPerBox = 15;
+      const pricePerBox = 180;
 
       const fields = [
         ['Full Name', 'fullName'],
@@ -112,13 +118,16 @@
       const updateQuantityPreview = () => {
         const quantity = Number.parseInt(quantityInput.value, 10);
         if (!Number.isFinite(quantity) || quantity < 1) {
-          quantityPreview.textContent = 'Enter boxes to see total units.';
+          quantityPreviewLine1.textContent = 'Enter boxes to see total units.';
+          quantityPreviewLine2.textContent = '';
           return;
         }
 
         const unitCount = quantity * unitsPerBox;
+        const preTaxTotal = quantity * pricePerBox;
         const boxLabel = quantity === 1 ? 'box' : 'boxes';
-        quantityPreview.textContent = `${quantity} ${boxLabel} (${unitCount} units)`;
+        quantityPreviewLine1.textContent = `${quantity} ${boxLabel} (${unitCount} units)`;
+        quantityPreviewLine2.textContent = `$${preTaxTotal.toFixed(2)} pre-tax, pre-shipping`;
       };
 
       quantityInput.addEventListener('input', updateQuantityPreview);
@@ -143,11 +152,10 @@
             return `${label}: ${value}`;
           })
           .join('\n');
-        const invoiceNotes = `\n\nStandard Order: ${unitsPerBox} glasses per box\nPricing Note: Box price is pre-tax; shipping is billed separately.`;
-        const fullBody = `${body}${invoiceNotes}`;
+        const fullBody = body;
 
         const recipients = 'tgoetz@akoyamedical.com;tgoetz.sr@akoyamedical.com;dzaun@akoyamedical.com';
-        const subject = encodeURIComponent('Akoya Invoice Request');
+        const subject = encodeURIComponent('Akoya Order Now (Invoice) Request');
         const encodedBody = encodeURIComponent(fullBody);
         const mailtoUrl = `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
 

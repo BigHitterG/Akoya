@@ -586,6 +586,12 @@
       letter-spacing: normal;
       text-transform: none;
       white-space: nowrap;
+      display: grid;
+      gap: 4px;
+    }
+
+    .quantity-requested-preview-line2 {
+      font-weight: 600;
     }
 
     .invoice-form textarea {
