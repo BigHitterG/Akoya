@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request Invoice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="invoice-page">
+  <main class="invoice-shell">
+    <section class="invoice-intro">
+      <h1>Request Invoice</h1>
+      <p>Hospitals, clinics, and bulk purchasers can request an invoice here, and our team will follow up promptly.</p>
+    </section>
+
+    <section class="invoice-form-wrap">
+      <form id="invoiceForm" novalidate>
+        <div class="invoice-grid">
+          <div class="field">
+            <label for="fullName">Full Name</label>
+            <input id="fullName" name="Full Name" type="text" required>
+          </div>
+          <div class="field">
+            <label for="jobTitle">Job Title</label>
+            <input id="jobTitle" name="Job Title" type="text" required>
+          </div>
+          <div class="field full">
+            <label for="businessName">Hospital / Clinic / Business Name</label>
+            <input id="businessName" name="Hospital / Clinic / Business Name" type="text" required>
+          </div>
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input id="email" name="Email Address" type="email" required>
+          </div>
+          <div class="field">
+            <label for="phone">Phone Number</label>
+            <input id="phone" name="Phone Number" type="tel" required>
+          </div>
+          <div class="field">
+            <label for="quantity">Quantity Requested</label>
+            <input id="quantity" name="Quantity Requested" type="number" min="1" required>
+          </div>
+          <div class="field full">
+            <label for="shippingAddress">Shipping Address</label>
+            <textarea id="shippingAddress" name="Shipping Address" required></textarea>
+          </div>
+          <div class="field full">
+            <label for="billingAddress">Billing Address</label>
+            <textarea id="billingAddress" name="Billing Address" required></textarea>
+          </div>
+          <div class="field full">
+            <label for="poNumber">PO Number (optional)</label>
+            <input id="poNumber" name="PO Number" type="text">
+          </div>
+          <div class="field full">
+            <label for="notes">Notes / Special Instructions</label>
+            <textarea id="notes" name="Notes / Special Instructions"></textarea>
+          </div>
+        </div>
+
+        <div class="invoice-actions">
+          <a class="back-link" href="index.html">← Back to Homepage</a>
+          <button type="submit" class="btn btn-primary">Submit Invoice Request</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('invoiceForm');
+      if (!form) return;
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        const recipients = [
+          'tgoetz@akoyamedical.com',
+          'tgoetz.sr@akoyamedical.com',
+          'dzaun@akoyamedical.com'
+        ];
+
+        const formData = new FormData(form);
+        const lines = [];
+
+        formData.forEach((value, key) => {
+          const normalizedValue = String(value).trim();
+          lines.push(`${key}: ${normalizedValue || 'N/A'}`);
+        });
+
+        const subject = 'Akoya Invoice Request';
+        const body = lines.join('\n');
+        const mailtoUrl = `mailto:${recipients.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        window.location.href = mailtoUrl;
+      });
+    });
+  </script>
+</body>
+</html>
