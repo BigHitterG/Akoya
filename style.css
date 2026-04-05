@@ -58,9 +58,13 @@
     }
     .brand {
       justify-self: center;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
+      display: inline-flex;
+      align-items: center;
+    }
+    .brand-logo {
+      height: 34px;
+      width: auto;
+      object-fit: contain;
     }
 
     .hero {
