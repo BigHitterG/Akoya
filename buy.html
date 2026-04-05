@@ -18,9 +18,19 @@
 
   <header>
     <div class="nav">
-      <a class="nav-back" href="index.html" aria-label="Return to home page">←</a>
+      <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div class="brand"><img class="brand-logo" src="assets/images/IMG_1997.png" alt="Akoya"></div>
       <div></div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+      <a href="buy.html">Buy</a>
+      <a href="clinical-feedback.html">Clinical Feedback</a>
+      <a href="our-journey.html">Our Journey</a>
+      <a href="contact.html">Contact Us</a>
     </div>
   </header>
 
