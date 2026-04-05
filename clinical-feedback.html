@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clinical Feedback | Akoya</title>
+  <link rel="icon" type="image/png" href="assets/images/IMG_1998.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="top-banner">
+    <div>Clinical satisfaction data from Akoya Medical patient survey responses.</div>
+    <a href="index.html">Back Home</a>
+  </div>
+
+  <header>
+    <div class="nav">
+      <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="brand"><img class="brand-logo" src="assets/images/IMG_1997.png" alt="Akoya"></div>
+      <div></div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+      <a href="buy.html">Buy</a>
+      <a href="clinical-feedback.html">Clinical Feedback</a>
+      <a href="our-journey.html">Our Journey</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container page-container">
+      <div class="card">
+        <div class="card-pad">
+          <div class="kicker">Akoya Medical</div>
+          <h2>Patient Survey</h2>
+          <p class="body-copy">The chart below shows the percentage of patients rating their experience from 1 (very difficult) to 5 (very easy), based on 45 completed questionnaires out of 50 patients.</p>
+        </div>
+
+        <div class="survey-table-wrap">
+          <table class="survey-table" aria-label="Patient satisfaction survey results">
+            <thead>
+              <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Satisfaction Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Ease of Use</td><td>96%</td></tr>
+              <tr><td>Reliability</td><td>98%</td></tr>
+              <tr><td>Comfort</td><td>96%</td></tr>
+              <tr><td>Recommendation</td><td>96%</td></tr>
+              <tr><td>Anxiety Relief</td><td>88%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card-pad testimonials-block">
+          <h3>Patient Testimonials</h3>
+          <blockquote>“I couldn’t have done the procedure without them!”</blockquote>
+          <blockquote>“I passed out during a previous biopsy but didnt this time.”</blockquote>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="section">
+    <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

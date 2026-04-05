@@ -3,6 +3,34 @@
  * Keep lightweight behavior here as the landing page evolves.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const mobileMenuLinks = Array.from(document.querySelectorAll('.mobile-menu a'));
+
+  if (menuToggle && mobileMenu) {
+    const setMenuState = (isOpen) => {
+      mobileMenu.classList.toggle('is-open', isOpen);
+      mobileMenu.setAttribute('aria-hidden', String(!isOpen));
+      menuToggle.setAttribute('aria-expanded', String(isOpen));
+      menuToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    };
+
+    menuToggle.addEventListener('click', () => {
+      const isOpen = mobileMenu.classList.contains('is-open');
+      setMenuState(!isOpen);
+    });
+
+    mobileMenuLinks.forEach((link) => {
+      link.addEventListener('click', () => setMenuState(false));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        setMenuState(false);
+      }
+    });
+  }
+
   const galleryImages = Array.from(document.querySelectorAll('.product-gallery img'));
   const lightbox = document.getElementById('productLightbox');
   const lightboxImage = lightbox?.querySelector('.lightbox-image');

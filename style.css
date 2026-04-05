@@ -50,6 +50,9 @@
       flex-direction: column;
       justify-content: space-between;
       cursor: pointer;
+      border: none;
+      background: transparent;
+      padding: 0;
     }
     .hamburger span {
       height: 3px;
@@ -71,6 +74,34 @@
       height: 100%;
       object-fit: contain;
       transform: none;
+    }
+
+    .mobile-menu {
+      display: none;
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(11, 16, 21, 0.96);
+      overflow: hidden;
+    }
+
+    .mobile-menu.is-open {
+      display: grid;
+    }
+
+    .mobile-menu a {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .mobile-menu a:last-child {
+      border-bottom: none;
     }
 
     .hero {
@@ -547,6 +578,75 @@
       max-width: 900px;
     }
 
+    .page-container {
+      max-width: 900px;
+    }
+
+    .survey-table-wrap {
+      padding: 0 28px 28px;
+    }
+
+    .survey-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #c8d5df;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .survey-table th,
+    .survey-table td {
+      border: 1px solid #c8d5df;
+      padding: 14px 16px;
+      text-align: left;
+      color: #1a2b39;
+    }
+
+    .survey-table th {
+      background: #f4d7e4;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .survey-table td:last-child {
+      font-weight: 700;
+    }
+
+    .testimonials-block {
+      border-top: 1px solid #e4ebf0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .testimonials-block h3 {
+      font-size: 1.7rem;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .testimonials-block blockquote {
+      color: #304655;
+      font-style: italic;
+      font-size: 1.1rem;
+    }
+
+    .story-content {
+      display: grid;
+      gap: 16px;
+    }
+
+    .story-content p {
+      color: #334a5b;
+      font-size: 1.06rem;
+      line-height: 1.7;
+    }
+
+    .signature-line {
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
     .invoice-form {
       margin-top: 20px;
       display: grid;
@@ -688,5 +788,15 @@
 
       .quantity-requested-preview {
         white-space: normal;
+      }
+
+      .survey-table-wrap {
+        padding: 0 14px 20px;
+      }
+
+      .survey-table th,
+      .survey-table td {
+        padding: 12px 10px;
+        font-size: 0.9rem;
       }
     }
