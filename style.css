@@ -682,7 +682,7 @@
     }
 
     .story-inline-image {
-      width: min(360px, 100%);
+      width: min(180px, 100%);
       height: auto;
       display: block;
       justify-self: start;
