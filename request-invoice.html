@@ -39,8 +39,8 @@
       <div class="card">
         <div class="card-pad">
           <div class="kicker">Akoya Medical</div>
-          <h2>Order Now</h2>
-          <p class="body-copy">Hospitals, clinics, and bulk purchasers can submit a request below and the Akoya team will follow up with invoice details.</p>
+          <h2>Request Invoice / PO</h2>
+          <p class="body-copy">For hospitals, clinics, and bulk purchasers. Submit your order details and include a PO number if applicable. We'll send a digital invoice for payment.</p>
 
           <form id="invoiceForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
@@ -82,6 +82,8 @@
               <input type="text" name="poNumber">
             </label>
 
+            <p class="body-copy">A purchase order number may be included if required by your organization.</p>
+
             <label>Notes / Special Instructions
               <textarea name="notes" rows="4"></textarea>
             </label>
@@ -89,7 +91,7 @@
             <p class="form-feedback" id="formFeedback" aria-live="polite"></p>
 
             <div class="cta-row">
-              <button type="submit" class="btn btn-primary">Order Now</button>
+              <button type="submit" class="btn btn-primary">Submit Order Details</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
           </form>
@@ -155,7 +157,7 @@
           return;
         }
 
-        feedback.textContent = '';
+        feedback.textContent = 'Thank you. Your order request has been received. We'll send a digital invoice to your email shortly.';
         feedback.classList.remove('is-error');
 
         const body = fields
@@ -167,7 +169,7 @@
         const fullBody = body;
 
         const recipients = 'tgoetz@akoyamedical.com;tgoetz.sr@akoyamedical.com;dzaun@akoyamedical.com';
-        const subject = encodeURIComponent('Akoya Order Now (Invoice) Request');
+        const subject = encodeURIComponent('Akoya Order Request (Invoice / PO)');
         const encodedBody = encodeURIComponent(fullBody);
         const mailtoUrl = `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
 
