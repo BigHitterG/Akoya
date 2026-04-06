@@ -602,6 +602,10 @@
       max-width: 900px;
     }
 
+    .survey-intro-copy {
+      max-width: none;
+    }
+
     .survey-table-wrap {
       padding: 0 28px 28px;
     }
