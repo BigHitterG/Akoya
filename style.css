@@ -573,7 +573,7 @@
     .justified-copy {
       text-align: justify;
       text-justify: inter-word;
-      hyphens: auto;
+      hyphens: none;
     }
 
     .box-quantity-note {
@@ -669,7 +669,7 @@
     .story-letter p:not(.signature-line) {
       text-align: justify;
       text-justify: inter-word;
-      hyphens: auto;
+      hyphens: none;
       font-family: "Cormorant Garamond", "Times New Roman", serif;
       font-size: clamp(1.2rem, 1.7vw, 1.42rem);
       line-height: 1.58;
