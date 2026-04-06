@@ -31,6 +31,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+
+  const heroVideo = document.getElementById('heroVideo');
+
+  if (heroVideo) {
+    const revealVideo = () => heroVideo.classList.add('is-ready');
+
+    if (heroVideo.readyState >= 2) {
+      revealVideo();
+    }
+
+    heroVideo.addEventListener('loadeddata', revealVideo, { once: true });
+    heroVideo.addEventListener('canplay', revealVideo, { once: true });
+
+    const playbackAttempt = heroVideo.play();
+    if (playbackAttempt && typeof playbackAttempt.catch === 'function') {
+      playbackAttempt.catch(() => {
+        // Keep the black background if autoplay is blocked.
+      });
+    }
+  }
+
   const galleryImages = Array.from(document.querySelectorAll('.product-gallery img'));
   const lightbox = document.getElementById('productLightbox');
   const lightboxImage = lightbox?.querySelector('.lightbox-image');

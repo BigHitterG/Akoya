@@ -115,6 +115,7 @@
       position: absolute;
       inset: 0;
       overflow: hidden;
+      background: #000000;
     }
 
     .hero-video {
@@ -123,6 +124,13 @@
       object-fit: cover;
       filter: brightness(0.72);
       transform: scale(1.02);
+      opacity: 0;
+      transition: opacity 0.24s ease;
+      background: #000000;
+    }
+
+    .hero-video.is-ready {
+      opacity: 1;
     }
 
     .hero-overlay {
