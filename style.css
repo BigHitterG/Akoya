@@ -782,6 +782,18 @@
       color: #c33838;
     }
 
+    .form-followup {
+      min-height: 1.2em;
+      margin-top: 6px;
+      color: #5f6f7d;
+      font-size: 0.92rem;
+    }
+
+    .form-followup a {
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
     .lightbox {
       position: fixed;
       inset: 0;
