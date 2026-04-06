@@ -89,6 +89,7 @@
             </label>
 
             <p class="form-feedback" id="formFeedback" aria-live="polite"></p>
+            <p class="form-followup" id="formFollowup"></p>
 
             <div class="cta-row">
               <button type="submit" class="btn btn-primary">Submit Order Details</button>
@@ -106,17 +107,19 @@
 
   <script src="main.js" defer></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('invoiceForm');
-      const feedback = document.getElementById('formFeedback');
-      const quantityInput = document.getElementById('quantityRequested');
-      const quantityPreview = document.getElementById('quantityRequestedPreview');
-      const quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
-      const quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
-      const unitsPerBox = 15;
-      const pricePerBox = 180;
+    document.addEventListener('DOMContentLoaded', function () {
+      var form = document.getElementById('invoiceForm');
+      var feedback = document.getElementById('formFeedback');
+      var followup = document.getElementById('formFollowup');
+      var quantityInput = document.getElementById('quantityRequested');
+      var quantityPreview = document.getElementById('quantityRequestedPreview');
+      var quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
+      var quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
+      var unitsPerBox = 15;
+      var pricePerUnit = 12;
+      var draftStorageKey = 'akoyaInvoiceRequestDraft';
 
-      const fields = [
+      var fields = [
         ['Full Name', 'fullName'],
         ['Job Title', 'jobTitle'],
         ['Hospital / Clinic / Business Name', 'businessName'],
@@ -129,51 +132,99 @@
         ['Notes / Special Instructions', 'notes']
       ];
 
-      const updateQuantityPreview = () => {
-        const quantity = Number.parseInt(quantityInput.value, 10);
-        if (!Number.isFinite(quantity) || quantity < 1) {
+      function getFieldValue(name) {
+        if (!form || !form.elements || !form.elements[name]) {
+          return '';
+        }
+        return form.elements[name].value || '';
+      }
+
+      function updateQuantityPreview() {
+        var quantity = Number.parseInt(quantityInput.value, 10);
+        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0;
+
+        if (!hasValidQuantity) {
           quantityPreviewLine1.textContent = 'Enter boxes to see total units.';
           quantityPreviewLine2.textContent = '';
           return;
         }
 
-        const unitCount = quantity * unitsPerBox;
-        const preTaxTotal = quantity * pricePerBox;
-        const boxLabel = quantity === 1 ? 'box' : 'boxes';
-        quantityPreviewLine1.textContent = `${quantity} ${boxLabel} (${unitCount} units)`;
-        quantityPreviewLine2.textContent = `$${preTaxTotal.toFixed(2)} pre-tax, pre-shipping`;
-      };
+        var unitCount = quantity * unitsPerBox;
+        var preTaxTotal = unitCount * pricePerUnit;
+        var boxLabel = quantity === 1 ? 'box' : 'boxes';
+        quantityPreviewLine1.textContent = quantity + ' ' + boxLabel + ' (' + unitCount + ' units)';
+        quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
+      }
+
+      function saveDraft() {
+        var draft = fields.reduce(function (accumulator, field) {
+          var name = field[1];
+          accumulator[name] = getFieldValue(name);
+          return accumulator;
+        }, {});
+        localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+      }
+
+      function loadDraft() {
+        var savedDraft = localStorage.getItem(draftStorageKey);
+        if (!savedDraft) {
+          return;
+        }
+
+        try {
+          var parsedDraft = JSON.parse(savedDraft);
+          fields.forEach(function (field) {
+            var name = field[1];
+            if (typeof parsedDraft[name] === 'string' && form.elements[name]) {
+              form.elements[name].value = parsedDraft[name];
+            }
+          });
+        } catch (error) {
+          localStorage.removeItem(draftStorageKey);
+        }
+      }
 
       quantityInput.addEventListener('input', updateQuantityPreview);
+      quantityInput.addEventListener('change', updateQuantityPreview);
+      quantityInput.addEventListener('keyup', updateQuantityPreview);
+      form.addEventListener('input', saveDraft);
+      loadDraft();
       updateQuantityPreview();
 
-      form.addEventListener('submit', (event) => {
+      form.addEventListener('submit', function (event) {
         event.preventDefault();
 
         if (!form.checkValidity()) {
           feedback.textContent = 'Please complete all required fields before submitting.';
           feedback.classList.add('is-error');
+          followup.textContent = '';
           form.reportValidity();
           return;
         }
 
-        feedback.textContent = 'Thank you. Your order request has been received. We'll send a digital invoice to your email shortly.';
+        feedback.textContent = "Thank you. Your order request has been received. We'll send a digital invoice to your email shortly.";
         feedback.classList.remove('is-error');
+        followup.textContent = '';
 
-        const body = fields
-          .map(([label, name]) => {
-            const value = form.elements[name]?.value?.trim() || 'N/A';
-            return `${label}: ${value}`;
+        var body = fields
+          .map(function (field) {
+            var label = field[0];
+            var name = field[1];
+            var value = getFieldValue(name).trim() || 'N/A';
+            return label + ': ' + value;
           })
           .join('\n');
-        const fullBody = body;
 
-        const recipients = 'tgoetz@akoyamedical.com;tgoetz.sr@akoyamedical.com;dzaun@akoyamedical.com';
-        const subject = encodeURIComponent('Akoya Order Request (Invoice / PO)');
-        const encodedBody = encodeURIComponent(fullBody);
-        const mailtoUrl = `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
+        var recipients = 'tgoetz@akoyamedical.com,tgoetz.sr@akoyamedical.com,dzaun@akoyamedical.com';
+        var subject = encodeURIComponent('Akoya Order Request (Invoice / PO)');
+        var encodedBody = encodeURIComponent(body);
+        var mailtoUrl = 'mailto:' + recipients + '?subject=' + subject + '&body=' + encodedBody;
 
         window.location.href = mailtoUrl;
+
+        setTimeout(function () {
+          followup.innerHTML = 'If your email app did not open, <a href="' + mailtoUrl + '">tap here to open it</a> or copy these recipients: <strong>' + recipients + '</strong>.';
+        }, 600);
       });
     });
   </script>
