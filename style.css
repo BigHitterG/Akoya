@@ -627,6 +627,11 @@
       color: #1a2b39;
     }
 
+    .survey-table th:nth-child(2),
+    .survey-table td:nth-child(2) {
+      text-align: center;
+    }
+
     .survey-table th {
       background: #f4d7e4;
       font-size: 0.95rem;
@@ -675,8 +680,8 @@
       text-align: justify;
       text-justify: inter-word;
       hyphens: none;
-      font-family: "Cormorant Garamond", "Times New Roman", serif;
-      font-size: clamp(1.2rem, 1.7vw, 1.42rem);
+      font-family: "Caveat", "Cormorant Garamond", "Times New Roman", serif;
+      font-size: clamp(1.3rem, 1.9vw, 1.75rem);
       line-height: 1.58;
       letter-spacing: 0.01em;
     }
