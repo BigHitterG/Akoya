@@ -39,7 +39,7 @@
       <div class="card">
         <div class="card-pad">
           <div class="kicker">Akoya Medical</div>
-          <h2>Request Invoice / PO</h2>
+          <h2>Order (Invoice / PO)</h2>
           <p class="body-copy">For hospitals, clinics, and bulk purchasers. Submit your order details and include a PO number if applicable. We'll send a digital invoice for payment.</p>
 
           <form id="invoiceForm" class="invoice-form" novalidate>
@@ -88,9 +88,6 @@
               <textarea name="notes" rows="4"></textarea>
             </label>
 
-            <p class="form-feedback" id="formFeedback" aria-live="polite"></p>
-            <p class="form-followup" id="formFollowup"></p>
-
             <div class="cta-row">
               <button type="submit" class="btn btn-primary">Submit Order Details</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
@@ -109,8 +106,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       var form = document.getElementById('invoiceForm');
-      var feedback = document.getElementById('formFeedback');
-      var followup = document.getElementById('formFollowup');
       var quantityInput = document.getElementById('quantityRequested');
       var quantityPreview = document.getElementById('quantityRequestedPreview');
       var quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
@@ -195,16 +190,9 @@
         event.preventDefault();
 
         if (!form.checkValidity()) {
-          feedback.textContent = 'Please complete all required fields before submitting.';
-          feedback.classList.add('is-error');
-          followup.textContent = '';
           form.reportValidity();
           return;
         }
-
-        feedback.textContent = "Thank you. Your order request has been received. We'll send a digital invoice to your email shortly.";
-        feedback.classList.remove('is-error');
-        followup.textContent = '';
 
         var body = fields
           .map(function (field) {
@@ -216,15 +204,16 @@
           .join('\n');
 
         var recipients = 'tgoetz@akoyamedical.com,tgoetz.sr@akoyamedical.com,dzaun@akoyamedical.com';
-        var subject = encodeURIComponent('Akoya Order Request (Invoice / PO)');
+        var subject = encodeURIComponent('Akoya Order (Invoice / PO)');
         var encodedBody = encodeURIComponent(body);
         var mailtoUrl = 'mailto:' + recipients + '?subject=' + subject + '&body=' + encodedBody;
 
-        window.location.href = mailtoUrl;
+        localStorage.removeItem(draftStorageKey);
+        form.reset();
+        updateQuantityPreview();
 
-        setTimeout(function () {
-          followup.innerHTML = 'If your email app did not open, <a href="' + mailtoUrl + '">tap here to open it</a>.';
-        }, 600);
+        window.open(mailtoUrl, '_blank');
+        window.location.href = 'order-confirmation.html';
       });
     });
   </script>
