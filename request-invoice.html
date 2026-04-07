@@ -39,7 +39,7 @@
       <div class="card">
         <div class="card-pad">
           <div class="kicker">Akoya Medical</div>
-          <h2>Request Invoice / PO</h2>
+          <h2>Order (Invoice / PO)</h2>
           <p class="body-copy">For hospitals, clinics, and bulk purchasers. Submit your order details and include a PO number if applicable. We'll send a digital invoice for payment.</p>
 
           <form id="invoiceForm" class="invoice-form" novalidate>
@@ -202,7 +202,7 @@
           return;
         }
 
-        feedback.textContent = "Thank you. Your order request has been received. We'll send a digital invoice to your email shortly.";
+        feedback.textContent = "Thank you for your order. Your invoice should be arriving shortly.";
         feedback.classList.remove('is-error');
         followup.textContent = '';
 
@@ -216,15 +216,15 @@
           .join('\n');
 
         var recipients = 'tgoetz@akoyamedical.com,tgoetz.sr@akoyamedical.com,dzaun@akoyamedical.com';
-        var subject = encodeURIComponent('Akoya Order Request (Invoice / PO)');
+        var subject = encodeURIComponent('Akoya Order (Invoice / PO)');
         var encodedBody = encodeURIComponent(body);
         var mailtoUrl = 'mailto:' + recipients + '?subject=' + subject + '&body=' + encodedBody;
 
         window.location.href = mailtoUrl;
 
         setTimeout(function () {
-          followup.innerHTML = 'If your email app did not open, <a href="' + mailtoUrl + '">tap here to open it</a>.';
-        }, 600);
+          window.location.href = 'order-confirmation.html';
+        }, 300);
       });
     });
   </script>
