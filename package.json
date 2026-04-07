@@ -1,0 +1,12 @@
+{
+  "name": "akoya-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Akoya marketing and order request flow",
+  "scripts": {
+    "start": "python -m http.server 8000"
+  },
+  "dependencies": {
+    "stripe": "^18.2.0"
+  }
+}
