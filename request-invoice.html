@@ -88,8 +88,10 @@
               <textarea name="notes" rows="4"></textarea>
             </label>
 
+            <p id="invoiceSubmissionError" class="body-copy" style="color: #b42318; display: none; margin-top: 8px;"></p>
+
             <div class="cta-row">
-              <button type="submit" class="btn btn-primary">Submit Order Details</button>
+              <button type="submit" class="btn btn-primary" id="submitOrderDetailsButton">Submit Order Details</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
           </form>
@@ -186,7 +188,10 @@
       loadDraft();
       updateQuantityPreview();
 
-      form.addEventListener('submit', function (event) {
+      var submitButton = document.getElementById('submitOrderDetailsButton');
+      var submissionError = document.getElementById('invoiceSubmissionError');
+
+      form.addEventListener('submit', async function (event) {
         event.preventDefault();
 
         if (!form.checkValidity()) {
@@ -194,26 +199,43 @@
           return;
         }
 
-        var body = fields
-          .map(function (field) {
-            var label = field[0];
-            var name = field[1];
-            var value = getFieldValue(name).trim() || 'N/A';
-            return label + ': ' + value;
-          })
-          .join('\n');
+        var payload = fields.reduce(function (accumulator, field) {
+          var name = field[1];
+          accumulator[name] = getFieldValue(name).trim();
+          return accumulator;
+        }, {});
 
-        var recipients = 'tgoetz@akoyamedical.com,tgoetz.sr@akoyamedical.com,dzaun@akoyamedical.com';
-        var subject = encodeURIComponent('Akoya Order (Invoice / PO)');
-        var encodedBody = encodeURIComponent(body);
-        var mailtoUrl = 'mailto:' + recipients + '?subject=' + subject + '&body=' + encodedBody;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+        submissionError.style.display = 'none';
+        submissionError.textContent = '';
 
-        localStorage.removeItem(draftStorageKey);
-        form.reset();
-        updateQuantityPreview();
+        try {
+          var response = await fetch('/api/create-stripe-invoice', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
 
-        window.open(mailtoUrl, '_blank');
-        window.location.href = 'order-confirmation.html';
+          var responseBody = await response.json();
+
+          if (!response.ok || !responseBody.success) {
+            throw new Error(responseBody.error || 'Unable to submit order details right now.');
+          }
+
+          localStorage.removeItem(draftStorageKey);
+          form.reset();
+          updateQuantityPreview();
+          window.location.href = 'order-confirmation.html';
+        } catch (error) {
+          submissionError.textContent = error.message || 'Unable to submit order details right now. Please try again.';
+          submissionError.style.display = 'block';
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Submit Order Details';
+        }
       });
     });
   </script>
