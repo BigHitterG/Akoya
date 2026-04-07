@@ -88,9 +88,6 @@
               <textarea name="notes" rows="4"></textarea>
             </label>
 
-            <p class="form-feedback" id="formFeedback" aria-live="polite"></p>
-            <p class="form-followup" id="formFollowup"></p>
-
             <div class="cta-row">
               <button type="submit" class="btn btn-primary">Submit Order Details</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
@@ -109,8 +106,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       var form = document.getElementById('invoiceForm');
-      var feedback = document.getElementById('formFeedback');
-      var followup = document.getElementById('formFollowup');
       var quantityInput = document.getElementById('quantityRequested');
       var quantityPreview = document.getElementById('quantityRequestedPreview');
       var quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
@@ -195,16 +190,9 @@
         event.preventDefault();
 
         if (!form.checkValidity()) {
-          feedback.textContent = 'Please complete all required fields before submitting.';
-          feedback.classList.add('is-error');
-          followup.textContent = '';
           form.reportValidity();
           return;
         }
-
-        feedback.textContent = "Thank you for your order. Your invoice should be arriving shortly.";
-        feedback.classList.remove('is-error');
-        followup.textContent = '';
 
         var body = fields
           .map(function (field) {
@@ -220,11 +208,12 @@
         var encodedBody = encodeURIComponent(body);
         var mailtoUrl = 'mailto:' + recipients + '?subject=' + subject + '&body=' + encodedBody;
 
-        window.location.href = mailtoUrl;
+        localStorage.removeItem(draftStorageKey);
+        form.reset();
+        updateQuantityPreview();
 
-        setTimeout(function () {
-          window.location.href = 'order-confirmation.html';
-        }, 300);
+        window.open(mailtoUrl, '_blank');
+        window.location.href = 'order-confirmation.html';
       });
     });
   </script>
