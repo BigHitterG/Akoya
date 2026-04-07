@@ -89,13 +89,6 @@ module.exports = async function handler(req, res) {
       metadata
     });
 
-    await stripe.invoiceItems.create({
-      customer: customer.id,
-      amount: amountCents,
-      currency: 'usd',
-      description: `Akoya Eye Shield - ${boxCount} box(es) / ${units} units`
-    });
-
     const invoice = await stripe.invoices.create({
       customer: customer.id,
       collection_method: 'send_invoice',
@@ -105,19 +98,32 @@ module.exports = async function handler(req, res) {
       auto_advance: true
     });
 
+    await stripe.invoiceItems.create({
+      customer: customer.id,
+      invoice: invoice.id,
+      amount: amountCents,
+      currency: 'usd',
+      description: `Akoya Eye Shield - ${boxCount} box(es) / ${units} units`
+    });
+
     const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
-    await stripe.invoices.sendInvoice(finalizedInvoice.id);
+    if (finalizedInvoice.amount_due > 0 && finalizedInvoice.status === 'open') {
+      await stripe.invoices.sendInvoice(finalizedInvoice.id);
+    }
 
     res.status(200).json({
       success: true,
       customerId: customer.id,
       invoiceId: finalizedInvoice.id,
-      hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null
+      hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
+      status: finalizedInvoice.status,
+      amountDue: finalizedInvoice.amount_due
     });
   } catch (error) {
     res.status(500).json({
       error: 'Unable to create Stripe invoice.',
-      details: error && error.message ? error.message : 'Unknown error.'
+      details: error && error.message ? error.message : 'Unknown error.',
+      code: error && error.code ? error.code : null
     });
   }
 };
