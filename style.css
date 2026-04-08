@@ -723,6 +723,33 @@
       font-weight: 700;
     }
 
+    .shipping-fieldset {
+      border: 1px solid #c9d6e1;
+      border-radius: 16px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .shipping-fieldset legend {
+      padding: 0 8px;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5b6b78;
+      font-weight: 700;
+    }
+
+    .shipping-grid {
+      gap: 12px;
+    }
+
+    .shipping-helper-copy {
+      margin: 0;
+      color: #35536a;
+      font-size: 0.93rem;
+    }
+
     .invoice-form input,
     .invoice-form textarea {
       border: 1px solid #c9d6e1;
@@ -768,6 +795,35 @@
       border: 2px solid #12283a;
       background: #ffffff;
       color: #0b1015;
+    }
+
+    .shipping-validation-message {
+      display: grid;
+      gap: 6px;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      border: 1px solid transparent;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .shipping-validation-message ul {
+      margin: 2px 0 0;
+      padding-left: 18px;
+    }
+
+    .shipping-validation-message.is-success {
+      border-color: #b8e2c5;
+      background: #ecfdf3;
+      color: #14653a;
+    }
+
+    .shipping-validation-message.is-error {
+      border-color: #f3c7cd;
+      background: #fff1f3;
+      color: #b42318;
     }
 
     .form-feedback {
