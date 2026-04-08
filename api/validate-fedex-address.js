@@ -18,6 +18,47 @@ function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function normalizeStreetLines(streetLines) {
+  if (!Array.isArray(streetLines)) {
+    return [];
+  }
+  return streetLines
+    .map((line) => (typeof line === 'string' ? line.trim() : ''))
+    .filter(Boolean);
+}
+
+function parseStructuredShippingAddress(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const streetLines = normalizeStreetLines(payload.shippingStreetLines);
+  const city = typeof payload.shippingCity === 'string' ? payload.shippingCity.trim() : '';
+  const stateOrProvinceCode = typeof payload.shippingState === 'string' ? payload.shippingState.trim().toUpperCase() : '';
+  const postalCode = typeof payload.shippingPostalCode === 'string' ? payload.shippingPostalCode.trim() : '';
+  const countryCode = typeof payload.shippingCountryCode === 'string' ? payload.shippingCountryCode.trim().toUpperCase() : 'US';
+
+  if (!streetLines.length || !required(city) || !required(stateOrProvinceCode) || !required(postalCode)) {
+    return null;
+  }
+
+  if (!/^[A-Z]{2}$/.test(stateOrProvinceCode)) {
+    return null;
+  }
+
+  if (!/^\d{5}(?:-\d{4})?$/.test(postalCode)) {
+    return null;
+  }
+
+  return {
+    streetLines,
+    city,
+    stateOrProvinceCode,
+    postalCode,
+    countryCode: countryCode || 'US'
+  };
+}
+
 function parseShippingAddress(text) {
   if (!required(text)) {
     return null;
@@ -102,19 +143,18 @@ module.exports = async function handler(req, res) {
   }
 
   const payload = parseJson(req);
-  if (!payload || !required(payload.shippingAddress)) {
+  if (!payload) {
     res.status(400).json({
-      error: 'Missing required field: shippingAddress',
-      hint: 'Use multi-line address with final line in: City, ST ZIP format.'
+      error: 'Invalid JSON payload.'
     });
     return;
   }
 
-  const parsedAddress = parseShippingAddress(payload.shippingAddress);
+  const parsedAddress = parseStructuredShippingAddress(payload) || parseShippingAddress(payload.shippingAddress);
   if (!parsedAddress) {
     res.status(400).json({
       error: 'Shipping address format is invalid.',
-      hint: 'Expected format: Street\\nCity, ST ZIP'
+      hint: 'Expected street, city, state, and ZIP code in US format.'
     });
     return;
   }
@@ -175,13 +215,28 @@ module.exports = async function handler(req, res) {
     const normalizedAddress = formatFedexAddress(firstResolved);
     const attributes = firstResolved?.attributes || [];
     const hasInterpolated = attributes.some((item) => item?.name === 'InterpolatedStreetAddress' && item?.value === 'true');
+    const alerts = Array.isArray(output?.alerts) ? output.alerts : [];
+    const normalizedStreetLines = normalizeStreetLines(firstResolved?.streetLinesToken || firstResolved?.streetLines);
+    const normalizedComponents = {
+      street1: normalizedStreetLines[0] || '',
+      street2: normalizedStreetLines[1] || '',
+      city: firstResolved?.city || '',
+      stateOrProvinceCode: firstResolved?.stateOrProvinceCode || '',
+      postalCode: firstResolved?.postalCode || '',
+      countryCode: firstResolved?.countryCode || 'US'
+    };
 
     res.status(200).json({
       success: true,
       isValid: true,
       normalizedAddress,
+      normalizedComponents,
       classification: firstResolved?.classification || null,
-      interpolated: hasInterpolated
+      interpolated: hasInterpolated,
+      alerts: alerts.map((alert) => ({
+        code: alert?.code || null,
+        message: alert?.message || null
+      }))
     });
   } catch (error) {
     res.status(500).json({

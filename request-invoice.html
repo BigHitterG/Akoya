@@ -70,13 +70,34 @@
               </label>
             </div>
 
-            <label>Shipping Address*
-              <textarea name="shippingAddress" rows="3" required placeholder="Street Address&#10;City, ST ZIP"></textarea>
-            </label>
+            <fieldset class="shipping-fieldset">
+              <legend>Shipping Address*</legend>
+              <div class="invoice-grid shipping-grid">
+                <label>Street Address Line 1*
+                  <input type="text" name="shippingStreet1" required autocomplete="address-line1" placeholder="123 Main St">
+                </label>
+                <label>Street Address Line 2 (optional)
+                  <input type="text" name="shippingStreet2" autocomplete="address-line2" placeholder="Suite 400">
+                </label>
+                <label>City*
+                  <input type="text" name="shippingCity" required autocomplete="address-level2" placeholder="Memphis">
+                </label>
+                <label>State*
+                  <input type="text" name="shippingState" required maxlength="2" autocomplete="address-level1" placeholder="TN">
+                </label>
+                <label>ZIP Code*
+                  <input type="text" name="shippingPostalCode" required inputmode="numeric" autocomplete="postal-code" placeholder="38116">
+                </label>
+                <label>Country
+                  <input type="text" name="shippingCountryCode" value="US" readonly aria-readonly="true">
+                </label>
+              </div>
+              <p class="body-copy shipping-helper-copy">Use the recipient's exact postal address. FedEx validation works best with an accurate street and suite/unit.</p>
+            </fieldset>
             <div class="cta-row" style="margin-top: 0;">
               <button type="button" class="btn btn-secondary" id="validateShippingAddressButton">Validate Shipping Address</button>
             </div>
-            <p id="shippingAddressValidationMessage" class="body-copy" style="margin-top: 6px; display: none;"></p>
+            <div id="shippingAddressValidationMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
 
             <label>Billing Address*
               <textarea name="billingAddress" rows="3" required></textarea>
@@ -127,10 +148,24 @@
         ['Email Address', 'email'],
         ['Phone Number', 'phone'],
         ['Quantity Requested', 'quantityRequested'],
-        ['Shipping Address', 'shippingAddress'],
+        ['Shipping Street 1', 'shippingStreet1'],
+        ['Shipping Street 2', 'shippingStreet2'],
+        ['Shipping City', 'shippingCity'],
+        ['Shipping State', 'shippingState'],
+        ['Shipping ZIP', 'shippingPostalCode'],
+        ['Shipping Country', 'shippingCountryCode'],
         ['Billing Address', 'billingAddress'],
         ['PO Number', 'poNumber'],
         ['Notes / Special Instructions', 'notes']
+      ];
+
+      var shippingFields = [
+        'shippingStreet1',
+        'shippingStreet2',
+        'shippingCity',
+        'shippingState',
+        'shippingPostalCode',
+        'shippingCountryCode'
       ];
 
       function getFieldValue(name) {
@@ -196,11 +231,27 @@
       var validateAddressButton = document.getElementById('validateShippingAddressButton');
       var shippingAddressValidationMessage = document.getElementById('shippingAddressValidationMessage');
       var submissionError = document.getElementById('invoiceSubmissionError');
-      var shippingAddressField = form.elements.shippingAddress;
+      var shippingAddressField = form.elements.shippingStreet1;
 
-      function setShippingAddressMessage(message, color) {
-        shippingAddressValidationMessage.textContent = message;
-        shippingAddressValidationMessage.style.color = color || '#3a7f49';
+      function buildShippingAddressMultiline() {
+        var line1 = getFieldValue('shippingStreet1').trim();
+        var line2 = getFieldValue('shippingStreet2').trim();
+        var city = getFieldValue('shippingCity').trim();
+        var state = getFieldValue('shippingState').trim().toUpperCase();
+        var postalCode = getFieldValue('shippingPostalCode').trim();
+        var lines = [line1];
+
+        if (line2) {
+          lines.push(line2);
+        }
+        lines.push([city, state].filter(Boolean).join(', ') + (postalCode ? ' ' + postalCode : ''));
+
+        return lines.filter(Boolean).join('\n');
+      }
+
+      function setShippingAddressMessage(html, stateClass) {
+        shippingAddressValidationMessage.innerHTML = html;
+        shippingAddressValidationMessage.className = 'shipping-validation-message ' + (stateClass || '');
         shippingAddressValidationMessage.style.display = 'block';
       }
 
@@ -209,12 +260,22 @@
         shippingAddressValidationMessage.style.display = 'none';
       }
 
-      shippingAddressField.addEventListener('input', clearShippingAddressMessage);
+      shippingFields.forEach(function (fieldName) {
+        if (form.elements[fieldName]) {
+          form.elements[fieldName].addEventListener('input', clearShippingAddressMessage);
+        }
+      });
 
       validateAddressButton.addEventListener('click', async function () {
-        var shippingAddress = getFieldValue('shippingAddress').trim();
-        if (!shippingAddress) {
-          setShippingAddressMessage('Please enter a shipping address before validating.', '#b42318');
+        var shippingStreet1 = getFieldValue('shippingStreet1').trim();
+        var shippingCity = getFieldValue('shippingCity').trim();
+        var shippingState = getFieldValue('shippingState').trim().toUpperCase();
+        var shippingPostalCode = getFieldValue('shippingPostalCode').trim();
+        var shippingStreet2 = getFieldValue('shippingStreet2').trim();
+        var shippingCountryCode = (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase();
+
+        if (!shippingStreet1 || !shippingCity || !shippingState || !shippingPostalCode) {
+          setShippingAddressMessage('<strong>Please complete street, city, state, and ZIP before validating.</strong>', 'is-error');
           shippingAddressField.focus();
           return;
         }
@@ -230,7 +291,12 @@
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              shippingAddress: shippingAddress
+              shippingStreetLines: [shippingStreet1, shippingStreet2].filter(Boolean),
+              shippingCity: shippingCity,
+              shippingState: shippingState,
+              shippingPostalCode: shippingPostalCode,
+              shippingCountryCode: shippingCountryCode,
+              shippingAddress: buildShippingAddressMultiline()
             })
           });
           var responseBody = await response.json();
@@ -240,20 +306,38 @@
           }
 
           if (!responseBody.isValid || !responseBody.normalizedAddress) {
-            setShippingAddressMessage('FedEx could not validate this address. Please review and try again.', '#b42318');
+            setShippingAddressMessage('<strong>FedEx could not validate this address.</strong> Please review and try again.', 'is-error');
             return;
           }
 
-          if (responseBody.normalizedAddress !== shippingAddress) {
-            shippingAddressField.value = responseBody.normalizedAddress;
+          if (responseBody.normalizedComponents) {
+            form.elements.shippingStreet1.value = responseBody.normalizedComponents.street1 || shippingStreet1;
+            form.elements.shippingStreet2.value = responseBody.normalizedComponents.street2 || '';
+            form.elements.shippingCity.value = responseBody.normalizedComponents.city || shippingCity;
+            form.elements.shippingState.value = responseBody.normalizedComponents.stateOrProvinceCode || shippingState;
+            form.elements.shippingPostalCode.value = responseBody.normalizedComponents.postalCode || shippingPostalCode;
+            form.elements.shippingCountryCode.value = responseBody.normalizedComponents.countryCode || shippingCountryCode;
             saveDraft();
           }
 
           var classification = responseBody.classification ? ' (' + responseBody.classification + ')' : '';
-          var interpolationNote = responseBody.interpolated ? ' FedEx provided an interpolated result—please double-check suite/unit details.' : '';
-          setShippingAddressMessage('Shipping address validated by FedEx' + classification + '.' + interpolationNote, '#067647');
+          var interpolationNote = responseBody.interpolated
+            ? '<li>FedEx marked this as interpolated, so please confirm suite/unit details.</li>'
+            : '';
+          var alerts = Array.isArray(responseBody.alerts)
+            ? responseBody.alerts
+                .map(function (alert) {
+                  return alert && alert.message ? '<li>' + alert.message + '</li>' : '';
+                })
+                .filter(Boolean)
+                .join('')
+            : '';
+          setShippingAddressMessage(
+            '<strong>FedEx validated this shipping address' + classification + '.</strong><ul><li>Normalized address has been applied to the fields.</li>' + interpolationNote + alerts + '</ul>',
+            'is-success'
+          );
         } catch (error) {
-          setShippingAddressMessage(error.message || 'Unable to validate address right now.', '#b42318');
+          setShippingAddressMessage('<strong>' + (error.message || 'Unable to validate address right now.') + '</strong>', 'is-error');
         } finally {
           validateAddressButton.disabled = false;
           validateAddressButton.textContent = 'Validate Shipping Address';
@@ -273,6 +357,7 @@
           accumulator[name] = getFieldValue(name).trim();
           return accumulator;
         }, {});
+        payload.shippingAddress = buildShippingAddressMultiline();
 
         submitButton.disabled = true;
         submitButton.textContent = 'Submitting...';
