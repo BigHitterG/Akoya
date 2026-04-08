@@ -797,6 +797,17 @@
       color: #0b1015;
     }
 
+    .invoice-form .btn-secondary {
+      border: 1px solid #12283a;
+      background: #eef4f8;
+      color: #12283a;
+    }
+
+    .invoice-form .btn-secondary:hover {
+      background: #e2edf4;
+      transform: translateY(-1px);
+    }
+
     .shipping-validation-message {
       display: grid;
       gap: 6px;
