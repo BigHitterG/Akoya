@@ -71,8 +71,12 @@
             </div>
 
             <label>Shipping Address*
-              <textarea name="shippingAddress" rows="3" required></textarea>
+              <textarea name="shippingAddress" rows="3" required placeholder="Street Address&#10;City, ST ZIP"></textarea>
             </label>
+            <div class="cta-row" style="margin-top: 0;">
+              <button type="button" class="btn btn-secondary" id="validateShippingAddressButton">Validate Shipping Address</button>
+            </div>
+            <p id="shippingAddressValidationMessage" class="body-copy" style="margin-top: 6px; display: none;"></p>
 
             <label>Billing Address*
               <textarea name="billingAddress" rows="3" required></textarea>
@@ -189,7 +193,72 @@
       updateQuantityPreview();
 
       var submitButton = document.getElementById('submitOrderDetailsButton');
+      var validateAddressButton = document.getElementById('validateShippingAddressButton');
+      var shippingAddressValidationMessage = document.getElementById('shippingAddressValidationMessage');
       var submissionError = document.getElementById('invoiceSubmissionError');
+      var shippingAddressField = form.elements.shippingAddress;
+
+      function setShippingAddressMessage(message, color) {
+        shippingAddressValidationMessage.textContent = message;
+        shippingAddressValidationMessage.style.color = color || '#3a7f49';
+        shippingAddressValidationMessage.style.display = 'block';
+      }
+
+      function clearShippingAddressMessage() {
+        shippingAddressValidationMessage.textContent = '';
+        shippingAddressValidationMessage.style.display = 'none';
+      }
+
+      shippingAddressField.addEventListener('input', clearShippingAddressMessage);
+
+      validateAddressButton.addEventListener('click', async function () {
+        var shippingAddress = getFieldValue('shippingAddress').trim();
+        if (!shippingAddress) {
+          setShippingAddressMessage('Please enter a shipping address before validating.', '#b42318');
+          shippingAddressField.focus();
+          return;
+        }
+
+        validateAddressButton.disabled = true;
+        validateAddressButton.textContent = 'Validating...';
+        clearShippingAddressMessage();
+
+        try {
+          var response = await fetch('/api/validate-fedex-address', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              shippingAddress: shippingAddress
+            })
+          });
+          var responseBody = await response.json();
+
+          if (!response.ok || !responseBody.success) {
+            throw new Error(responseBody.error || responseBody.details || 'Unable to validate address right now.');
+          }
+
+          if (!responseBody.isValid || !responseBody.normalizedAddress) {
+            setShippingAddressMessage('FedEx could not validate this address. Please review and try again.', '#b42318');
+            return;
+          }
+
+          if (responseBody.normalizedAddress !== shippingAddress) {
+            shippingAddressField.value = responseBody.normalizedAddress;
+            saveDraft();
+          }
+
+          var classification = responseBody.classification ? ' (' + responseBody.classification + ')' : '';
+          var interpolationNote = responseBody.interpolated ? ' FedEx provided an interpolated result—please double-check suite/unit details.' : '';
+          setShippingAddressMessage('Shipping address validated by FedEx' + classification + '.' + interpolationNote, '#067647');
+        } catch (error) {
+          setShippingAddressMessage(error.message || 'Unable to validate address right now.', '#b42318');
+        } finally {
+          validateAddressButton.disabled = false;
+          validateAddressButton.textContent = 'Validate Shipping Address';
+        }
+      });
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
