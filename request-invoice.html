@@ -96,11 +96,7 @@
                   </select>
                 </label>
               </div>
-              <p class="body-copy shipping-helper-copy">Start typing Street Address Line 1 to see suggested addresses. FedEx validation works best with an accurate street and suite/unit.</p>
             </fieldset>
-            <div class="cta-row" style="margin-top: 0;">
-              <button type="button" class="btn btn-secondary" id="validateShippingAddressButton">Validate Shipping Address</button>
-            </div>
             <div id="shippingAddressValidationMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
 
             <label>Billing Address*
@@ -232,14 +228,18 @@
       updateQuantityPreview();
 
       var submitButton = document.getElementById('submitOrderDetailsButton');
-      var validateAddressButton = document.getElementById('validateShippingAddressButton');
       var shippingAddressValidationMessage = document.getElementById('shippingAddressValidationMessage');
       var submissionError = document.getElementById('invoiceSubmissionError');
       var shippingAddressField = form.elements.shippingStreet1;
       var shippingStreetSuggestions = document.getElementById('shippingAddressSuggestions');
       var addressSuggestionLookup = Object.create(null);
       var addressAutocompleteDebounceTimer = null;
+      var shippingValidationDebounceTimer = null;
       var activeAutocompleteRequest = null;
+      var shippingValidationState = {
+        status: 'idle',
+        lastValidatedSignature: ''
+      };
       var usStateOptions = [
         ['', 'Select state'],
         ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
@@ -422,29 +422,55 @@
         shippingAddressValidationMessage.style.display = 'none';
       }
 
-      shippingFields.forEach(function (fieldName) {
-        if (form.elements[fieldName]) {
-          form.elements[fieldName].addEventListener('input', clearShippingAddressMessage);
+      function buildShippingSignature() {
+        return [
+          getFieldValue('shippingStreet1').trim(),
+          getFieldValue('shippingStreet2').trim(),
+          getFieldValue('shippingCity').trim(),
+          getFieldValue('shippingState').trim().toUpperCase(),
+          getFieldValue('shippingPostalCode').trim(),
+          (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        ].join('|');
+      }
+
+      function getShippingAddressInput() {
+        return {
+          shippingStreet1: getFieldValue('shippingStreet1').trim(),
+          shippingStreet2: getFieldValue('shippingStreet2').trim(),
+          shippingCity: getFieldValue('shippingCity').trim(),
+          shippingState: getFieldValue('shippingState').trim().toUpperCase(),
+          shippingPostalCode: getFieldValue('shippingPostalCode').trim(),
+          shippingCountryCode: (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        };
+      }
+
+      async function validateShippingAddress(options) {
+        var validationOptions = options || {};
+        var shouldFocusOnError = Boolean(validationOptions.focusOnError);
+        var isSubmitValidation = Boolean(validationOptions.fromSubmit);
+        var shippingInput = getShippingAddressInput();
+        var shippingSignature = buildShippingSignature();
+
+        if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
+          shippingValidationState.status = 'incomplete';
+          shippingValidationState.lastValidatedSignature = '';
+          if (isSubmitValidation) {
+            setShippingAddressMessage('<strong>Please complete street, city, state, and ZIP before submitting.</strong>', 'is-error');
+            if (shouldFocusOnError) {
+              shippingAddressField.focus();
+            }
+          } else {
+            clearShippingAddressMessage();
+          }
+          return false;
         }
-      });
 
-      validateAddressButton.addEventListener('click', async function () {
-        var shippingStreet1 = getFieldValue('shippingStreet1').trim();
-        var shippingCity = getFieldValue('shippingCity').trim();
-        var shippingState = getFieldValue('shippingState').trim().toUpperCase();
-        var shippingPostalCode = getFieldValue('shippingPostalCode').trim();
-        var shippingStreet2 = getFieldValue('shippingStreet2').trim();
-        var shippingCountryCode = (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase();
-
-        if (!shippingStreet1 || !shippingCity || !shippingState || !shippingPostalCode) {
-          setShippingAddressMessage('<strong>Please complete street, city, state, and ZIP before validating.</strong>', 'is-error');
-          shippingAddressField.focus();
-          return;
+        if (shippingValidationState.status === 'valid' && shippingValidationState.lastValidatedSignature === shippingSignature) {
+          return true;
         }
 
-        validateAddressButton.disabled = true;
-        validateAddressButton.textContent = 'Validating...';
-        clearShippingAddressMessage();
+        shippingValidationState.status = 'pending';
+        setShippingAddressMessage('<strong>Validating shipping address…</strong>', '');
 
         try {
           var response = await fetch('/api/validate-fedex-address', {
@@ -453,11 +479,11 @@
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              shippingStreetLines: [shippingStreet1, shippingStreet2].filter(Boolean),
-              shippingCity: shippingCity,
-              shippingState: shippingState,
-              shippingPostalCode: shippingPostalCode,
-              shippingCountryCode: shippingCountryCode,
+              shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+              shippingCity: shippingInput.shippingCity,
+              shippingState: shippingInput.shippingState,
+              shippingPostalCode: shippingInput.shippingPostalCode,
+              shippingCountryCode: shippingInput.shippingCountryCode,
               shippingAddress: buildShippingAddressMultiline()
             })
           });
@@ -469,20 +495,25 @@
           }
 
           if (!responseBody.isValid || !responseBody.normalizedAddress) {
-            setShippingAddressMessage('<strong>FedEx could not validate this address.</strong> Please review and try again.', 'is-error');
-            return;
+            shippingValidationState.status = 'invalid';
+            shippingValidationState.lastValidatedSignature = '';
+            setShippingAddressMessage('<strong>FedEx could not validate this address.</strong> Please review and update your shipping details.', 'is-error');
+            if (shouldFocusOnError) {
+              shippingAddressField.focus();
+            }
+            return false;
           }
 
           if (responseBody.normalizedComponents) {
-            var normalizedCountryCode = normalizeCountryCode(responseBody.normalizedComponents.countryCode) || shippingCountryCode;
-            var normalizedStateCode = normalizeStateOrProvinceCode(responseBody.normalizedComponents.stateOrProvinceCode, normalizedCountryCode) || shippingState;
-            form.elements.shippingStreet1.value = responseBody.normalizedComponents.street1 || shippingStreet1;
+            var normalizedCountryCode = normalizeCountryCode(responseBody.normalizedComponents.countryCode) || shippingInput.shippingCountryCode;
+            var normalizedStateCode = normalizeStateOrProvinceCode(responseBody.normalizedComponents.stateOrProvinceCode, normalizedCountryCode) || shippingInput.shippingState;
+            form.elements.shippingStreet1.value = responseBody.normalizedComponents.street1 || shippingInput.shippingStreet1;
             form.elements.shippingStreet2.value = responseBody.normalizedComponents.street2 || '';
-            form.elements.shippingCity.value = responseBody.normalizedComponents.city || shippingCity;
+            form.elements.shippingCity.value = responseBody.normalizedComponents.city || shippingInput.shippingCity;
             form.elements.shippingCountryCode.value = normalizedCountryCode;
             updateStateOptionsForCountry(normalizedCountryCode);
             form.elements.shippingState.value = normalizedStateCode;
-            form.elements.shippingPostalCode.value = responseBody.normalizedComponents.postalCode || shippingPostalCode;
+            form.elements.shippingPostalCode.value = responseBody.normalizedComponents.postalCode || shippingInput.shippingPostalCode;
             saveDraft();
           }
 
@@ -502,11 +533,38 @@
             '<strong>FedEx validated this shipping address' + classification + '.</strong><ul><li>Normalized address has been applied to the fields.</li>' + interpolationNote + alerts + '</ul>',
             'is-success'
           );
+          shippingValidationState.status = 'valid';
+          shippingValidationState.lastValidatedSignature = buildShippingSignature();
+          return true;
         } catch (error) {
+          shippingValidationState.status = 'invalid';
+          shippingValidationState.lastValidatedSignature = '';
           setShippingAddressMessage('<strong>' + (error.message || 'Unable to validate address right now.') + '</strong>', 'is-error');
-        } finally {
-          validateAddressButton.disabled = false;
-          validateAddressButton.textContent = 'Validate Shipping Address';
+          if (shouldFocusOnError) {
+            shippingAddressField.focus();
+          }
+          return false;
+        }
+      }
+
+      function scheduleShippingValidation() {
+        if (shippingValidationDebounceTimer) {
+          clearTimeout(shippingValidationDebounceTimer);
+        }
+        shippingValidationDebounceTimer = setTimeout(function () {
+          validateShippingAddress();
+        }, 400);
+      }
+
+      shippingFields.forEach(function (fieldName) {
+        if (form.elements[fieldName]) {
+          form.elements[fieldName].addEventListener('input', function () {
+            shippingValidationState.status = 'dirty';
+            shippingValidationState.lastValidatedSignature = '';
+            clearShippingAddressMessage();
+            scheduleShippingValidation();
+          });
+          form.elements[fieldName].addEventListener('change', scheduleShippingValidation);
         }
       });
 
@@ -515,6 +573,11 @@
 
         if (!form.checkValidity()) {
           form.reportValidity();
+          return;
+        }
+
+        var isShippingAddressValid = await validateShippingAddress({ fromSubmit: true, focusOnError: true });
+        if (!isShippingAddressValid) {
           return;
         }
 
