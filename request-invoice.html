@@ -260,6 +260,35 @@
         ['NS', 'Nova Scotia'], ['NT', 'Northwest Territories'], ['NU', 'Nunavut'], ['ON', 'Ontario'], ['PE', 'Prince Edward Island'],
         ['QC', 'Quebec'], ['SK', 'Saskatchewan'], ['YT', 'Yukon']
       ];
+      var countryAliases = {
+        US: 'US',
+        USA: 'US',
+        'UNITED STATES': 'US',
+        'UNITED STATES OF AMERICA': 'US',
+        CA: 'CA',
+        CAN: 'CA',
+        CANADA: 'CA'
+      };
+
+      function normalizeCountryCode(value) {
+        var normalized = (value || '').trim().toUpperCase();
+        return countryAliases[normalized] || '';
+      }
+
+      function normalizeStateOrProvinceCode(value, countryCode) {
+        var normalized = (value || '').trim().toUpperCase();
+        if (!normalized) {
+          return '';
+        }
+
+        var options = countryCode === 'CA' ? canadaProvinceOptions : usStateOptions;
+        if (options.some(function (entry) { return entry[0] === normalized; })) {
+          return normalized;
+        }
+
+        var matchedEntry = options.find(function (entry) { return entry[1].toUpperCase() === normalized; });
+        return matchedEntry ? matchedEntry[0] : '';
+      }
 
       function setSelectOptions(selectElement, options) {
         var currentValue = selectElement.value;
@@ -445,12 +474,15 @@
           }
 
           if (responseBody.normalizedComponents) {
+            var normalizedCountryCode = normalizeCountryCode(responseBody.normalizedComponents.countryCode) || shippingCountryCode;
+            var normalizedStateCode = normalizeStateOrProvinceCode(responseBody.normalizedComponents.stateOrProvinceCode, normalizedCountryCode) || shippingState;
             form.elements.shippingStreet1.value = responseBody.normalizedComponents.street1 || shippingStreet1;
             form.elements.shippingStreet2.value = responseBody.normalizedComponents.street2 || '';
             form.elements.shippingCity.value = responseBody.normalizedComponents.city || shippingCity;
-            form.elements.shippingState.value = responseBody.normalizedComponents.stateOrProvinceCode || shippingState;
+            form.elements.shippingCountryCode.value = normalizedCountryCode;
+            updateStateOptionsForCountry(normalizedCountryCode);
+            form.elements.shippingState.value = normalizedStateCode;
             form.elements.shippingPostalCode.value = responseBody.normalizedComponents.postalCode || shippingPostalCode;
-            form.elements.shippingCountryCode.value = responseBody.normalizedComponents.countryCode || shippingCountryCode;
             saveDraft();
           }
 
