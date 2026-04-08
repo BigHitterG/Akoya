@@ -751,6 +751,7 @@
     }
 
     .invoice-form input,
+    .invoice-form select,
     .invoice-form textarea {
       border: 1px solid #c9d6e1;
       border-radius: 14px;

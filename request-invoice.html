@@ -74,7 +74,8 @@
               <legend>Shipping Address*</legend>
               <div class="invoice-grid shipping-grid">
                 <label>Street Address Line 1*
-                  <input type="text" name="shippingStreet1" required autocomplete="address-line1" placeholder="123 Main St">
+                  <input type="text" name="shippingStreet1" required autocomplete="address-line1" placeholder="123 Main St" list="shippingAddressSuggestions">
+                  <datalist id="shippingAddressSuggestions"></datalist>
                 </label>
                 <label>Street Address Line 2 (optional)
                   <input type="text" name="shippingStreet2" autocomplete="address-line2" placeholder="Suite 400">
@@ -83,16 +84,19 @@
                   <input type="text" name="shippingCity" required autocomplete="address-level2" placeholder="Memphis">
                 </label>
                 <label>State*
-                  <input type="text" name="shippingState" required maxlength="2" autocomplete="address-level1" placeholder="TN">
+                  <select name="shippingState" required autocomplete="address-level1"></select>
                 </label>
                 <label>ZIP Code*
                   <input type="text" name="shippingPostalCode" required inputmode="numeric" autocomplete="postal-code" placeholder="38116">
                 </label>
                 <label>Country
-                  <input type="text" name="shippingCountryCode" value="US" readonly aria-readonly="true">
+                  <select name="shippingCountryCode" autocomplete="country">
+                    <option value="US" selected>United States</option>
+                    <option value="CA">Canada</option>
+                  </select>
                 </label>
               </div>
-              <p class="body-copy shipping-helper-copy">Use the recipient's exact postal address. FedEx validation works best with an accurate street and suite/unit.</p>
+              <p class="body-copy shipping-helper-copy">Start typing Street Address Line 1 to see suggested addresses. FedEx validation works best with an accurate street and suite/unit.</p>
             </fieldset>
             <div class="cta-row" style="margin-top: 0;">
               <button type="button" class="btn btn-secondary" id="validateShippingAddressButton">Validate Shipping Address</button>
@@ -232,6 +236,135 @@
       var shippingAddressValidationMessage = document.getElementById('shippingAddressValidationMessage');
       var submissionError = document.getElementById('invoiceSubmissionError');
       var shippingAddressField = form.elements.shippingStreet1;
+      var shippingStreetSuggestions = document.getElementById('shippingAddressSuggestions');
+      var addressSuggestionLookup = Object.create(null);
+      var addressAutocompleteDebounceTimer = null;
+      var activeAutocompleteRequest = null;
+      var usStateOptions = [
+        ['', 'Select state'],
+        ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
+        ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'], ['FL', 'Florida'], ['GA', 'Georgia'],
+        ['HI', 'Hawaii'], ['ID', 'Idaho'], ['IL', 'Illinois'], ['IN', 'Indiana'], ['IA', 'Iowa'],
+        ['KS', 'Kansas'], ['KY', 'Kentucky'], ['LA', 'Louisiana'], ['ME', 'Maine'], ['MD', 'Maryland'],
+        ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'], ['MS', 'Mississippi'], ['MO', 'Missouri'],
+        ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'], ['NH', 'New Hampshire'], ['NJ', 'New Jersey'],
+        ['NM', 'New Mexico'], ['NY', 'New York'], ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'],
+        ['OK', 'Oklahoma'], ['OR', 'Oregon'], ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'],
+        ['SD', 'South Dakota'], ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'], ['VT', 'Vermont'],
+        ['VA', 'Virginia'], ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
+        ['DC', 'District of Columbia']
+      ];
+      var canadaProvinceOptions = [
+        ['', 'Select province'],
+        ['AB', 'Alberta'], ['BC', 'British Columbia'], ['MB', 'Manitoba'], ['NB', 'New Brunswick'], ['NL', 'Newfoundland and Labrador'],
+        ['NS', 'Nova Scotia'], ['NT', 'Northwest Territories'], ['NU', 'Nunavut'], ['ON', 'Ontario'], ['PE', 'Prince Edward Island'],
+        ['QC', 'Quebec'], ['SK', 'Saskatchewan'], ['YT', 'Yukon']
+      ];
+
+      function setSelectOptions(selectElement, options) {
+        var currentValue = selectElement.value;
+        selectElement.innerHTML = '';
+        options.forEach(function (entry) {
+          var option = document.createElement('option');
+          option.value = entry[0];
+          option.textContent = entry[1];
+          selectElement.appendChild(option);
+        });
+
+        if (currentValue && options.some(function (entry) { return entry[0] === currentValue; })) {
+          selectElement.value = currentValue;
+        } else {
+          selectElement.value = options[0][0];
+        }
+      }
+
+      function updateStateOptionsForCountry(countryCode) {
+        setSelectOptions(form.elements.shippingState, countryCode === 'CA' ? canadaProvinceOptions : usStateOptions);
+      }
+
+      function clearStreetSuggestions() {
+        addressSuggestionLookup = Object.create(null);
+        shippingStreetSuggestions.innerHTML = '';
+      }
+
+      function applyAddressSuggestion(suggestion) {
+        if (!suggestion) {
+          return;
+        }
+
+        form.elements.shippingStreet1.value = suggestion.street1 || form.elements.shippingStreet1.value;
+        form.elements.shippingCity.value = suggestion.city || form.elements.shippingCity.value;
+        form.elements.shippingPostalCode.value = suggestion.postalCode || form.elements.shippingPostalCode.value;
+
+        if (suggestion.countryCode && form.elements.shippingCountryCode.value !== suggestion.countryCode) {
+          form.elements.shippingCountryCode.value = suggestion.countryCode;
+          updateStateOptionsForCountry(suggestion.countryCode);
+        }
+
+        if (suggestion.stateOrProvinceCode) {
+          form.elements.shippingState.value = suggestion.stateOrProvinceCode;
+        }
+      }
+
+      async function populateStreetSuggestions(query) {
+        var countryCode = (form.elements.shippingCountryCode.value || 'US').toUpperCase();
+        if (activeAutocompleteRequest) {
+          activeAutocompleteRequest.abort();
+        }
+        activeAutocompleteRequest = new AbortController();
+
+        try {
+          var response = await fetch('/api/address-autocomplete?query=' + encodeURIComponent(query) + '&countryCode=' + encodeURIComponent(countryCode), {
+            signal: activeAutocompleteRequest.signal
+          });
+          if (!response.ok) {
+            clearStreetSuggestions();
+            return;
+          }
+          var responseBody = await response.json();
+          var suggestions = Array.isArray(responseBody.suggestions) ? responseBody.suggestions : [];
+          clearStreetSuggestions();
+
+          suggestions.forEach(function (suggestion) {
+            if (!suggestion || !suggestion.label) {
+              return;
+            }
+            addressSuggestionLookup[suggestion.label] = suggestion;
+            var option = document.createElement('option');
+            option.value = suggestion.label;
+            shippingStreetSuggestions.appendChild(option);
+          });
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            clearStreetSuggestions();
+          }
+        }
+      }
+
+      updateStateOptionsForCountry((form.elements.shippingCountryCode.value || 'US').toUpperCase());
+      form.elements.shippingCountryCode.addEventListener('change', function () {
+        updateStateOptionsForCountry((form.elements.shippingCountryCode.value || 'US').toUpperCase());
+        clearStreetSuggestions();
+      });
+
+      form.elements.shippingStreet1.addEventListener('input', function () {
+        var query = form.elements.shippingStreet1.value.trim();
+        if (query.length < 4) {
+          clearStreetSuggestions();
+          return;
+        }
+        if (addressAutocompleteDebounceTimer) {
+          clearTimeout(addressAutocompleteDebounceTimer);
+        }
+        addressAutocompleteDebounceTimer = setTimeout(function () {
+          populateStreetSuggestions(query);
+        }, 250);
+      });
+
+      form.elements.shippingStreet1.addEventListener('change', function () {
+        var suggestion = addressSuggestionLookup[form.elements.shippingStreet1.value];
+        applyAddressSuggestion(suggestion);
+      });
 
       function buildShippingAddressMultiline() {
         var line1 = getFieldValue('shippingStreet1').trim();
@@ -302,7 +435,8 @@
           var responseBody = await response.json();
 
           if (!response.ok || !responseBody.success) {
-            throw new Error(responseBody.error || responseBody.details || 'Unable to validate address right now.');
+            var messageParts = [responseBody.error, responseBody.hint || responseBody.details].filter(Boolean);
+            throw new Error(messageParts.join(' ') || 'Unable to validate address right now.');
           }
 
           if (!responseBody.isValid || !responseBody.normalizedAddress) {
