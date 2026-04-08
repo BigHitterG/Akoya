@@ -213,8 +213,17 @@ module.exports = async function handler(req, res) {
     }
 
     const normalizedAddress = formatFedexAddress(firstResolved);
-    const attributes = firstResolved?.attributes || [];
-    const hasInterpolated = attributes.some((item) => item?.name === 'InterpolatedStreetAddress' && item?.value === 'true');
+    const rawAttributes = firstResolved?.attributes;
+    const attributes = Array.isArray(rawAttributes)
+      ? rawAttributes
+      : rawAttributes && typeof rawAttributes === 'object'
+        ? Object.entries(rawAttributes).map(([name, value]) => ({ name, value }))
+        : [];
+    const hasInterpolated = attributes.some((item) => {
+      const name = item?.name;
+      const value = String(item?.value ?? '').toLowerCase();
+      return name === 'InterpolatedStreetAddress' && value === 'true';
+    });
     const alerts = Array.isArray(output?.alerts) ? output.alerts : [];
     const normalizedStreetLines = normalizeStreetLines(firstResolved?.streetLinesToken || firstResolved?.streetLines);
     const normalizedComponents = {

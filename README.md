@@ -23,13 +23,22 @@ On success, the API route:
 
 The browser then redirects the user to `order-confirmation.html`.
 
-### Required environment variable
+### Required environment variables
 
-Set this on the server hosting the `api/` route:
+Set these on the server hosting the `api/` routes:
 
 ```bash
 STRIPE_SECRET_KEY=sk_live_or_test_...
+
+# Required for POST /api/validate-fedex-address
+FEDEX_CLIENT_ID=...
+FEDEX_CLIENT_SECRET=...
+
+# Optional (defaults to sandbox if omitted)
+FEDEX_API_BASE_URL=https://apis-sandbox.fedex.com
 ```
+
+FedEx credentials are required for the shipping-address validation flow used by `request-invoice.html`.
 
 ## Local development
 
