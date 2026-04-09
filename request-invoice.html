@@ -542,7 +542,8 @@
           var responseBody = await response.json();
 
           if (!response.ok || !responseBody.success) {
-            throw new Error(responseBody.error || responseBody.details || 'Unable to fetch live shipping quote.');
+            var errorParts = [responseBody.error, responseBody.hint, responseBody.details].filter(Boolean);
+            throw new Error(errorParts.join(' ') || 'Unable to fetch live shipping quote.');
           }
 
           shippingRateState.status = 'ready';
