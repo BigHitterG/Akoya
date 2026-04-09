@@ -86,15 +86,54 @@ function firstFiniteCents(values) {
 }
 
 function extractChargeCents(detail) {
+  const topLevelCents = firstFiniteCents([
+    detail?.totalNetCharge,
+    detail?.totalNetFedExCharge,
+    detail?.totalBaseCharge
+  ]);
+
+  if (Number.isFinite(topLevelCents)) {
+    return topLevelCents;
+  }
+
   const ratedShipmentDetails = Array.isArray(detail?.ratedShipmentDetails) ? detail.ratedShipmentDetails : [];
   for (const rated of ratedShipmentDetails) {
+    const packageLevelDetails = Array.isArray(rated?.ratedPackages) ? rated.ratedPackages : [];
+    for (const pkg of packageLevelDetails) {
+      const packageLevelCents = firstFiniteCents([
+        pkg?.packageRateDetail?.netCharge,
+        pkg?.packageRateDetail?.netFedExCharge,
+        pkg?.packageRateDetail?.baseCharge,
+        pkg?.packageRateDetail?.totalSurcharges,
+        pkg?.packageRateDetail?.netCharge?.amount,
+        pkg?.packageRateDetail?.netFedExCharge?.amount,
+        pkg?.packageRateDetail?.baseCharge?.amount,
+        pkg?.packageRateDetail?.totalSurcharges?.amount
+      ]);
+
+      if (Number.isFinite(packageLevelCents)) {
+        return packageLevelCents;
+      }
+    }
+
     const cents = firstFiniteCents([
+      rated?.totalNetCharge,
+      rated?.totalNetFedExCharge,
+      rated?.totalBaseCharge,
+      rated?.totalSurcharges,
       rated?.totalNetCharge?.amount,
       rated?.shipmentRateDetail?.totalNetCharge?.amount,
       rated?.shipmentRateDetail?.totalNetFedExCharge?.amount,
+      rated?.shipmentRateDetail?.totalNetCharge,
+      rated?.shipmentRateDetail?.totalNetFedExCharge,
       rated?.shipmentRateDetail?.totalBaseCharge?.amount,
+      rated?.shipmentRateDetail?.totalBaseCharge,
       rated?.shipmentRateDetail?.totalSurcharges?.amount,
-      rated?.shipmentRateDetail?.totalFreightDiscounts?.amount
+      rated?.shipmentRateDetail?.totalSurcharges,
+      rated?.shipmentRateDetail?.totalFreightDiscounts?.amount,
+      rated?.shipmentRateDetail?.totalFreightDiscounts,
+      rated?.shipmentRateDetail?.totalFreightDiscount?.amount,
+      rated?.shipmentRateDetail?.totalFreightDiscount
     ]);
 
     if (Number.isFinite(cents)) {
