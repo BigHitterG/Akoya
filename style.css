@@ -760,6 +760,23 @@
       align-items: center;
     }
 
+    .stripe-card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    .stripe-card-field {
+      display: grid;
+      gap: 8px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5b6b78;
+      font-weight: 700;
+    }
+
     .invoice-form input,
     .invoice-form select,
     .invoice-form textarea {
@@ -1045,6 +1062,10 @@
 
       .quantity-requested-preview {
         white-space: normal;
+      }
+
+      .stripe-card-grid {
+        grid-template-columns: 1fr;
       }
 
       .survey-table-wrap {
