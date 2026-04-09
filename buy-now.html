@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akoya</title>
+  <link rel="icon" type="image/png" href="assets/images/IMG_1998.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="top-banner">
+    <div>Secure checkout: shipping is estimated before payment and sent to Stripe.</div>
+    <a href="buy.html">Back to Buy</a>
+  </div>
+
+  <header>
+    <div class="nav">
+      <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="brand"><a href="index.html" aria-label="Akoya home"><img class="brand-logo" src="assets/images/IMG_1997.png" alt="Akoya"></a></div>
+      <div></div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+      <a href="buy.html">Buy</a>
+      <a href="clinical-feedback.html">Clinical Feedback</a>
+      <a href="our-journey.html">Our Journey</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container invoice-layout">
+      <div class="card">
+        <div class="card-pad">
+          <div class="kicker">Akoya Medical</div>
+          <h2>Buy Now Checkout</h2>
+
+          <form id="buyNowForm" class="invoice-form" novalidate>
+            <div class="invoice-grid">
+              <label>Full Name*
+                <input type="text" name="fullName" required>
+              </label>
+              <label>Email Address*
+                <input type="email" name="email" required>
+              </label>
+              <label>Phone Number*
+                <input type="tel" name="phone" required>
+              </label>
+              <label>Quantity Requested*
+                <div class="quantity-requested-row">
+                  <input id="quantityRequested" type="number" min="1" step="1" name="quantityRequested" required>
+                  <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
+                    <span class="quantity-requested-preview-line1">Enter boxes to see total units.</span>
+                    <span class="quantity-requested-preview-line2"></span>
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <fieldset class="shipping-fieldset">
+              <legend>Shipping Address*</legend>
+              <div class="invoice-grid shipping-grid">
+                <label>Street Address Line 1*
+                  <input type="text" name="shippingStreet1" required autocomplete="address-line1" placeholder="123 Main St">
+                </label>
+                <label>Street Address Line 2 (optional)
+                  <input type="text" name="shippingStreet2" autocomplete="address-line2" placeholder="Suite 400">
+                </label>
+                <label>City*
+                  <input type="text" name="shippingCity" required autocomplete="address-level2" placeholder="Memphis">
+                </label>
+                <label>State*
+                  <input type="text" name="shippingState" required autocomplete="address-level1" placeholder="TN">
+                </label>
+                <label>ZIP Code*
+                  <input type="text" name="shippingPostalCode" required inputmode="numeric" autocomplete="postal-code" placeholder="38116">
+                </label>
+                <label>Country
+                  <select name="shippingCountryCode" autocomplete="country">
+                    <option value="US" selected>United States</option>
+                    <option value="CA">Canada</option>
+                  </select>
+                </label>
+              </div>
+            </fieldset>
+
+            <div id="shippingRateEstimateMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
+
+            <div class="invoice-preview" aria-live="polite">
+              <p class="invoice-preview-title">Checkout Preview</p>
+              <div class="invoice-preview-line-item">
+                <span>Total cost of goods</span>
+                <strong id="invoiceGoodsTotal">$0.00</strong>
+              </div>
+              <div class="invoice-preview-line-item">
+                <span>Estimated shipping</span>
+                <strong id="invoiceShippingTotal">Add shipping address for estimate</strong>
+              </div>
+              <div class="invoice-preview-line-item invoice-preview-line-item-muted">
+                <span>Tax</span>
+                <strong>Calculated by Stripe at payment</strong>
+              </div>
+              <div class="invoice-preview-line-item invoice-preview-line-item-total">
+                <span>Estimated subtotal (pre-tax)</span>
+                <strong id="invoiceEstimatedSubtotal">$0.00</strong>
+              </div>
+            </div>
+
+            <p id="checkoutSubmissionError" class="body-copy" style="color: #b42318; display: none; margin-top: 8px;"></p>
+
+            <div class="cta-row">
+              <button type="submit" class="btn btn-primary" id="proceedToPaymentButton">Proceed to Payment</button>
+              <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="section">
+    <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
+  </footer>
+
+  <script src="main.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var form = document.getElementById('buyNowForm');
+      var quantityInput = document.getElementById('quantityRequested');
+      var quantityPreview = document.getElementById('quantityRequestedPreview');
+      var quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
+      var quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
+      var invoiceGoodsTotal = document.getElementById('invoiceGoodsTotal');
+      var invoiceShippingTotal = document.getElementById('invoiceShippingTotal');
+      var invoiceEstimatedSubtotal = document.getElementById('invoiceEstimatedSubtotal');
+      var shippingRateEstimateMessage = document.getElementById('shippingRateEstimateMessage');
+      var submissionError = document.getElementById('checkoutSubmissionError');
+      var proceedToPaymentButton = document.getElementById('proceedToPaymentButton');
+      var unitsPerBox = 15;
+      var pricePerUnit = 12;
+
+      var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
+      var shippingRateState = { status: 'idle', cents: null, serviceName: '', serviceType: '', quoteSignature: '' };
+
+      function getFieldValue(name) {
+        return form.elements[name] ? (form.elements[name].value || '') : '';
+      }
+
+      function setShippingRateMessage(html, stateClass) {
+        if (!html) {
+          shippingRateEstimateMessage.textContent = '';
+          shippingRateEstimateMessage.style.display = 'none';
+          return;
+        }
+        shippingRateEstimateMessage.innerHTML = html;
+        shippingRateEstimateMessage.className = 'shipping-validation-message ' + (stateClass || '');
+        shippingRateEstimateMessage.style.display = 'block';
+      }
+
+      function buildRateQuoteSignature() {
+        return [
+          getFieldValue('quantityRequested').trim(),
+          getFieldValue('shippingStreet1').trim(),
+          getFieldValue('shippingStreet2').trim(),
+          getFieldValue('shippingCity').trim(),
+          getFieldValue('shippingState').trim().toUpperCase(),
+          getFieldValue('shippingPostalCode').trim(),
+          (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        ].join('|');
+      }
+
+      function getShippingAddressInput() {
+        return {
+          shippingStreet1: getFieldValue('shippingStreet1').trim(),
+          shippingStreet2: getFieldValue('shippingStreet2').trim(),
+          shippingCity: getFieldValue('shippingCity').trim(),
+          shippingState: getFieldValue('shippingState').trim().toUpperCase(),
+          shippingPostalCode: getFieldValue('shippingPostalCode').trim(),
+          shippingCountryCode: (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        };
+      }
+
+      function updateQuantityPreview() {
+        var quantity = Number.parseInt(quantityInput.value, 10);
+        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0;
+
+        if (!hasValidQuantity) {
+          quantityPreviewLine1.textContent = 'Enter boxes to see total units.';
+          quantityPreviewLine2.textContent = '';
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        var unitCount = quantity * unitsPerBox;
+        var preTaxTotal = unitCount * pricePerUnit;
+        var boxLabel = quantity === 1 ? 'box' : 'boxes';
+        quantityPreviewLine1.textContent = quantity + ' ' + boxLabel + ' (' + unitCount + ' units)';
+        quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
+        updateInvoicePreviewTotals();
+      }
+
+      function updateInvoicePreviewTotals() {
+        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0;
+        var goodsTotal = hasValidQuantity ? quantity * unitsPerBox * pricePerUnit : 0;
+        var hasShippingEstimate = Number.isFinite(shippingRateState.cents);
+        var shippingTotal = hasShippingEstimate ? shippingRateState.cents / 100 : null;
+        var subtotal = goodsTotal + (shippingTotal || 0);
+
+        invoiceGoodsTotal.textContent = '$' + goodsTotal.toFixed(2);
+        invoiceShippingTotal.textContent = hasShippingEstimate ? '$' + shippingTotal.toFixed(2) : 'Add shipping address for estimate';
+        invoiceEstimatedSubtotal.textContent = '$' + subtotal.toFixed(2);
+      }
+
+      async function refreshShippingRateEstimate() {
+        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var shippingInput = getShippingAddressInput();
+        var quoteSignature = buildRateQuoteSignature();
+
+        if (!Number.isFinite(quantity) || quantity < 1) {
+          shippingRateState = { status: 'idle', cents: null, serviceName: '', serviceType: '', quoteSignature: '' };
+          setShippingRateMessage('', '');
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        if (quantity !== 1) {
+          shippingRateState = { status: 'unsupported_quantity', cents: null, serviceName: '', serviceType: '', quoteSignature: '' };
+          setShippingRateMessage('<strong>Live shipping quote currently supports 1 box only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
+          shippingRateState = { status: 'incomplete', cents: null, serviceName: '', serviceType: '', quoteSignature: '' };
+          setShippingRateMessage('', '');
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        if (shippingRateState.status === 'ready' && shippingRateState.quoteSignature === quoteSignature && Number.isFinite(shippingRateState.cents)) {
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        shippingRateState = { status: 'pending', cents: null, serviceName: '', serviceType: '', quoteSignature: '' };
+        setShippingRateMessage('<strong>Fetching live FedEx shipping estimate…</strong>', '');
+        updateInvoicePreviewTotals();
+
+        try {
+          var response = await fetch('/api/get-fedex-rate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quantityRequested: quantity,
+              shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+              shippingCity: shippingInput.shippingCity,
+              shippingState: shippingInput.shippingState,
+              shippingPostalCode: shippingInput.shippingPostalCode,
+              shippingCountryCode: shippingInput.shippingCountryCode,
+              flow: 'buy-now'
+            })
+          });
+
+          var responseBody = await response.json().catch(function () { return {}; });
+          if (!response.ok || !Number.isFinite(responseBody.shippingFeeCents)) {
+            throw new Error(responseBody && responseBody.error ? responseBody.error : 'Unable to fetch live shipping quote.');
+          }
+
+          shippingRateState = {
+            status: 'ready',
+            cents: responseBody.shippingFeeCents,
+            serviceName: responseBody.serviceName || '',
+            serviceType: responseBody.serviceType || '',
+            quoteSignature: quoteSignature
+          };
+
+          setShippingRateMessage(
+            '<strong>Estimated shipping:</strong> $' + (responseBody.shippingFeeCents / 100).toFixed(2) + (shippingRateState.serviceName ? ' (' + shippingRateState.serviceName + ')' : ''),
+            'is-success'
+          );
+        } catch (error) {
+          shippingRateState = { status: 'error', cents: null, serviceName: '', serviceType: '', quoteSignature: '' };
+          setShippingRateMessage('<strong>' + (error.message || 'Unable to fetch shipping estimate right now.') + '</strong>', 'is-error');
+        }
+
+        updateInvoicePreviewTotals();
+      }
+
+      quantityInput.addEventListener('input', function () {
+        updateQuantityPreview();
+        refreshShippingRateEstimate();
+      });
+
+      shippingFields.forEach(function (fieldName) {
+        var field = form.elements[fieldName];
+        field.addEventListener('input', function () {
+          refreshShippingRateEstimate();
+        });
+      });
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        submissionError.style.display = 'none';
+        submissionError.textContent = '';
+
+        if (!form.reportValidity()) {
+          return;
+        }
+
+        if (shippingRateState.status !== 'ready' || !Number.isFinite(shippingRateState.cents)) {
+          submissionError.textContent = 'Live shipping quote is required before payment. Please verify shipping details.';
+          submissionError.style.display = 'block';
+          return;
+        }
+
+        proceedToPaymentButton.disabled = true;
+        proceedToPaymentButton.textContent = 'Preparing Checkout…';
+
+        try {
+          var shippingInput = getShippingAddressInput();
+          var payload = {
+            fullName: getFieldValue('fullName').trim(),
+            email: getFieldValue('email').trim(),
+            phone: getFieldValue('phone').trim(),
+            quantityRequested: Number.parseInt(getFieldValue('quantityRequested').trim(), 10),
+            shippingStreet1: shippingInput.shippingStreet1,
+            shippingStreet2: shippingInput.shippingStreet2,
+            shippingCity: shippingInput.shippingCity,
+            shippingState: shippingInput.shippingState,
+            shippingPostalCode: shippingInput.shippingPostalCode,
+            shippingCountryCode: shippingInput.shippingCountryCode,
+            shippingFeeCents: shippingRateState.cents,
+            shippingServiceName: shippingRateState.serviceName,
+            shippingServiceType: shippingRateState.serviceType
+          };
+
+          var response = await fetch('/api/create-stripe-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          var responseBody = await response.json().catch(function () { return {}; });
+          if (!response.ok || !responseBody.checkoutUrl) {
+            throw new Error(responseBody && responseBody.error ? responseBody.error : 'Unable to start Stripe checkout.');
+          }
+
+          window.location.href = responseBody.checkoutUrl;
+        } catch (error) {
+          submissionError.textContent = error.message || 'Unable to proceed to payment right now.';
+          submissionError.style.display = 'block';
+          proceedToPaymentButton.disabled = false;
+          proceedToPaymentButton.textContent = 'Proceed to Payment';
+        }
+      });
+
+      updateQuantityPreview();
+      var url = new URL(window.location.href);
+      if (url.searchParams.get('canceled') === '1') {
+        setShippingRateMessage('<strong>Checkout was canceled.</strong> Your details are still here—review and continue when ready.', 'is-error');
+      }
+    });
+  </script>
+</body>
+</html>
