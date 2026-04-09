@@ -99,6 +99,11 @@
             </fieldset>
             <div id="shippingAddressValidationMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
             <div id="shippingRateEstimateMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
+            <div id="fedexRateDebugPanel" class="shipping-validation-message" style="display: none; border: 1px dashed #b42318; background: #fff5f5; color: #7a271a;" aria-live="polite">
+              <strong>TEMPORARY DEBUG: FedEx Rate Debug</strong>
+              <p style="margin: 8px 0;">For troubleshooting only. Remove after diagnosing rate quote failures.</p>
+              <pre id="fedexRateDebugContent" style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin: 0;"></pre>
+            </div>
 
             <label>Billing Address*
               <textarea name="billingAddress" rows="3" required></textarea>
@@ -243,6 +248,8 @@
       var submitButton = document.getElementById('submitOrderDetailsButton');
       var shippingAddressValidationMessage = document.getElementById('shippingAddressValidationMessage');
       var shippingRateEstimateMessage = document.getElementById('shippingRateEstimateMessage');
+      var fedexRateDebugPanel = document.getElementById('fedexRateDebugPanel');
+      var fedexRateDebugContent = document.getElementById('fedexRateDebugContent');
       var submissionError = document.getElementById('invoiceSubmissionError');
       var shippingAddressField = form.elements.shippingStreet1;
       var shippingStreetSuggestions = document.getElementById('shippingAddressSuggestions');
@@ -453,6 +460,15 @@
         shippingRateEstimateMessage.style.display = 'none';
       }
 
+      function setFedexRateDebug(debugPayload) {
+        if (!fedexRateDebugPanel || !fedexRateDebugContent) {
+          return;
+        }
+
+        fedexRateDebugContent.textContent = JSON.stringify(debugPayload || {}, null, 2);
+        fedexRateDebugPanel.style.display = 'block';
+      }
+
       function buildShippingSignature() {
         return [
           getFieldValue('shippingStreet1').trim(),
@@ -523,6 +539,14 @@
         shippingRateState.serviceName = '';
         shippingRateState.quoteSignature = '';
         setShippingRateMessage('<strong>Fetching live FedEx shipping estimate…</strong>', '');
+        var frontendPayload = {
+          quantityRequested: quantityValue,
+          shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+          shippingCity: shippingInput.shippingCity,
+          shippingState: shippingInput.shippingState,
+          shippingPostalCode: shippingInput.shippingPostalCode,
+          shippingCountryCode: shippingInput.shippingCountryCode
+        };
 
         try {
           var response = await fetch('/api/get-fedex-rate', {
@@ -530,16 +554,18 @@
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              quantityRequested: quantityValue,
-              shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
-              shippingCity: shippingInput.shippingCity,
-              shippingState: shippingInput.shippingState,
-              shippingPostalCode: shippingInput.shippingPostalCode,
-              shippingCountryCode: shippingInput.shippingCountryCode
-            })
+            body: JSON.stringify(frontendPayload)
           });
           var responseBody = await response.json();
+          setFedexRateDebug({
+            flow: 'request-invoice',
+            endpoint: '/api/get-fedex-rate',
+            frontendPayload: frontendPayload,
+            responseOk: response.ok,
+            responseStatus: response.status,
+            backendDebug: responseBody.debug || null,
+            uiOutcome: (!response.ok || !responseBody.success) ? 'rate_error' : 'rate_ready'
+          });
 
           if (!response.ok || !responseBody.success) {
             var errorParts = [responseBody.error, responseBody.hint, responseBody.details].filter(Boolean);
@@ -559,6 +585,13 @@
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
           shippingRateState.quoteSignature = '';
+          setFedexRateDebug({
+            flow: 'request-invoice',
+            endpoint: '/api/get-fedex-rate',
+            frontendPayload: frontendPayload,
+            uiOutcome: 'rate_error_exception',
+            uiError: error && error.message ? error.message : 'Unknown error.'
+          });
           setShippingRateMessage('<strong>' + (error.message || 'Unable to fetch shipping estimate right now.') + '</strong>', 'is-error');
         }
       }
