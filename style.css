@@ -750,6 +750,16 @@
       font-size: 0.93rem;
     }
 
+    .card-element-container {
+      border: 1px solid #c9d6e1;
+      border-radius: 14px;
+      padding: 14px;
+      background: #ffffff;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
     .invoice-form input,
     .invoice-form select,
     .invoice-form textarea {
