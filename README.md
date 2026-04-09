@@ -102,3 +102,5 @@ Then visit `http://localhost:8000`.
 > Note: The Stripe API route requires a serverless/runtime host that executes `api/create-stripe-invoice.js` (for example Vercel).
 
 For the Buy Now embedded checkout flow (`buy-now.html` → `POST /api/create-stripe-checkout-session`), both Stripe keys are required. If the publishable key is missing, the checkout API now returns a clear configuration error message.
+
+Buy Now checkout now creates a FedEx shipment immediately before creating the Stripe Checkout Session, then uses the actual shipment charge (`shippingFeeCents`) in Stripe line items. Stripe automatic tax is enabled by default unless `ENABLE_STRIPE_AUTOMATIC_TAX=false` is explicitly set.
