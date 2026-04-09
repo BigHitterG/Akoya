@@ -61,6 +61,14 @@ function parsePositiveInt(value) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function parseServiceType(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim().toUpperCase();
+}
+
 function parseAmountCents(value) {
   if (value === undefined || value === null) {
     return null;
@@ -254,6 +262,8 @@ module.exports = async function handler(req, res) {
   const packageLengthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_LENGTH_IN || '10', 10);
   const packageWidthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_WIDTH_IN || '8', 10);
   const packageHeightIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_HEIGHT_IN || '4', 10);
+  const configuredDefaultServiceType = parseServiceType(process.env.FEDEX_DEFAULT_SERVICE_TYPE) || 'FEDEX_GROUND';
+  const resolvedServiceType = parseServiceType(payload.serviceType) || configuredDefaultServiceType;
 
   const shipDatestamp = new Date().toISOString().slice(0, 10);
   const responseDebug = {
@@ -261,6 +271,7 @@ module.exports = async function handler(req, res) {
     fedexBaseUrl: baseUrl,
     normalized: {
       accountNumberMasked: maskAccountNumber(fedexAccountNumber),
+      serviceType: resolvedServiceType,
       recipient: {
         city: recipientAddress.city,
         stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
@@ -280,7 +291,7 @@ module.exports = async function handler(req, res) {
       requestedShipment: {
         shipDatestamp,
         pickupType: 'DROPOFF_AT_FEDEX_LOCATION',
-        serviceType: payload.serviceType || undefined,
+        serviceType: resolvedServiceType,
         packagingType: 'YOUR_PACKAGING',
         shippingChargesPayment: {
           paymentType: 'SENDER',
@@ -337,10 +348,6 @@ module.exports = async function handler(req, res) {
         ]
       }
     };
-
-    if (!shipmentRequestBody.requestedShipment.serviceType) {
-      delete shipmentRequestBody.requestedShipment.serviceType;
-    }
 
     responseDebug.fedexShipmentRequestBody = shipmentRequestBody;
 

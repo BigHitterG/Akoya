@@ -281,6 +281,7 @@
         shippingRateState.status = 'dirty';
         shippingRateState.cents = null;
         shippingRateState.serviceName = '';
+        shippingRateState.serviceType = '';
         shippingRateState.quoteSignature = '';
         clearShippingRateMessage();
       });
@@ -316,6 +317,7 @@
         status: 'idle',
         cents: null,
         serviceName: '',
+        serviceType: '',
         quoteSignature: ''
       };
       var lastFedexRateAttemptDebug = null;
@@ -574,7 +576,7 @@
           recipientName: getFieldValue('fullName').trim() || getFieldValue('businessName').trim(),
           recipientPhone: getFieldValue('phone').trim(),
           recipientCompanyName: getFieldValue('businessName').trim(),
-          serviceType: ''
+          serviceType: shippingRateState.serviceType || ''
         };
       }
 
@@ -640,6 +642,7 @@
             shippingRateState.status = 'ready';
             shippingRateState.cents = responseBody.shippingFeeCents;
             shippingRateState.serviceName = 'FedEx Shipment (paid label)';
+            shippingRateState.serviceType = responseBody.serviceType || payload.serviceType || '';
             shippingRateState.quoteSignature = buildRateQuoteSignature();
             setShippingRateMessage(
               '<strong>Shipment purchased:</strong> $' + (responseBody.shippingFeeCents / 100).toFixed(2) +
@@ -694,6 +697,7 @@
           shippingRateState.status = 'idle';
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
+          shippingRateState.serviceType = '';
           shippingRateState.quoteSignature = '';
           clearShippingRateMessage();
           return;
@@ -703,6 +707,7 @@
           shippingRateState.status = 'unsupported_quantity';
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
+          shippingRateState.serviceType = '';
           shippingRateState.quoteSignature = '';
           setShippingRateMessage('<strong>Live shipping quote currently supports 1 box only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
           return;
@@ -712,6 +717,7 @@
           shippingRateState.status = 'incomplete';
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
+          shippingRateState.serviceType = '';
           shippingRateState.quoteSignature = '';
           clearShippingRateMessage();
           return;
@@ -724,6 +730,7 @@
         shippingRateState.status = 'pending';
         shippingRateState.cents = null;
         shippingRateState.serviceName = '';
+        shippingRateState.serviceType = '';
         shippingRateState.quoteSignature = '';
         setShippingRateMessage('<strong>Fetching live FedEx shipping estimate…</strong>', '');
         var frontendPayload = {
@@ -762,6 +769,7 @@
           shippingRateState.status = 'ready';
           shippingRateState.cents = responseBody.shippingFeeCents;
           shippingRateState.serviceName = responseBody.serviceName || '';
+          shippingRateState.serviceType = responseBody.serviceType || '';
           shippingRateState.quoteSignature = quoteSignature;
           setShippingRateMessage(
             '<strong>Estimated shipping:</strong> $' + (responseBody.shippingFeeCents / 100).toFixed(2) + (shippingRateState.serviceName ? ' (' + shippingRateState.serviceName + ')' : ''),
@@ -772,6 +780,7 @@
           shippingRateState.status = 'error';
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
+          shippingRateState.serviceType = '';
           shippingRateState.quoteSignature = '';
           setFedexRateDebug({
             flow: 'request-invoice',
@@ -842,6 +851,7 @@
             shippingRateState.status = 'invalid_address';
             shippingRateState.cents = null;
             shippingRateState.serviceName = '';
+            shippingRateState.serviceType = '';
             shippingRateState.quoteSignature = '';
             clearShippingRateMessage();
             setShippingAddressMessage('<strong>FedEx could not validate this address.</strong> Please review and update your shipping details.', 'is-error');
@@ -890,6 +900,7 @@
           shippingRateState.status = 'error';
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
+          shippingRateState.serviceType = '';
           shippingRateState.quoteSignature = '';
           clearShippingRateMessage();
           setShippingAddressMessage('<strong>' + (error.message || 'Unable to validate address right now.') + '</strong>', 'is-error');
@@ -917,6 +928,7 @@
             shippingRateState.status = 'dirty';
             shippingRateState.cents = null;
             shippingRateState.serviceName = '';
+            shippingRateState.serviceType = '';
             shippingRateState.quoteSignature = '';
             clearShippingAddressMessage();
             clearShippingRateMessage();
