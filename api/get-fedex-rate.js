@@ -180,10 +180,17 @@ module.exports = async function handler(req, res) {
   const clientSecret = process.env.FEDEX_CLIENT_SECRET;
   const fedexAccountNumber = process.env.FEDEX_ACCOUNT_NUMBER;
 
-  if (!clientId || !clientSecret || !fedexAccountNumber) {
+  const missingCoreConfig = [
+    ['FEDEX_CLIENT_ID', clientId],
+    ['FEDEX_CLIENT_SECRET', clientSecret],
+    ['FEDEX_ACCOUNT_NUMBER', fedexAccountNumber]
+  ].filter((entry) => !required(entry[1])).map((entry) => entry[0]);
+
+  if (missingCoreConfig.length) {
     res.status(500).json({
       error: 'FedEx rate quote is not configured.',
-      hint: 'Missing FEDEX_CLIENT_ID, FEDEX_CLIENT_SECRET, or FEDEX_ACCOUNT_NUMBER.'
+      hint: `Missing ${missingCoreConfig.join(', ')}.`,
+      missingConfig: missingCoreConfig
     });
     return;
   }
@@ -194,10 +201,18 @@ module.exports = async function handler(req, res) {
   const shipperPostalCode = process.env.FEDEX_SHIPPER_POSTAL_CODE;
   const shipperCountryCode = (process.env.FEDEX_SHIPPER_COUNTRY_CODE || 'US').trim().toUpperCase();
 
-  if (!required(shipperStreet1) || !required(shipperCity) || !required(shipperState) || !required(shipperPostalCode)) {
+  const missingShipperConfig = [
+    ['FEDEX_SHIPPER_STREET1', shipperStreet1],
+    ['FEDEX_SHIPPER_CITY', shipperCity],
+    ['FEDEX_SHIPPER_STATE', shipperState],
+    ['FEDEX_SHIPPER_POSTAL_CODE', shipperPostalCode]
+  ].filter((entry) => !required(entry[1])).map((entry) => entry[0]);
+
+  if (missingShipperConfig.length) {
     res.status(500).json({
       error: 'FedEx shipper origin is not configured.',
-      hint: 'Set FEDEX_SHIPPER_STREET1, FEDEX_SHIPPER_CITY, FEDEX_SHIPPER_STATE, and FEDEX_SHIPPER_POSTAL_CODE.'
+      hint: `Set ${missingShipperConfig.join(', ')}.`,
+      missingConfig: missingShipperConfig
     });
     return;
   }

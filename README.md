@@ -54,6 +54,22 @@ FEDEX_API_BASE_URL=https://apis-sandbox.fedex.com
 
 FedEx credentials are required for the shipping-address validation flow used by `request-invoice.html`.
 
+
+FedEx integration needs two config groups:
+- **Address validation only** (`/api/validate-fedex-address`):
+  - `FEDEX_CLIENT_ID`
+  - `FEDEX_CLIENT_SECRET`
+  - `FEDEX_ACCOUNT_NUMBER`
+- **Live rate quote** (`/api/get-fedex-rate`): requires all of the above **plus** ship-from origin:
+  - `FEDEX_SHIPPER_STREET1`
+  - `FEDEX_SHIPPER_CITY`
+  - `FEDEX_SHIPPER_STATE`
+  - `FEDEX_SHIPPER_POSTAL_CODE`
+  - `FEDEX_SHIPPER_COUNTRY_CODE` (optional, defaults to `US`)
+
+If you only set `FEDEX_CLIENT_ID` + `FEDEX_CLIENT_SECRET`, rate quotes will fail because `FEDEX_ACCOUNT_NUMBER` and shipper-origin fields are still missing.
+
+
 ## Local development
 
 Install dependencies:
