@@ -54,6 +54,17 @@ FEDEX_API_BASE_URL=https://apis-sandbox.fedex.com
 
 FedEx credentials are required for the shipping-address validation flow used by `request-invoice.html`.
 
+### FedEx rate debug mode (UI toggle)
+
+`request-invoice.html` keeps FedEx quote debug data in code, but the debug panel is hidden by default in the UI.
+
+- Enable debug panel once via URL: `request-invoice.html?debugFedexRate=1`
+- Enable debug panel persistently from browser console: `window.enableFedexRateDebugUi()`
+- Disable debug panel from browser console: `window.disableFedexRateDebugUi()`
+- Inspect the latest captured payload without showing the panel: `window.getFedexRateDebugSnapshot()`
+
+This keeps troubleshooting instrumentation available without exposing temporary debug output to normal users.
+
 
 FedEx integration needs two config groups:
 - **Address validation only** (`/api/validate-fedex-address`):
