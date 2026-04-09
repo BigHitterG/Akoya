@@ -121,15 +121,18 @@
             <fieldset class="shipping-fieldset">
               <legend>Card Details*</legend>
               <div class="stripe-card-grid">
-                <label class="stripe-card-field">Card Number
+                <div class="stripe-card-field" role="group" aria-label="Card number">
+                  <span>Card Number</span>
                   <div id="cardNumberElementContainer" class="card-element-container"></div>
-                </label>
-                <label class="stripe-card-field">Expiration Date
+                </div>
+                <div class="stripe-card-field" role="group" aria-label="Expiration date">
+                  <span>Expiration Date</span>
                   <div id="cardExpiryElementContainer" class="card-element-container"></div>
-                </label>
-                <label class="stripe-card-field">Security Code
+                </div>
+                <div class="stripe-card-field" role="group" aria-label="Security code">
+                  <span>Security Code</span>
                   <div id="cardCvcElementContainer" class="card-element-container"></div>
-                </label>
+                </div>
                 <p id="cardElementHint" class="shipping-helper-copy">Card details are encrypted by Stripe and never touch our servers.</p>
               </div>
             </fieldset>
