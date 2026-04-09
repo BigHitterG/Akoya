@@ -98,6 +98,7 @@
               </div>
             </fieldset>
             <div id="shippingAddressValidationMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
+            <div id="shippingRateEstimateMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
 
             <label>Billing Address*
               <textarea name="billingAddress" rows="3" required></textarea>
@@ -223,12 +224,25 @@
       quantityInput.addEventListener('input', updateQuantityPreview);
       quantityInput.addEventListener('change', updateQuantityPreview);
       quantityInput.addEventListener('keyup', updateQuantityPreview);
+      quantityInput.addEventListener('input', function () {
+        shippingRateState.status = 'dirty';
+        shippingRateState.cents = null;
+        shippingRateState.serviceName = '';
+        shippingRateState.quoteSignature = '';
+        clearShippingRateMessage();
+      });
+      quantityInput.addEventListener('change', function () {
+        if (shippingValidationState.status === 'valid') {
+          fetchShippingRateQuote();
+        }
+      });
       form.addEventListener('input', saveDraft);
       loadDraft();
       updateQuantityPreview();
 
       var submitButton = document.getElementById('submitOrderDetailsButton');
       var shippingAddressValidationMessage = document.getElementById('shippingAddressValidationMessage');
+      var shippingRateEstimateMessage = document.getElementById('shippingRateEstimateMessage');
       var submissionError = document.getElementById('invoiceSubmissionError');
       var shippingAddressField = form.elements.shippingStreet1;
       var shippingStreetSuggestions = document.getElementById('shippingAddressSuggestions');
@@ -239,6 +253,12 @@
       var shippingValidationState = {
         status: 'idle',
         lastValidatedSignature: ''
+      };
+      var shippingRateState = {
+        status: 'idle',
+        cents: null,
+        serviceName: '',
+        quoteSignature: ''
       };
       var usStateOptions = [
         ['', 'Select state'],
@@ -422,6 +442,17 @@
         shippingAddressValidationMessage.style.display = 'none';
       }
 
+      function setShippingRateMessage(html, stateClass) {
+        shippingRateEstimateMessage.innerHTML = html;
+        shippingRateEstimateMessage.className = 'shipping-validation-message ' + (stateClass || '');
+        shippingRateEstimateMessage.style.display = 'block';
+      }
+
+      function clearShippingRateMessage() {
+        shippingRateEstimateMessage.textContent = '';
+        shippingRateEstimateMessage.style.display = 'none';
+      }
+
       function buildShippingSignature() {
         return [
           getFieldValue('shippingStreet1').trim(),
@@ -430,6 +461,13 @@
           getFieldValue('shippingState').trim().toUpperCase(),
           getFieldValue('shippingPostalCode').trim(),
           (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        ].join('|');
+      }
+
+      function buildRateQuoteSignature() {
+        return [
+          buildShippingSignature(),
+          getFieldValue('quantityRequested').trim()
         ].join('|');
       }
 
@@ -442,6 +480,86 @@
           shippingPostalCode: getFieldValue('shippingPostalCode').trim(),
           shippingCountryCode: (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
         };
+      }
+
+      async function fetchShippingRateQuote() {
+        var quantityValue = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var shippingInput = getShippingAddressInput();
+        var quoteSignature = buildRateQuoteSignature();
+
+        if (!Number.isFinite(quantityValue) || quantityValue < 1) {
+          shippingRateState.status = 'idle';
+          shippingRateState.cents = null;
+          shippingRateState.serviceName = '';
+          shippingRateState.quoteSignature = '';
+          clearShippingRateMessage();
+          return;
+        }
+
+        if (quantityValue !== 1) {
+          shippingRateState.status = 'unsupported_quantity';
+          shippingRateState.cents = null;
+          shippingRateState.serviceName = '';
+          shippingRateState.quoteSignature = '';
+          setShippingRateMessage('<strong>Live shipping quote currently supports 1 box only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
+          return;
+        }
+
+        if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
+          shippingRateState.status = 'incomplete';
+          shippingRateState.cents = null;
+          shippingRateState.serviceName = '';
+          shippingRateState.quoteSignature = '';
+          clearShippingRateMessage();
+          return;
+        }
+
+        if (shippingRateState.status === 'ready' && shippingRateState.quoteSignature === quoteSignature && Number.isFinite(shippingRateState.cents)) {
+          return;
+        }
+
+        shippingRateState.status = 'pending';
+        shippingRateState.cents = null;
+        shippingRateState.serviceName = '';
+        shippingRateState.quoteSignature = '';
+        setShippingRateMessage('<strong>Fetching live FedEx shipping estimate…</strong>', '');
+
+        try {
+          var response = await fetch('/api/get-fedex-rate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              quantityRequested: quantityValue,
+              shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+              shippingCity: shippingInput.shippingCity,
+              shippingState: shippingInput.shippingState,
+              shippingPostalCode: shippingInput.shippingPostalCode,
+              shippingCountryCode: shippingInput.shippingCountryCode
+            })
+          });
+          var responseBody = await response.json();
+
+          if (!response.ok || !responseBody.success) {
+            throw new Error(responseBody.error || responseBody.details || 'Unable to fetch live shipping quote.');
+          }
+
+          shippingRateState.status = 'ready';
+          shippingRateState.cents = responseBody.shippingFeeCents;
+          shippingRateState.serviceName = responseBody.serviceName || '';
+          shippingRateState.quoteSignature = quoteSignature;
+          setShippingRateMessage(
+            '<strong>Estimated shipping:</strong> $' + (responseBody.shippingFeeCents / 100).toFixed(2) + (shippingRateState.serviceName ? ' (' + shippingRateState.serviceName + ')' : ''),
+            'is-success'
+          );
+        } catch (error) {
+          shippingRateState.status = 'error';
+          shippingRateState.cents = null;
+          shippingRateState.serviceName = '';
+          shippingRateState.quoteSignature = '';
+          setShippingRateMessage('<strong>' + (error.message || 'Unable to fetch shipping estimate right now.') + '</strong>', 'is-error');
+        }
       }
 
       async function validateShippingAddress(options) {
@@ -497,6 +615,11 @@
           if (!responseBody.isValid || !responseBody.normalizedAddress) {
             shippingValidationState.status = 'invalid';
             shippingValidationState.lastValidatedSignature = '';
+            shippingRateState.status = 'invalid_address';
+            shippingRateState.cents = null;
+            shippingRateState.serviceName = '';
+            shippingRateState.quoteSignature = '';
+            clearShippingRateMessage();
             setShippingAddressMessage('<strong>FedEx could not validate this address.</strong> Please review and update your shipping details.', 'is-error');
             if (shouldFocusOnError) {
               shippingAddressField.focus();
@@ -535,10 +658,16 @@
           );
           shippingValidationState.status = 'valid';
           shippingValidationState.lastValidatedSignature = buildShippingSignature();
+          await fetchShippingRateQuote();
           return true;
         } catch (error) {
           shippingValidationState.status = 'invalid';
           shippingValidationState.lastValidatedSignature = '';
+          shippingRateState.status = 'error';
+          shippingRateState.cents = null;
+          shippingRateState.serviceName = '';
+          shippingRateState.quoteSignature = '';
+          clearShippingRateMessage();
           setShippingAddressMessage('<strong>' + (error.message || 'Unable to validate address right now.') + '</strong>', 'is-error');
           if (shouldFocusOnError) {
             shippingAddressField.focus();
@@ -561,7 +690,12 @@
           form.elements[fieldName].addEventListener('input', function () {
             shippingValidationState.status = 'dirty';
             shippingValidationState.lastValidatedSignature = '';
+            shippingRateState.status = 'dirty';
+            shippingRateState.cents = null;
+            shippingRateState.serviceName = '';
+            shippingRateState.quoteSignature = '';
             clearShippingAddressMessage();
+            clearShippingRateMessage();
             scheduleShippingValidation();
           });
           form.elements[fieldName].addEventListener('change', scheduleShippingValidation);
@@ -581,12 +715,20 @@
           return;
         }
 
+        if (shippingRateState.status !== 'ready' || !Number.isFinite(shippingRateState.cents)) {
+          submissionError.textContent = 'Live shipping quote is required before submitting. Please verify shipping details.';
+          submissionError.style.display = 'block';
+          return;
+        }
+
         var payload = fields.reduce(function (accumulator, field) {
           var name = field[1];
           accumulator[name] = getFieldValue(name).trim();
           return accumulator;
         }, {});
         payload.shippingAddress = buildShippingAddressMultiline();
+        payload.shippingFeeCents = shippingRateState.cents;
+        payload.shippingServiceName = shippingRateState.serviceName;
 
         submitButton.disabled = true;
         submitButton.textContent = 'Submitting...';
