@@ -105,18 +105,31 @@
               </div>
               <div class="invoice-preview-line-item invoice-preview-line-item-muted">
                 <span>Tax</span>
-                <strong>Calculated by Stripe at payment</strong>
+                <strong id="invoiceTaxTotal">Awaiting shipping selection</strong>
               </div>
               <div class="invoice-preview-line-item invoice-preview-line-item-total">
                 <span>Estimated subtotal (pre-tax)</span>
                 <strong id="invoiceEstimatedSubtotal">$0.00</strong>
               </div>
+              <div class="invoice-preview-line-item invoice-preview-line-item-total">
+                <span>Estimated total (incl. tax)</span>
+                <strong id="invoiceEstimatedTotal">$0.00</strong>
+              </div>
+              <p id="taxEstimateMessage" class="invoice-preview-note"></p>
             </div>
 
             <fieldset class="shipping-fieldset">
               <legend>Card Details*</legend>
-              <div class="invoice-grid" style="grid-template-columns: 1fr;">
-                <div id="cardElementContainer" class="card-element-container"></div>
+              <div class="stripe-card-grid">
+                <label class="stripe-card-field">Card Number
+                  <div id="cardNumberElementContainer" class="card-element-container"></div>
+                </label>
+                <label class="stripe-card-field">Expiration Date
+                  <div id="cardExpiryElementContainer" class="card-element-container"></div>
+                </label>
+                <label class="stripe-card-field">Security Code
+                  <div id="cardCvcElementContainer" class="card-element-container"></div>
+                </label>
                 <p id="cardElementHint" class="shipping-helper-copy">Card details are encrypted by Stripe and never touch our servers.</p>
               </div>
             </fieldset>
@@ -148,17 +161,25 @@
       var quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
       var invoiceGoodsTotal = document.getElementById('invoiceGoodsTotal');
       var invoiceShippingTotal = document.getElementById('invoiceShippingTotal');
+      var invoiceTaxTotal = document.getElementById('invoiceTaxTotal');
       var invoiceEstimatedSubtotal = document.getElementById('invoiceEstimatedSubtotal');
+      var invoiceEstimatedTotal = document.getElementById('invoiceEstimatedTotal');
+      var taxEstimateMessage = document.getElementById('taxEstimateMessage');
       var shippingRateEstimateMessage = document.getElementById('shippingRateEstimateMessage');
       var submissionError = document.getElementById('checkoutSubmissionError');
       var shippingOptionSelector = document.getElementById('shippingOptionSelector');
       var proceedToPaymentButton = document.getElementById('proceedToPaymentButton');
-      var cardElementContainer = document.getElementById('cardElementContainer');
       var unitsPerBox = 15;
       var pricePerUnit = 12;
       var stripe = null;
-      var cardElement = null;
-      var isCardComplete = false;
+      var cardNumberElement = null;
+      var cardExpiryElement = null;
+      var cardCvcElement = null;
+      var cardState = {
+        numberComplete: false,
+        expiryComplete: false,
+        cvcComplete: false
+      };
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
       var shippingRateState = {
@@ -170,6 +191,12 @@
         options: [],
         selectedOptionId: ''
       };
+      var taxState = {
+        status: 'idle',
+        amountCents: null,
+        source: '',
+        signature: ''
+      };
 
       function resetShippingRateState(status) {
         shippingRateState = {
@@ -180,6 +207,15 @@
           quoteSignature: '',
           options: [],
           selectedOptionId: ''
+        };
+      }
+
+      function resetTaxState(status) {
+        taxState = {
+          status: status || 'idle',
+          amountCents: null,
+          source: '',
+          signature: ''
         };
       }
 
@@ -262,6 +298,7 @@
         shippingRateState.serviceName = selected.serviceName || '';
         shippingRateState.serviceType = selected.serviceType || '';
         updateInvoicePreviewTotals();
+        refreshTaxEstimate();
       }
 
       function renderShippingOptions() {
@@ -294,6 +331,19 @@
       function buildRateQuoteSignature() {
         return [
           getFieldValue('quantityRequested').trim(),
+          getFieldValue('shippingStreet1').trim(),
+          getFieldValue('shippingStreet2').trim(),
+          getFieldValue('shippingCity').trim(),
+          getFieldValue('shippingState').trim().toUpperCase(),
+          getFieldValue('shippingPostalCode').trim(),
+          (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        ].join('|');
+      }
+
+      function buildTaxQuoteSignature() {
+        return [
+          getFieldValue('quantityRequested').trim(),
+          String(shippingRateState.cents || ''),
           getFieldValue('shippingStreet1').trim(),
           getFieldValue('shippingStreet2').trim(),
           getFieldValue('shippingCity').trim(),
@@ -340,14 +390,90 @@
         var hasShippingEstimate = Number.isFinite(shippingRateState.cents);
         var shippingTotal = hasShippingEstimate ? shippingRateState.cents / 100 : null;
         var subtotal = goodsTotal + (shippingTotal || 0);
+        var hasTax = Number.isFinite(taxState.amountCents);
+        var taxTotal = hasTax ? taxState.amountCents / 100 : null;
+        var estimatedTotal = subtotal + (taxTotal || 0);
         var shippingLabel = hasShippingEstimate ? '$' + shippingTotal.toFixed(2) : 'Select a shipping option';
+        var taxLabel = 'Awaiting shipping selection';
+        if (taxState.status === 'pending') {
+          taxLabel = 'Calculating with Stripe…';
+        } else if (taxState.status === 'error') {
+          taxLabel = 'Unavailable';
+        } else if (hasTax) {
+          taxLabel = '$' + taxTotal.toFixed(2);
+        }
         if (hasShippingEstimate && shippingRateState.serviceName) {
           shippingLabel += ' (' + shippingRateState.serviceName + ')';
         }
 
         invoiceGoodsTotal.textContent = '$' + goodsTotal.toFixed(2);
         invoiceShippingTotal.textContent = shippingLabel;
+        invoiceTaxTotal.textContent = taxLabel;
         invoiceEstimatedSubtotal.textContent = '$' + subtotal.toFixed(2);
+        invoiceEstimatedTotal.textContent = '$' + estimatedTotal.toFixed(2);
+      }
+
+      async function refreshTaxEstimate() {
+        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var shippingInput = getShippingAddressInput();
+        var quoteSignature = buildTaxQuoteSignature();
+
+        if (!Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(shippingRateState.cents)) {
+          resetTaxState('idle');
+          taxEstimateMessage.textContent = 'Tax will be estimated after a shipping option is selected.';
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
+          resetTaxState('incomplete');
+          taxEstimateMessage.textContent = 'Enter a complete shipping address to preview Stripe tax.';
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        if (taxState.status === 'ready' && taxState.signature === quoteSignature) {
+          updateInvoicePreviewTotals();
+          return;
+        }
+
+        resetTaxState('pending');
+        taxState.signature = quoteSignature;
+        taxEstimateMessage.textContent = 'Calculating tax estimate from Stripe…';
+        updateInvoicePreviewTotals();
+
+        try {
+          var response = await fetch('/api/preview-buy-now-tax', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quantityRequested: quantity,
+              shippingFeeCents: shippingRateState.cents,
+              shippingStreet1: shippingInput.shippingStreet1,
+              shippingStreet2: shippingInput.shippingStreet2,
+              shippingCity: shippingInput.shippingCity,
+              shippingState: shippingInput.shippingState,
+              shippingPostalCode: shippingInput.shippingPostalCode,
+              shippingCountryCode: shippingInput.shippingCountryCode
+            })
+          });
+
+          var body = await response.json().catch(function () { return {}; });
+          if (!response.ok || !body.success || !Number.isFinite(body.taxAmountCents)) {
+            throw new Error(body && body.error ? body.error : 'Unable to preview Stripe tax.');
+          }
+
+          taxState.status = 'ready';
+          taxState.amountCents = body.taxAmountCents;
+          taxState.source = body.source || 'stripe_tax';
+          taxState.signature = quoteSignature;
+          taxEstimateMessage.textContent = 'Stripe tax estimate ready (' + taxState.source + ').';
+        } catch (error) {
+          resetTaxState('error');
+          taxEstimateMessage.textContent = error.message || 'Unable to preview Stripe tax right now.';
+        }
+
+        updateInvoicePreviewTotals();
       }
 
       async function refreshShippingRateEstimate() {
@@ -388,6 +514,8 @@
         resetShippingRateState('pending');
         setShippingRateMessage('<strong>Fetching live FedEx shipping options…</strong>', '');
         hideShippingOptions();
+        resetTaxState('idle');
+        taxEstimateMessage.textContent = 'Tax will be estimated after a shipping option is selected.';
         updateInvoicePreviewTotals();
 
         try {
@@ -431,6 +559,8 @@
           resetShippingRateState('error');
           setShippingRateMessage('<strong>' + (error.message || 'Unable to fetch shipping estimate right now.') + '</strong>', 'is-error');
           hideShippingOptions();
+          resetTaxState('idle');
+          taxEstimateMessage.textContent = 'Tax estimate unavailable until shipping quote is available.';
         }
 
         updateInvoicePreviewTotals();
@@ -453,8 +583,7 @@
 
           stripe = window.Stripe(keyBody.publishableKey);
           var elements = stripe.elements();
-          cardElement = elements.create('card', {
-            hidePostalCode: true,
+          cardNumberElement = elements.create('cardNumber', {
             style: {
               base: {
                 fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
@@ -465,9 +594,34 @@
               invalid: { color: '#b42318' }
             }
           });
-          cardElement.mount('#cardElementContainer');
-          cardElement.on('change', function (event) {
-            isCardComplete = !!event.complete;
+          cardExpiryElement = elements.create('cardExpiry', {
+            style: {
+              base: {
+                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+                fontSize: '16px',
+                color: '#12283a',
+                '::placeholder': { color: '#6b7c93' }
+              },
+              invalid: { color: '#b42318' }
+            }
+          });
+          cardCvcElement = elements.create('cardCvc', {
+            style: {
+              base: {
+                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+                fontSize: '16px',
+                color: '#12283a',
+                '::placeholder': { color: '#6b7c93' }
+              },
+              invalid: { color: '#b42318' }
+            }
+          });
+          cardNumberElement.mount('#cardNumberElementContainer');
+          cardExpiryElement.mount('#cardExpiryElementContainer');
+          cardCvcElement.mount('#cardCvcElementContainer');
+
+          function onCardElementChange(fieldName, event) {
+            cardState[fieldName] = !!event.complete;
             if (event.error) {
               submissionError.textContent = event.error.message;
               submissionError.style.display = 'block';
@@ -475,7 +629,11 @@
               submissionError.style.display = 'none';
               submissionError.textContent = '';
             }
-          });
+          }
+
+          cardNumberElement.on('change', function (event) { onCardElementChange('numberComplete', event); });
+          cardExpiryElement.on('change', function (event) { onCardElementChange('expiryComplete', event); });
+          cardCvcElement.on('change', function (event) { onCardElementChange('cvcComplete', event); });
 
           proceedToPaymentButton.disabled = false;
           proceedToPaymentButton.textContent = 'Buy Now';
@@ -508,14 +666,14 @@
           return;
         }
 
-        if (!stripe || !cardElement) {
+        if (!stripe || !cardNumberElement || !cardExpiryElement || !cardCvcElement) {
           submissionError.textContent = 'Secure card form is still loading. Please wait a moment and try again.';
           submissionError.style.display = 'block';
           return;
         }
 
-        if (!isCardComplete) {
-          submissionError.textContent = 'Please enter complete card details before buying now.';
+        if (!cardState.numberComplete || !cardState.expiryComplete || !cardState.cvcComplete) {
+          submissionError.textContent = 'Please complete card number, expiration date, and security code before buying now.';
           submissionError.style.display = 'block';
           return;
         }
@@ -533,7 +691,7 @@
           var shippingInput = getShippingAddressInput();
           var paymentMethodResult = await stripe.createPaymentMethod({
             type: 'card',
-            card: cardElement,
+            card: cardNumberElement,
             billing_details: {
               name: getFieldValue('fullName').trim(),
               email: getFieldValue('email').trim(),
@@ -606,6 +764,7 @@
 
       updateQuantityPreview();
       initializeStripeCardElement();
+      taxEstimateMessage.textContent = 'Tax will be estimated after a shipping option is selected.';
 
       var url = new URL(window.location.href);
       if (url.searchParams.get('canceled') === '1') {
