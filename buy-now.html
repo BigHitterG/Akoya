@@ -120,6 +120,12 @@
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
           </form>
+
+          <div id="embeddedCheckoutWrapper" class="shipping-validation-message" style="display: none; margin-top: 20px;">
+            <strong>Secure Payment</strong>
+            <p style="margin: 8px 0 16px;">Review final taxes and submit payment below. Your FedEx label is created after Stripe confirms payment.</p>
+            <div id="embeddedCheckoutMount"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -129,6 +135,7 @@
     <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
   </footer>
 
+  <script src="https://js.stripe.com/v3"></script>
   <script src="main.js" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -144,8 +151,11 @@
       var submissionError = document.getElementById('checkoutSubmissionError');
       var shippingOptionSelector = document.getElementById('shippingOptionSelector');
       var proceedToPaymentButton = document.getElementById('proceedToPaymentButton');
+      var embeddedCheckoutWrapper = document.getElementById('embeddedCheckoutWrapper');
+      var embeddedCheckoutMount = document.getElementById('embeddedCheckoutMount');
       var unitsPerBox = 15;
       var pricePerUnit = 12;
+      var activeEmbeddedCheckout = null;
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
       var shippingRateState = {
@@ -452,7 +462,7 @@
         }
 
         proceedToPaymentButton.disabled = true;
-        proceedToPaymentButton.textContent = 'Preparing Checkout…';
+        proceedToPaymentButton.textContent = 'Loading Secure Payment…';
 
         try {
           var shippingInput = getShippingAddressInput();
@@ -479,11 +489,26 @@
           });
 
           var responseBody = await response.json().catch(function () { return {}; });
-          if (!response.ok || !responseBody.checkoutUrl) {
-            throw new Error(responseBody && responseBody.error ? responseBody.error : 'Unable to start Stripe checkout.');
+          if (!response.ok || !responseBody.clientSecret || !responseBody.publishableKey) {
+            throw new Error(responseBody && responseBody.error ? responseBody.error : 'Unable to start Stripe embedded checkout.');
           }
 
-          window.location.href = responseBody.checkoutUrl;
+          if (!window.Stripe) {
+            throw new Error('Stripe.js failed to load. Please refresh and try again.');
+          }
+
+          if (activeEmbeddedCheckout && typeof activeEmbeddedCheckout.unmount === 'function') {
+            activeEmbeddedCheckout.unmount();
+          }
+
+          var stripe = window.Stripe(responseBody.publishableKey);
+          activeEmbeddedCheckout = await stripe.initEmbeddedCheckout({
+            clientSecret: responseBody.clientSecret
+          });
+          embeddedCheckoutWrapper.style.display = 'block';
+          activeEmbeddedCheckout.mount('#embeddedCheckoutMount');
+          embeddedCheckoutWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          proceedToPaymentButton.textContent = 'Payment Loaded Below';
         } catch (error) {
           submissionError.textContent = error.message || 'Unable to proceed to payment right now.';
           submissionError.style.display = 'block';
