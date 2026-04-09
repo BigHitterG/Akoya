@@ -195,11 +195,16 @@ async function getFedexAccessToken(baseUrl, clientId, clientSecret) {
 }
 
 function pickLowestRateQuote(rateReplyDetails) {
+  const candidates = pickUsableRateQuotes(rateReplyDetails);
+  return candidates[0] || null;
+}
+
+function pickUsableRateQuotes(rateReplyDetails) {
   if (!Array.isArray(rateReplyDetails) || !rateReplyDetails.length) {
-    return null;
+    return [];
   }
 
-  const candidates = rateReplyDetails
+  return rateReplyDetails
     .map((detail) => {
       const cents = extractChargeCents(detail);
       if (!Number.isFinite(cents)) {
@@ -215,8 +220,6 @@ function pickLowestRateQuote(rateReplyDetails) {
     })
     .filter(Boolean)
     .sort((a, b) => a.shippingFeeCents - b.shippingFeeCents);
-
-  return candidates[0] || null;
 }
 
 module.exports = async function handler(req, res) {
@@ -297,7 +300,7 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = (process.env.FEDEX_API_BASE_URL || 'https://apis-sandbox.fedex.com').replace(/\/+$/, '');
   const responseDebug = {
-    flow: 'request-invoice',
+    flow: typeof payload.flow === 'string' && payload.flow.trim() ? payload.flow.trim() : 'request-invoice',
     fedexBaseUrl: baseUrl,
     normalized: {
       accountNumberMasked: maskAccountNumber(fedexAccountNumber),
@@ -402,7 +405,8 @@ module.exports = async function handler(req, res) {
     }
 
     const rateReplyDetails = quoteBody?.output?.rateReplyDetails || [];
-    const selectedQuote = pickLowestRateQuote(rateReplyDetails);
+    const parsedQuotes = pickUsableRateQuotes(rateReplyDetails);
+    const selectedQuote = parsedQuotes[0] || null;
     const filteredOutCount = rateReplyDetails.filter((detail) => {
       return !Number.isFinite(extractChargeCents(detail));
     }).length;
@@ -429,6 +433,7 @@ module.exports = async function handler(req, res) {
       serviceType: selectedQuote.serviceType,
       serviceName: selectedQuote.serviceName,
       transitTime: selectedQuote.transitTime,
+      shippingOptions: parsedQuotes,
       packageProfile: {
         weightLb: packageWeightLbs,
         lengthIn: packageLengthIn,
