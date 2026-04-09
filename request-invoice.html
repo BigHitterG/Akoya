@@ -104,6 +104,11 @@
               <p style="margin: 8px 0;">Use only while troubleshooting shipping quote issues.</p>
               <pre id="fedexRateDebugContent" style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin: 0;"></pre>
             </div>
+            <div id="fedexShipmentDebugPanel" class="shipping-validation-message" style="display: none; border: 1px dashed #175cd3; background: #eff8ff; color: #1849a9;" aria-live="polite">
+              <strong>FedEx Shipment Debug (Developer Mode)</strong>
+              <p style="margin: 8px 0;">Creates a shipment label immediately and shows tracking + shipping charge returned by FedEx.</p>
+              <pre id="fedexShipmentDebugContent" style="white-space: pre-wrap; word-break: break-word; font-size: 12px; margin: 0;"></pre>
+            </div>
 
             <label>Billing Address*
               <textarea name="billingAddress" rows="3" required></textarea>
@@ -144,8 +149,10 @@
 
             <div class="cta-row">
               <button type="submit" class="btn btn-primary" id="submitOrderDetailsButton">Submit Order Details</button>
+              <button type="button" class="btn btn-secondary" id="createFedexShipmentDebugButton">Debug: Create FedEx Shipment</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
+            <p class="body-copy shipping-debug-note">Debug button is temporary. It is intentionally separate from Submit Order Details while we validate the FedEx shipment payload/response flow.</p>
           </form>
         </div>
       </div>
@@ -291,6 +298,9 @@
       var shippingRateEstimateMessage = document.getElementById('shippingRateEstimateMessage');
       var fedexRateDebugPanel = document.getElementById('fedexRateDebugPanel');
       var fedexRateDebugContent = document.getElementById('fedexRateDebugContent');
+      var fedexShipmentDebugPanel = document.getElementById('fedexShipmentDebugPanel');
+      var fedexShipmentDebugContent = document.getElementById('fedexShipmentDebugContent');
+      var createFedexShipmentDebugButton = document.getElementById('createFedexShipmentDebugButton');
       var submissionError = document.getElementById('invoiceSubmissionError');
       var shippingAddressField = form.elements.shippingStreet1;
       var shippingStreetSuggestions = document.getElementById('shippingAddressSuggestions');
@@ -309,6 +319,7 @@
         quoteSignature: ''
       };
       var lastFedexRateAttemptDebug = null;
+      var lastFedexShipmentAttemptDebug = null;
       var usStateOptions = [
         ['', 'Select state'],
         ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
@@ -535,6 +546,113 @@
         fedexRateDebugContent.textContent = JSON.stringify(debugPayload || {}, null, 2);
         if (fedexRateDebugPanel) {
           fedexRateDebugPanel.style.display = isFedexRateDebugUiEnabled ? 'block' : 'none';
+        }
+      }
+
+      function setFedexShipmentDebug(debugPayload) {
+        if (!fedexShipmentDebugContent) {
+          return;
+        }
+
+        lastFedexShipmentAttemptDebug = debugPayload || null;
+        fedexShipmentDebugContent.textContent = JSON.stringify(debugPayload || {}, null, 2);
+        if (fedexShipmentDebugPanel) {
+          fedexShipmentDebugPanel.style.display = 'block';
+        }
+      }
+
+      function buildFedexShipmentPayload() {
+        var shippingInput = getShippingAddressInput();
+        var quantityValue = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        return {
+          quantityRequested: quantityValue,
+          shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+          shippingCity: shippingInput.shippingCity,
+          shippingState: shippingInput.shippingState,
+          shippingPostalCode: shippingInput.shippingPostalCode,
+          shippingCountryCode: shippingInput.shippingCountryCode,
+          recipientName: getFieldValue('fullName').trim() || getFieldValue('businessName').trim(),
+          recipientPhone: getFieldValue('phone').trim(),
+          recipientCompanyName: getFieldValue('businessName').trim(),
+          serviceType: ''
+        };
+      }
+
+      async function runFedexShipmentDebugFlow() {
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        var isShippingAddressValid = await validateShippingAddress({ fromSubmit: true, focusOnError: true });
+        if (!isShippingAddressValid) {
+          setFedexShipmentDebug({
+            flow: 'request-invoice-debug-shipment',
+            uiOutcome: 'address_invalid'
+          });
+          return;
+        }
+
+        var payload = buildFedexShipmentPayload();
+        if (!Number.isFinite(payload.quantityRequested) || payload.quantityRequested !== 1) {
+          setFedexShipmentDebug({
+            flow: 'request-invoice-debug-shipment',
+            uiOutcome: 'invalid_quantity',
+            details: 'Debug shipment flow currently supports quantityRequested = 1 only.',
+            payload: payload
+          });
+          return;
+        }
+
+        createFedexShipmentDebugButton.disabled = true;
+        createFedexShipmentDebugButton.textContent = 'Creating Shipment...';
+        setFedexShipmentDebug({
+          flow: 'request-invoice-debug-shipment',
+          uiOutcome: 'pending',
+          payload: payload
+        });
+
+        try {
+          var response = await fetch('/api/create-fedex-shipment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          var responseBody = await response.json();
+
+          setFedexShipmentDebug({
+            flow: 'request-invoice-debug-shipment',
+            endpoint: '/api/create-fedex-shipment',
+            payload: payload,
+            responseOk: response.ok,
+            responseStatus: response.status,
+            responseBody: responseBody,
+            uiOutcome: (!response.ok || !responseBody.success) ? 'shipment_error' : 'shipment_created'
+          });
+
+          if (!response.ok || !responseBody.success) {
+            throw new Error(responseBody.error || responseBody.details || 'Unable to create FedEx shipment right now.');
+          }
+
+          if (Number.isFinite(responseBody.shippingFeeCents)) {
+            shippingRateState.status = 'ready';
+            shippingRateState.cents = responseBody.shippingFeeCents;
+            shippingRateState.serviceName = 'FedEx Shipment (paid label)';
+            shippingRateState.quoteSignature = buildRateQuoteSignature();
+            setShippingRateMessage(
+              '<strong>Shipment purchased:</strong> $' + (responseBody.shippingFeeCents / 100).toFixed(2) +
+              (responseBody.trackingNumber ? ' • Tracking ' + responseBody.trackingNumber : ''),
+              'is-success'
+            );
+            updateInvoicePreviewTotals();
+          }
+        } catch (error) {
+          setShippingRateMessage('<strong>' + (error.message || 'Unable to create FedEx shipment.') + '</strong>', 'is-error');
+        } finally {
+          createFedexShipmentDebugButton.disabled = false;
+          createFedexShipmentDebugButton.textContent = 'Debug: Create FedEx Shipment';
         }
       }
 
@@ -807,6 +925,8 @@
           form.elements[fieldName].addEventListener('change', scheduleShippingValidation);
         }
       });
+
+      createFedexShipmentDebugButton.addEventListener('click', runFedexShipmentDebugFlow);
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();

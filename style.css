@@ -838,6 +838,12 @@
       color: #b42318;
     }
 
+    .shipping-debug-note {
+      margin-top: 10px;
+      color: #475467;
+      font-size: 0.92rem;
+    }
+
     .invoice-preview {
       border: 1px solid #d7e4ee;
       border-radius: 14px;
