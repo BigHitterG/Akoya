@@ -44,6 +44,19 @@ async function createFedexShipmentForSession(req, session) {
     return { attempted: false, skipped: true, reason: 'not_buy_now_flow' };
   }
 
+  if ((metadata.fedexShipmentCreated || '').trim().toLowerCase() === 'true' && required(metadata.fedexTrackingNumber)) {
+    return {
+      attempted: false,
+      skipped: true,
+      reason: 'shipment_already_created',
+      shipment: {
+        trackingNumber: metadata.fedexTrackingNumber.trim(),
+        labelUrl: (metadata.fedexLabelUrl || '').trim() || null,
+        shipDatestamp: (metadata.fedexShipDatestamp || '').trim() || null
+      }
+    };
+  }
+
   const quantityRequested = Number.parseInt(metadata.boxes, 10);
   if (!Number.isFinite(quantityRequested) || quantityRequested < 1) {
     return { attempted: false, skipped: true, reason: 'missing_box_count' };

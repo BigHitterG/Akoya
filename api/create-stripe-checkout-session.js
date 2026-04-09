@@ -51,6 +51,40 @@ function getBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
+async function createFedexShipmentBeforeCheckout(baseUrl, payload) {
+  const shipmentPayload = {
+    quantityRequested: Number.parseInt(payload.quantityRequested, 10),
+    shippingStreetLines: [payload.shippingStreet1, payload.shippingStreet2].filter((line) => required(line)),
+    shippingCity: payload.shippingCity.trim(),
+    shippingState: payload.shippingState.trim().toUpperCase(),
+    shippingPostalCode: payload.shippingPostalCode.trim(),
+    shippingCountryCode: (payload.shippingCountryCode || 'US').trim().toUpperCase(),
+    recipientName: payload.fullName.trim(),
+    recipientPhone: payload.phone.trim(),
+    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
+  };
+
+  const response = await fetch(`${baseUrl}/api/create-fedex-shipment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(shipmentPayload)
+  });
+  const body = await response.json().catch(() => null);
+
+  if (!response.ok || !body?.success) {
+    return {
+      success: false,
+      status: response.status,
+      body
+    };
+  }
+
+  return {
+    success: true,
+    shipment: body
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -104,8 +138,8 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const shippingFeeCents = parseCents(payload.shippingFeeCents);
-  if (!Number.isFinite(shippingFeeCents)) {
+  const quotedShippingFeeCents = parseCents(payload.shippingFeeCents);
+  if (!Number.isFinite(quotedShippingFeeCents)) {
     res.status(400).json({ error: 'shippingFeeCents is required.' });
     return;
   }
@@ -122,7 +156,7 @@ module.exports = async function handler(req, res) {
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
   const boxPriceCents = unitsPerBox * pricePerUnitCents;
-  const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
+  const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX !== 'false';
 
   const metadata = {
     flow: 'buy-now',
@@ -137,7 +171,7 @@ module.exports = async function handler(req, res) {
     shippingState: payload.shippingState.trim().toUpperCase(),
     shippingPostalCode: payload.shippingPostalCode.trim(),
     shippingCountryCode: countryCode,
-    shippingFeeCents: String(shippingFeeCents),
+    shippingFeeCents: String(quotedShippingFeeCents),
     shippingServiceName: required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '',
     shippingServiceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
   };
@@ -149,6 +183,29 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const shipmentResult = await createFedexShipmentBeforeCheckout(baseUrl, payload);
+    if (!shipmentResult.success) {
+      res.status(502).json({
+        error: 'Unable to create FedEx shipment before checkout.',
+        details:
+          shipmentResult.body?.details ||
+          shipmentResult.body?.error ||
+          `FedEx shipment request failed with status ${shipmentResult.status}.`,
+        status: shipmentResult.status,
+        fedex: shipmentResult.body || null
+      });
+      return;
+    }
+
+    const actualShippingFeeCents = parseCents(shipmentResult.shipment.shippingFeeCents);
+    if (!Number.isFinite(actualShippingFeeCents)) {
+      res.status(502).json({
+        error: 'FedEx shipment did not return a usable shipping amount.',
+        fedex: shipmentResult.shipment
+      });
+      return;
+    }
+
     const customer = await stripe.customers.create({
       email: payload.email.trim(),
       name: payload.fullName.trim(),
@@ -175,6 +232,15 @@ module.exports = async function handler(req, res) {
       },
       metadata
     });
+
+    metadata.shippingFeeCentsQuoted = String(quotedShippingFeeCents);
+    metadata.shippingFeeCents = String(actualShippingFeeCents);
+    metadata.shippingServiceName = shipmentResult.shipment.serviceName || metadata.shippingServiceName;
+    metadata.shippingServiceType = shipmentResult.shipment.serviceType || metadata.shippingServiceType;
+    metadata.fedexShipmentCreated = 'true';
+    metadata.fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
+    metadata.fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
+    metadata.fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -207,7 +273,7 @@ module.exports = async function handler(req, res) {
           quantity: 1,
           price_data: {
             currency: 'usd',
-            unit_amount: shippingFeeCents,
+            unit_amount: actualShippingFeeCents,
             product_data: {
               name: metadata.shippingServiceName ? `Shipping (${metadata.shippingServiceName})` : 'Shipping',
               metadata: {
@@ -230,7 +296,10 @@ module.exports = async function handler(req, res) {
       publishableKey,
       sessionId: session.id,
       customerId: customer.id,
-      automaticTaxEnabled
+      automaticTaxEnabled,
+      shippingFeeCentsQuoted: quotedShippingFeeCents,
+      shippingFeeCentsCharged: actualShippingFeeCents,
+      fedexTrackingNumber: shipmentResult.shipment.trackingNumber || null
     });
   } catch (error) {
     res.status(500).json({
