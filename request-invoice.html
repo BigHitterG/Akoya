@@ -267,6 +267,7 @@
         serviceName: '',
         quoteSignature: ''
       };
+      var lastFedexRateAttemptDebug = null;
       var usStateOptions = [
         ['', 'Select state'],
         ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
@@ -465,6 +466,7 @@
           return;
         }
 
+        lastFedexRateAttemptDebug = debugPayload || null;
         fedexRateDebugContent.textContent = JSON.stringify(debugPayload || {}, null, 2);
         fedexRateDebugPanel.style.display = 'block';
       }
@@ -589,6 +591,7 @@
             flow: 'request-invoice',
             endpoint: '/api/get-fedex-rate',
             frontendPayload: frontendPayload,
+            previousAttemptDebug: lastFedexRateAttemptDebug,
             uiOutcome: 'rate_error_exception',
             uiError: error && error.message ? error.message : 'Unknown error.'
           });

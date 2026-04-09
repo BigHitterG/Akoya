@@ -74,6 +74,37 @@ function parseAmountCents(value) {
   return Math.round(numeric * 100);
 }
 
+function firstFiniteCents(values) {
+  for (const value of values) {
+    const cents = parseAmountCents(value);
+    if (Number.isFinite(cents)) {
+      return cents;
+    }
+  }
+
+  return null;
+}
+
+function extractChargeCents(detail) {
+  const ratedShipmentDetails = Array.isArray(detail?.ratedShipmentDetails) ? detail.ratedShipmentDetails : [];
+  for (const rated of ratedShipmentDetails) {
+    const cents = firstFiniteCents([
+      rated?.totalNetCharge?.amount,
+      rated?.shipmentRateDetail?.totalNetCharge?.amount,
+      rated?.shipmentRateDetail?.totalNetFedExCharge?.amount,
+      rated?.shipmentRateDetail?.totalBaseCharge?.amount,
+      rated?.shipmentRateDetail?.totalSurcharges?.amount,
+      rated?.shipmentRateDetail?.totalFreightDiscounts?.amount
+    ]);
+
+    if (Number.isFinite(cents)) {
+      return cents;
+    }
+  }
+
+  return null;
+}
+
 function summarizeFedexErrors(body) {
   const errors = Array.isArray(body?.errors) ? body.errors : [];
   const parts = errors
@@ -131,12 +162,7 @@ function pickLowestRateQuote(rateReplyDetails) {
 
   const candidates = rateReplyDetails
     .map((detail) => {
-      const ratedShipmentDetails = Array.isArray(detail?.ratedShipmentDetails) ? detail.ratedShipmentDetails : [];
-      const firstRated = ratedShipmentDetails[0] || null;
-      const totalChargeAmount = firstRated?.totalNetCharge?.amount
-        ?? firstRated?.shipmentRateDetail?.totalNetCharge?.amount
-        ?? firstRated?.shipmentRateDetail?.totalBaseCharge?.amount;
-      const cents = parseAmountCents(totalChargeAmount);
+      const cents = extractChargeCents(detail);
       if (!Number.isFinite(cents)) {
         return null;
       }
@@ -339,13 +365,7 @@ module.exports = async function handler(req, res) {
     const rateReplyDetails = quoteBody?.output?.rateReplyDetails || [];
     const selectedQuote = pickLowestRateQuote(rateReplyDetails);
     const filteredOutCount = rateReplyDetails.filter((detail) => {
-      const ratedShipmentDetails = Array.isArray(detail?.ratedShipmentDetails) ? detail.ratedShipmentDetails : [];
-      const firstRated = ratedShipmentDetails[0] || null;
-      const totalChargeAmount = firstRated?.totalNetCharge?.amount
-        ?? firstRated?.shipmentRateDetail?.totalNetCharge?.amount
-        ?? firstRated?.shipmentRateDetail?.totalBaseCharge?.amount;
-      const cents = parseAmountCents(totalChargeAmount);
-      return !Number.isFinite(cents);
+      return !Number.isFinite(extractChargeCents(detail));
     }).length;
 
     if (!selectedQuote) {
