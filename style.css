@@ -838,6 +838,64 @@
       color: #b42318;
     }
 
+    .invoice-preview {
+      border: 1px solid #d7e4ee;
+      border-radius: 14px;
+      background: #f8fbfd;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .invoice-preview-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #16354b;
+    }
+
+    .invoice-preview-line-item {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: baseline;
+      color: #243f54;
+      font-size: 0.92rem;
+    }
+
+    .invoice-preview-line-item strong {
+      text-align: right;
+      font-size: 0.92rem;
+      color: #0d2536;
+    }
+
+    .invoice-preview-line-item-muted,
+    .invoice-preview-line-item-muted strong {
+      color: #557184;
+      font-weight: 600;
+    }
+
+    .invoice-preview-line-item-total {
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px dashed #bfd2e0;
+      font-weight: 700;
+      color: #102b3f;
+    }
+
+    .invoice-preview-line-item-total strong {
+      font-size: 1rem;
+      color: #102b3f;
+    }
+
+    .invoice-preview-note {
+      margin: 0;
+      color: #49657a;
+      font-size: 0.84rem;
+    }
+
     .form-feedback {
       min-height: 1.2em;
       color: #5f6f7d;
