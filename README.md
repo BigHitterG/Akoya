@@ -29,6 +29,8 @@ Set these on the server hosting the `api/` routes:
 
 ```bash
 STRIPE_SECRET_KEY=sk_live_or_test_...
+STRIPE_PUBLISHABLE_KEY=pk_live_or_test_...
+# or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_or_test_...
 
 # Required for POST /api/validate-fedex-address
 FEDEX_CLIENT_ID=...
@@ -98,3 +100,5 @@ npm run start
 Then visit `http://localhost:8000`.
 
 > Note: The Stripe API route requires a serverless/runtime host that executes `api/create-stripe-invoice.js` (for example Vercel).
+
+For the Buy Now embedded checkout flow (`buy-now.html` → `POST /api/create-stripe-checkout-session`), both Stripe keys are required. If the publishable key is missing, the checkout API now returns a clear configuration error message.

@@ -58,14 +58,21 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = process.env.STRIPE_SECRET_KEY;
-  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const publishableKey =
+    process.env.STRIPE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    process.env.STRIPE_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
   if (!apiKey) {
     res.status(500).json({ error: 'Missing STRIPE_SECRET_KEY environment variable.' });
     return;
   }
 
   if (!publishableKey) {
-    res.status(500).json({ error: 'Missing STRIPE_PUBLISHABLE_KEY environment variable.' });
+    res.status(500).json({
+      error:
+        'Missing Stripe publishable key. Set STRIPE_PUBLISHABLE_KEY (or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY).'
+    });
     return;
   }
 

@@ -116,14 +116,14 @@
             <p id="checkoutSubmissionError" class="body-copy" style="color: #b42318; display: none; margin-top: 8px;"></p>
 
             <div class="cta-row">
-              <button type="submit" class="btn btn-primary" id="proceedToPaymentButton">Proceed to Payment</button>
+              <button type="submit" class="btn btn-primary" id="proceedToPaymentButton">Load Card Details</button>
               <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
           </form>
 
           <div id="embeddedCheckoutWrapper" class="shipping-validation-message" style="display: none; margin-top: 20px;">
             <strong>Secure Payment</strong>
-            <p style="margin: 8px 0 16px;">Review final taxes and submit payment below. Your FedEx label is created after Stripe confirms payment.</p>
+            <p style="margin: 8px 0 16px;">Enter card details and finalize payment below (no redirect). Your FedEx label is created after Stripe confirms payment.</p>
             <div id="embeddedCheckoutMount"></div>
           </div>
         </div>
@@ -462,7 +462,7 @@
         }
 
         proceedToPaymentButton.disabled = true;
-        proceedToPaymentButton.textContent = 'Loading Secure Payment…';
+        proceedToPaymentButton.textContent = 'Loading Card Form…';
 
         try {
           var shippingInput = getShippingAddressInput();
@@ -508,12 +508,16 @@
           embeddedCheckoutWrapper.style.display = 'block';
           activeEmbeddedCheckout.mount('#embeddedCheckoutMount');
           embeddedCheckoutWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          proceedToPaymentButton.textContent = 'Payment Loaded Below';
+          proceedToPaymentButton.textContent = 'Card Form Loaded Below';
         } catch (error) {
-          submissionError.textContent = error.message || 'Unable to proceed to payment right now.';
+          var message = error.message || 'Unable to proceed to payment right now.';
+          if (message.toLowerCase().indexOf('publishable key') !== -1) {
+            message += ' Add STRIPE_PUBLISHABLE_KEY in your server environment, then redeploy.';
+          }
+          submissionError.textContent = message;
           submissionError.style.display = 'block';
           proceedToPaymentButton.disabled = false;
-          proceedToPaymentButton.textContent = 'Proceed to Payment';
+          proceedToPaymentButton.textContent = 'Load Card Details';
         }
       });
 
