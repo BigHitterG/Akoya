@@ -38,7 +38,9 @@ async function sendInternalNotification({
   invoiceId,
   amountDue,
   hostedInvoiceUrl,
-  status
+  status,
+  trackingNumber,
+  shippingServiceName
 }) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const notifyTo = process.env.ORDER_NOTIFICATION_EMAIL;
@@ -58,6 +60,8 @@ async function sendInternalNotification({
       `Customer: ${fullName} <${orderEmail}>`,
       `Status: ${status}`,
       `Amount due: $${(amountDue / 100).toFixed(2)}`,
+      shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
+      trackingNumber ? `Tracking number: ${trackingNumber}` : null,
       hostedInvoiceUrl ? `Hosted invoice URL: ${hostedInvoiceUrl}` : null
     ]
       .filter(Boolean)
@@ -141,6 +145,10 @@ module.exports = async function handler(req, res) {
   const productAmountCents = units * pricePerUnitCents;
   const shippingFeeCents = parseCents(payload.shippingFeeCents ?? process.env.DEFAULT_SHIPPING_FEE_CENTS) || 0;
   const shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
+  const shippingServiceType = required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '';
+  const trackingNumber = required(payload.trackingNumber) ? payload.trackingNumber.trim() : '';
+  const shippingLabelUrl = required(payload.shippingLabelUrl) ? payload.shippingLabelUrl.trim() : '';
+  const shipDatestamp = required(payload.shipDatestamp) ? payload.shipDatestamp.trim() : '';
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
 
   const metadata = {
@@ -156,7 +164,11 @@ module.exports = async function handler(req, res) {
     boxes: String(boxCount),
     units: String(units),
     shippingFeeCents: String(shippingFeeCents),
-    shippingServiceName
+    shippingServiceName,
+    shippingServiceType,
+    trackingNumber,
+    shippingLabelUrl,
+    shipDatestamp
   };
 
   try {
@@ -186,12 +198,16 @@ module.exports = async function handler(req, res) {
     });
 
     if (shippingFeeCents > 0) {
+      const shippingDescriptionParts = [
+        shippingServiceName ? `Shipping (${shippingServiceName})` : 'Shipping',
+        trackingNumber ? `Tracking: ${trackingNumber}` : null
+      ].filter(Boolean);
       await stripe.invoiceItems.create({
         customer: customer.id,
         invoice: invoice.id,
         amount: shippingFeeCents,
         currency: 'usd',
-        description: shippingServiceName ? `Shipping (${shippingServiceName})` : 'Shipping'
+        description: shippingDescriptionParts.join(' • ')
       });
     }
 
@@ -211,7 +227,9 @@ module.exports = async function handler(req, res) {
       invoiceId: finalizedInvoice.id,
       amountDue: finalizedInvoice.amount_due,
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
-      status: finalizedInvoice.status
+      status: finalizedInvoice.status,
+      trackingNumber,
+      shippingServiceName
     });
 
     res.status(200).json({
@@ -223,6 +241,8 @@ module.exports = async function handler(req, res) {
       amountDue: finalizedInvoice.amount_due,
       automaticTaxEnabled,
       shippingFeeCents,
+      trackingNumber,
+      shippingServiceName,
       sendAttempted,
       sendResult,
       internalEmail

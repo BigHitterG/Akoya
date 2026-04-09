@@ -580,6 +580,51 @@
         };
       }
 
+      async function createFedexShipment(options) {
+        var shipmentOptions = options || {};
+        var payload = buildFedexShipmentPayload();
+        var flow = shipmentOptions.flow || 'request-invoice-submit';
+        var endpoint = '/api/create-fedex-shipment';
+
+        if (!Number.isFinite(payload.quantityRequested) || payload.quantityRequested !== 1) {
+          throw new Error('FedEx shipment creation currently supports quantity = 1 only.');
+        }
+
+        setFedexShipmentDebug({
+          flow: flow,
+          uiOutcome: 'pending',
+          payload: payload
+        });
+
+        var response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        var responseBody = await response.json();
+        setFedexShipmentDebug({
+          flow: flow,
+          endpoint: endpoint,
+          payload: payload,
+          responseOk: response.ok,
+          responseStatus: response.status,
+          responseBody: responseBody,
+          uiOutcome: (!response.ok || !responseBody.success) ? 'shipment_error' : 'shipment_created'
+        });
+
+        if (!response.ok || !responseBody.success) {
+          throw new Error(responseBody.error || responseBody.details || 'Unable to create FedEx shipment right now.');
+        }
+
+        return {
+          payload: payload,
+          responseBody: responseBody
+        };
+      }
+
       async function runFedexShipmentDebugFlow() {
         if (!form.checkValidity()) {
           form.reportValidity();
@@ -595,48 +640,13 @@
           return;
         }
 
-        var payload = buildFedexShipmentPayload();
-        if (!Number.isFinite(payload.quantityRequested) || payload.quantityRequested !== 1) {
-          setFedexShipmentDebug({
-            flow: 'request-invoice-debug-shipment',
-            uiOutcome: 'invalid_quantity',
-            details: 'Debug shipment flow currently supports quantityRequested = 1 only.',
-            payload: payload
-          });
-          return;
-        }
-
         createFedexShipmentDebugButton.disabled = true;
         createFedexShipmentDebugButton.textContent = 'Creating Shipment...';
-        setFedexShipmentDebug({
-          flow: 'request-invoice-debug-shipment',
-          uiOutcome: 'pending',
-          payload: payload
-        });
 
         try {
-          var response = await fetch('/api/create-fedex-shipment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-          var responseBody = await response.json();
-
-          setFedexShipmentDebug({
-            flow: 'request-invoice-debug-shipment',
-            endpoint: '/api/create-fedex-shipment',
-            payload: payload,
-            responseOk: response.ok,
-            responseStatus: response.status,
-            responseBody: responseBody,
-            uiOutcome: (!response.ok || !responseBody.success) ? 'shipment_error' : 'shipment_created'
-          });
-
-          if (!response.ok || !responseBody.success) {
-            throw new Error(responseBody.error || responseBody.details || 'Unable to create FedEx shipment right now.');
-          }
+          var shipmentResult = await createFedexShipment({ flow: 'request-invoice-debug-shipment' });
+          var payload = shipmentResult.payload;
+          var responseBody = shipmentResult.responseBody;
 
           if (Number.isFinite(responseBody.shippingFeeCents)) {
             shippingRateState.status = 'ready';
@@ -969,11 +979,25 @@
         payload.shippingServiceName = shippingRateState.serviceName;
 
         submitButton.disabled = true;
-        submitButton.textContent = 'Submitting...';
+        submitButton.textContent = 'Creating Shipment...';
         submissionError.style.display = 'none';
         submissionError.textContent = '';
 
         try {
+          var shipmentResult = await createFedexShipment({ flow: 'request-invoice-submit' });
+          var shipmentResponse = shipmentResult.responseBody;
+          if (!Number.isFinite(shipmentResponse.shippingFeeCents)) {
+            throw new Error('FedEx shipment did not return a shipping charge.');
+          }
+
+          payload.shippingFeeCents = shipmentResponse.shippingFeeCents;
+          payload.shippingServiceName = shipmentResponse.serviceName || 'FedEx Shipment (paid label)';
+          payload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
+          payload.trackingNumber = shipmentResponse.trackingNumber || '';
+          payload.shippingLabelUrl = shipmentResponse.labelUrl || '';
+          payload.shipDatestamp = shipmentResponse.shipDatestamp || '';
+
+          submitButton.textContent = 'Creating Invoice...';
           var response = await fetch('/api/create-stripe-invoice', {
             method: 'POST',
             headers: {
