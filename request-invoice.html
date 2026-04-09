@@ -119,6 +119,27 @@
               <textarea name="notes" rows="4"></textarea>
             </label>
 
+            <div class="invoice-preview" aria-live="polite">
+              <p class="invoice-preview-title">Invoice Preview (What You'll See After Submission)</p>
+              <div class="invoice-preview-line-item">
+                <span>Total cost of goods</span>
+                <strong id="invoiceGoodsTotal">$0.00</strong>
+              </div>
+              <div class="invoice-preview-line-item">
+                <span>Estimated shipping</span>
+                <strong id="invoiceShippingTotal">Add shipping address for estimate</strong>
+              </div>
+              <div class="invoice-preview-line-item invoice-preview-line-item-muted">
+                <span>Tax</span>
+                <strong>Calculated on invoice (not shown here)</strong>
+              </div>
+              <div class="invoice-preview-line-item invoice-preview-line-item-total">
+                <span>Estimated subtotal (pre-tax)</span>
+                <strong id="invoiceEstimatedSubtotal">$0.00</strong>
+              </div>
+              <p class="invoice-preview-note">Final Stripe invoice will include applicable tax details.</p>
+            </div>
+
             <p id="invoiceSubmissionError" class="body-copy" style="color: #b42318; display: none; margin-top: 8px;"></p>
 
             <div class="cta-row">
@@ -143,6 +164,9 @@
       var quantityPreview = document.getElementById('quantityRequestedPreview');
       var quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
       var quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
+      var invoiceGoodsTotal = document.getElementById('invoiceGoodsTotal');
+      var invoiceShippingTotal = document.getElementById('invoiceShippingTotal');
+      var invoiceEstimatedSubtotal = document.getElementById('invoiceEstimatedSubtotal');
       var unitsPerBox = 15;
       var pricePerUnit = 12;
       var draftStorageKey = 'akoyaInvoiceRequestDraft';
@@ -188,6 +212,7 @@
         if (!hasValidQuantity) {
           quantityPreviewLine1.textContent = 'Enter boxes to see total units.';
           quantityPreviewLine2.textContent = '';
+          updateInvoicePreviewTotals();
           return;
         }
 
@@ -196,6 +221,22 @@
         var boxLabel = quantity === 1 ? 'box' : 'boxes';
         quantityPreviewLine1.textContent = quantity + ' ' + boxLabel + ' (' + unitCount + ' units)';
         quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
+        updateInvoicePreviewTotals();
+      }
+
+      function updateInvoicePreviewTotals() {
+        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0;
+        var goodsTotal = hasValidQuantity ? quantity * unitsPerBox * pricePerUnit : 0;
+        var hasShippingEstimate = shippingRateState && Number.isFinite(shippingRateState.cents);
+        var shippingTotal = hasShippingEstimate ? shippingRateState.cents / 100 : null;
+        var subtotal = goodsTotal + (shippingTotal || 0);
+
+        invoiceGoodsTotal.textContent = '$' + goodsTotal.toFixed(2);
+        invoiceShippingTotal.textContent = hasShippingEstimate
+          ? '$' + shippingTotal.toFixed(2)
+          : 'Add shipping address for estimate';
+        invoiceEstimatedSubtotal.textContent = '$' + subtotal.toFixed(2);
       }
 
       function saveDraft() {
@@ -482,6 +523,7 @@
       function clearShippingRateMessage() {
         shippingRateEstimateMessage.textContent = '';
         shippingRateEstimateMessage.style.display = 'none';
+        updateInvoicePreviewTotals();
       }
 
       function setFedexRateDebug(debugPayload) {
@@ -607,6 +649,7 @@
             '<strong>Estimated shipping:</strong> $' + (responseBody.shippingFeeCents / 100).toFixed(2) + (shippingRateState.serviceName ? ' (' + shippingRateState.serviceName + ')' : ''),
             'is-success'
           );
+          updateInvoicePreviewTotals();
         } catch (error) {
           shippingRateState.status = 'error';
           shippingRateState.cents = null;
@@ -621,6 +664,7 @@
             uiError: error && error.message ? error.message : 'Unknown error.'
           });
           setShippingRateMessage('<strong>' + (error.message || 'Unable to fetch shipping estimate right now.') + '</strong>', 'is-error');
+          updateInvoicePreviewTotals();
         }
       }
 
