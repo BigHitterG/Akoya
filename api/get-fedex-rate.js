@@ -87,6 +87,19 @@ function summarizeFedexErrors(body) {
   return parts.join(' | ');
 }
 
+function maskAccountNumber(value) {
+  const raw = typeof value === 'string' ? value.replace(/\s+/g, '') : '';
+  if (!raw) {
+    return null;
+  }
+
+  if (raw.length <= 4) {
+    return raw;
+  }
+
+  return `${'*'.repeat(raw.length - 4)}${raw.slice(-4)}`;
+}
+
 async function getFedexAccessToken(baseUrl, clientId, clientSecret) {
   const tokenResponse = await fetch(`${baseUrl}/oauth/token`, {
     method: 'POST',
@@ -218,6 +231,25 @@ module.exports = async function handler(req, res) {
   }
 
   const baseUrl = (process.env.FEDEX_API_BASE_URL || 'https://apis-sandbox.fedex.com').replace(/\/+$/, '');
+  const responseDebug = {
+    flow: 'request-invoice',
+    fedexBaseUrl: baseUrl,
+    normalized: {
+      accountNumberMasked: maskAccountNumber(fedexAccountNumber),
+      shipper: {
+        city: shipperCity ? shipperCity.trim() : '',
+        stateOrProvinceCode: shipperState ? shipperState.trim().toUpperCase() : '',
+        postalCode: shipperPostalCode ? shipperPostalCode.trim() : '',
+        countryCode: shipperCountryCode
+      },
+      recipient: {
+        city: recipientAddress.city,
+        stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
+        postalCode: recipientAddress.postalCode,
+        countryCode: recipientAddress.countryCode
+      }
+    }
+  };
 
   const packageWeightLbs = Number.parseFloat(process.env.FEDEX_RATE_BOX1_WEIGHT_LB || '1.0');
   const packageLengthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_LENGTH_IN || '10', 10);
@@ -264,6 +296,15 @@ module.exports = async function handler(req, res) {
         ]
       }
     };
+    responseDebug.fedexRateRequestBody = rateRequestBody;
+    responseDebug.requestSummary = {
+      pickupType: rateRequestBody.requestedShipment.pickupType,
+      rateRequestType: rateRequestBody.requestedShipment.rateRequestType,
+      packagingType: rateRequestBody.requestedShipment.packagingType,
+      serviceType: rateRequestBody.requestedShipment.serviceType || null,
+      weight: rateRequestBody.requestedShipment.requestedPackageLineItems[0]?.weight || null,
+      dimensions: rateRequestBody.requestedShipment.requestedPackageLineItems[0]?.dimensions || null
+    };
 
     const quoteResponse = await fetch(`${baseUrl}/rate/v1/rates/quotes`, {
       method: 'POST',
@@ -275,23 +316,49 @@ module.exports = async function handler(req, res) {
     });
 
     const quoteBody = await quoteResponse.json().catch(() => null);
+    responseDebug.fedexHttpStatus = quoteResponse.status;
+    responseDebug.fedexRawResponseBody = quoteBody;
+    responseDebug.fedexErrorSummary = summarizeFedexErrors(quoteBody) || null;
+    responseDebug.rateReplyDetailsCount = Array.isArray(quoteBody?.output?.rateReplyDetails)
+      ? quoteBody.output.rateReplyDetails.length
+      : 0;
 
     if (!quoteResponse.ok) {
       const fedexMessage = summarizeFedexErrors(quoteBody);
       res.status(502).json({
         error: 'FedEx rate quote failed.',
-        details: fedexMessage || `HTTP ${quoteResponse.status}`
+        details: fedexMessage || `HTTP ${quoteResponse.status}`,
+        debug: {
+          ...responseDebug,
+          failureReason: 'fedex_http_error'
+        }
       });
       return;
     }
 
     const rateReplyDetails = quoteBody?.output?.rateReplyDetails || [];
     const selectedQuote = pickLowestRateQuote(rateReplyDetails);
+    const filteredOutCount = rateReplyDetails.filter((detail) => {
+      const ratedShipmentDetails = Array.isArray(detail?.ratedShipmentDetails) ? detail.ratedShipmentDetails : [];
+      const firstRated = ratedShipmentDetails[0] || null;
+      const totalChargeAmount = firstRated?.totalNetCharge?.amount
+        ?? firstRated?.shipmentRateDetail?.totalNetCharge?.amount
+        ?? firstRated?.shipmentRateDetail?.totalBaseCharge?.amount;
+      const cents = parseAmountCents(totalChargeAmount);
+      return !Number.isFinite(cents);
+    }).length;
 
     if (!selectedQuote) {
       res.status(502).json({
         error: 'FedEx returned no usable rate quote.',
-        details: summarizeFedexErrors(quoteBody) || null
+        details: summarizeFedexErrors(quoteBody) || null,
+        debug: {
+          ...responseDebug,
+          failureReason: 'no_usable_quote',
+          rateReplyDetailsMissingOrEmpty: !Array.isArray(rateReplyDetails) || !rateReplyDetails.length,
+          filteredOutCandidateCountMissingCharges: filteredOutCount,
+          parsedSelection: null
+        }
       });
       return;
     }
@@ -308,12 +375,23 @@ module.exports = async function handler(req, res) {
         lengthIn: packageLengthIn,
         widthIn: packageWidthIn,
         heightIn: packageHeightIn
+      },
+      debug: {
+        ...responseDebug,
+        failureReason: null,
+        rateReplyDetailsMissingOrEmpty: !Array.isArray(rateReplyDetails) || !rateReplyDetails.length,
+        filteredOutCandidateCountMissingCharges: filteredOutCount,
+        parsedSelection: selectedQuote
       }
     });
   } catch (error) {
     res.status(500).json({
       error: 'Unable to fetch live shipping rate.',
-      details: error && error.message ? error.message : 'Unknown error.'
+      details: error && error.message ? error.message : 'Unknown error.',
+      debug: {
+        ...responseDebug,
+        failureReason: 'handler_exception'
+      }
     });
   }
 };
