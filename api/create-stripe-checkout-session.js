@@ -58,8 +58,14 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   if (!apiKey) {
     res.status(500).json({ error: 'Missing STRIPE_SECRET_KEY environment variable.' });
+    return;
+  }
+
+  if (!publishableKey) {
+    res.status(500).json({ error: 'Missing STRIPE_PUBLISHABLE_KEY environment variable.' });
     return;
   }
 
@@ -206,13 +212,15 @@ module.exports = async function handler(req, res) {
       ],
       automatic_tax: { enabled: automaticTaxEnabled },
       metadata,
-      success_url: `${baseUrl}/order-confirmation.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/buy-now.html?canceled=1`
+      ui_mode: 'embedded',
+      return_url: `${baseUrl}/order-confirmation.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`
     });
 
     res.status(200).json({
       success: true,
-      checkoutUrl: session.url,
+      checkoutUrl: session.url || null,
+      clientSecret: session.client_secret || null,
+      publishableKey,
       sessionId: session.id,
       customerId: customer.id,
       automaticTaxEnabled
