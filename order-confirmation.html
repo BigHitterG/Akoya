@@ -31,7 +31,12 @@
       var message = document.getElementById('confirmationMessage');
       var params = new URLSearchParams(window.location.search);
       if (params.get('checkout') === 'success') {
-        message.textContent = 'Your payment was successful and your order is confirmed.';
+        var tracking = params.get('tracking');
+        if (tracking) {
+          message.textContent = 'Your payment was successful, your order is confirmed, and your tracking number is ' + tracking + '.';
+        } else {
+          message.textContent = 'Your payment was successful and your order is confirmed.';
+        }
       }
     });
   </script>
