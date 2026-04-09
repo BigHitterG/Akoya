@@ -181,6 +181,25 @@ function pickShipmentChargeCents(output) {
   ]);
 }
 
+function pickServiceName(output, fallbackServiceType) {
+  const description = output?.serviceDetail?.description || output?.serviceDescription?.description || '';
+  if (required(description)) {
+    return description.trim();
+  }
+
+  if (!required(fallbackServiceType)) {
+    return '';
+  }
+
+  return fallbackServiceType
+    .trim()
+    .toUpperCase()
+    .split('_')
+    .filter(Boolean)
+    .map((token) => token[0] + token.slice(1).toLowerCase())
+    .join(' ');
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -381,10 +400,13 @@ module.exports = async function handler(req, res) {
     const trackingNumber = pickFirstTrackingNumber(output);
     const labelUrl = pickFirstLabelUrl(output);
     const shippingFeeCents = pickShipmentChargeCents(output);
+    const serviceName = pickServiceName(output, resolvedServiceType);
 
     res.status(200).json({
       success: true,
       quantityRequested,
+      serviceType: resolvedServiceType,
+      serviceName,
       trackingNumber,
       labelUrl,
       shippingFeeCents,
@@ -394,6 +416,8 @@ module.exports = async function handler(req, res) {
         ...responseDebug,
         failureReason: null,
         parsedResult: {
+          serviceType: resolvedServiceType,
+          serviceName,
           trackingNumber,
           labelUrl,
           shippingFeeCents
