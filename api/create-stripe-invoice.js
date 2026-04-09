@@ -140,6 +140,7 @@ module.exports = async function handler(req, res) {
   const units = boxCount * unitsPerBox;
   const productAmountCents = units * pricePerUnitCents;
   const shippingFeeCents = parseCents(payload.shippingFeeCents ?? process.env.DEFAULT_SHIPPING_FEE_CENTS) || 0;
+  const shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
 
   const metadata = {
@@ -154,7 +155,8 @@ module.exports = async function handler(req, res) {
     notes: (payload.notes || '').trim(),
     boxes: String(boxCount),
     units: String(units),
-    shippingFeeCents: String(shippingFeeCents)
+    shippingFeeCents: String(shippingFeeCents),
+    shippingServiceName
   };
 
   try {
@@ -189,7 +191,7 @@ module.exports = async function handler(req, res) {
         invoice: invoice.id,
         amount: shippingFeeCents,
         currency: 'usd',
-        description: 'Shipping'
+        description: shippingServiceName ? `Shipping (${shippingServiceName})` : 'Shipping'
       });
     }
 
