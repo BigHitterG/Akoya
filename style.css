@@ -767,6 +767,8 @@
     .card-element-container .StripeElement,
     .card-element-container iframe {
       width: 100%;
+      min-height: 22px;
+      display: block;
       opacity: 1;
     }
 
