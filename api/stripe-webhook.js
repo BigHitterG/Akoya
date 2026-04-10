@@ -38,6 +38,27 @@ function parseRawBody(req) {
   return '';
 }
 
+function buildInternalApiHeaders(req) {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  if (required(req.headers.cookie)) {
+    headers.Cookie = req.headers.cookie;
+  }
+
+  if (required(req.headers.authorization)) {
+    headers.Authorization = req.headers.authorization;
+  }
+
+  if (required(process.env.VERCEL_AUTOMATION_BYPASS_SECRET)) {
+    headers['x-vercel-protection-bypass'] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET.trim();
+    headers['x-vercel-set-bypass-cookie'] = 'true';
+  }
+
+  return headers;
+}
+
 async function createFedexShipmentForSession(req, session) {
   const metadata = session.metadata || {};
   if ((metadata.flow || '').trim() !== 'buy-now') {
@@ -92,9 +113,7 @@ async function createFedexShipmentForSession(req, session) {
 
   const response = await fetch(`${baseUrl}/api/create-fedex-shipment`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: buildInternalApiHeaders(req),
     body: JSON.stringify(payload)
   });
 

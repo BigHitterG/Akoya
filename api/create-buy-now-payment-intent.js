@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const createFedexShipmentHandler = require('./create-fedex-shipment');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
@@ -40,26 +41,7 @@ function normalizeCountryCode(value) {
   return value.trim().toUpperCase();
 }
 
-function getBaseUrl(req) {
-  const envUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL;
-  if (envUrl) {
-    if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
-      return envUrl;
-    }
-    return `https://${envUrl}`;
-  }
-
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-
-  if (!host) {
-    return null;
-  }
-
-  return `${proto}://${host}`;
-}
-
-async function createFedexShipment(baseUrl, payload) {
+async function createFedexShipment(payload) {
   const shipmentPayload = {
     quantityRequested: Number.parseInt(payload.quantityRequested, 10),
     shippingStreetLines: [payload.shippingStreet1, payload.shippingStreet2].filter((line) => required(line)),
@@ -72,24 +54,34 @@ async function createFedexShipment(baseUrl, payload) {
     serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
   };
 
-  const response = await fetch(`${baseUrl}/api/create-fedex-shipment`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(shipmentPayload)
-  });
+  let responseStatus = 500;
+  let responseBody = null;
 
-  const body = await response.json().catch(() => null);
-  if (!response.ok || !body?.success) {
+  await createFedexShipmentHandler(
+    { method: 'POST', body: shipmentPayload },
+    {
+      status(code) {
+        responseStatus = code;
+        return this;
+      },
+      json(body) {
+        responseBody = body;
+        return this;
+      }
+    }
+  );
+
+  if (responseStatus < 200 || responseStatus > 299 || !responseBody?.success) {
     return {
       success: false,
-      status: response.status,
-      body
+      status: responseStatus,
+      body: responseBody
     };
   }
 
   return {
     success: true,
-    shipment: body
+    shipment: responseBody
   };
 }
 
@@ -191,18 +183,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const baseUrl = getBaseUrl(req);
-  if (!baseUrl) {
-    res.status(500).json({ error: 'Unable to determine base URL.' });
-    return;
-  }
-
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
   const goodsAmountCents = units * pricePerUnitCents;
 
   try {
-    const shipmentResult = await createFedexShipment(baseUrl, payload);
+    const shipmentResult = await createFedexShipment(payload);
     if (!shipmentResult.success) {
       res.status(502).json({
         error: 'Unable to create FedEx shipment before payment.',
