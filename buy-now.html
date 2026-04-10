@@ -120,10 +120,18 @@
 
             <fieldset class="shipping-fieldset">
               <legend>Card Details*</legend>
-              <div class="stripe-card-grid stripe-card-grid-inline">
+              <div class="stripe-card-grid">
                 <div class="stripe-card-field stripe-card-field-number">
-                  <span>Card Information</span>
-                  <div id="cardElementContainer" class="card-element-container"></div>
+                  <span>Card Number</span>
+                  <div id="cardNumberElementContainer" class="card-element-container"></div>
+                </div>
+                <div class="stripe-card-field stripe-card-field-expiry">
+                  <span>Expiration Date</span>
+                  <div id="cardExpiryElementContainer" class="card-element-container"></div>
+                </div>
+                <div class="stripe-card-field stripe-card-field-cvc">
+                  <span>Security Code</span>
+                  <div id="cardCvcElementContainer" class="card-element-container"></div>
                 </div>
                 <p id="cardElementHint" class="shipping-helper-copy">Card details are encrypted by Stripe and never touch our servers.</p>
               </div>
@@ -167,9 +175,13 @@
       var unitsPerBox = 15;
       var pricePerUnit = 12;
       var stripe = null;
-      var cardElement = null;
+      var cardNumberElement = null;
+      var cardExpiryElement = null;
+      var cardCvcElement = null;
       var cardState = {
-        complete: false
+        numberComplete: false,
+        expiryComplete: false,
+        cvcComplete: false
       };
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
@@ -597,44 +609,53 @@
           };
 
           var elements = stripe.elements();
-          cardElement = elements.create('card', {
-            style: stripeCardStyle,
-            hidePostalCode: true
-          });
-          cardElement.mount('#cardElementContainer');
-          cardState.complete = false;
-          var cardContainer = document.getElementById('cardElementContainer');
+          cardNumberElement = elements.create('cardNumber', { style: stripeCardStyle });
+          cardExpiryElement = elements.create('cardExpiry', { style: stripeCardStyle });
+          cardCvcElement = elements.create('cardCvc', { style: stripeCardStyle });
+          cardNumberElement.mount('#cardNumberElementContainer');
+          cardExpiryElement.mount('#cardExpiryElementContainer');
+          cardCvcElement.mount('#cardCvcElementContainer');
+          cardState.numberComplete = false;
+          cardState.expiryComplete = false;
+          cardState.cvcComplete = false;
 
-          function bindCardContainerFocus(container, cardElement) {
-            if (!container || !cardElement) {
+          var cardNumberContainer = document.getElementById('cardNumberElementContainer');
+          var cardExpiryContainer = document.getElementById('cardExpiryElementContainer');
+          var cardCvcContainer = document.getElementById('cardCvcElementContainer');
+
+          function bindCardContainerFocus(container, elementInstance) {
+            if (!container || !elementInstance) {
               return;
             }
 
             container.classList.add('is-ready');
             container.addEventListener('click', function () {
-              cardElement.focus();
+              elementInstance.focus();
             });
           }
 
-          bindCardContainerFocus(cardContainer, cardElement);
-          cardElement.on('focus', function () { cardContainer.classList.add('is-focus'); });
-          cardElement.on('blur', function () { cardContainer.classList.remove('is-focus'); });
+          function bindCardElementEvents(elementInstance, container, keyName) {
+            bindCardContainerFocus(container, elementInstance);
+            elementInstance.on('focus', function () { container.classList.add('is-focus'); });
+            elementInstance.on('blur', function () { container.classList.remove('is-focus'); });
+            elementInstance.on('change', function (event) {
+              cardState[keyName] = !!event.complete;
+              container.classList.toggle('is-complete', !!event.complete);
+              container.classList.toggle('is-invalid', !!event.error);
 
-          function onCardElementChange(event) {
-            cardState.complete = !!event.complete;
-            cardContainer.classList.toggle('is-complete', !!event.complete);
-            cardContainer.classList.toggle('is-invalid', !!event.error);
-
-            if (event.error) {
-              submissionError.textContent = event.error.message;
-              submissionError.style.display = 'block';
-            } else if (submissionError.textContent && submissionError.textContent.toLowerCase().indexOf('card') !== -1) {
-              submissionError.style.display = 'none';
-              submissionError.textContent = '';
-            }
+              if (event.error) {
+                submissionError.textContent = event.error.message;
+                submissionError.style.display = 'block';
+              } else if (submissionError.textContent && submissionError.textContent.toLowerCase().indexOf('card') !== -1) {
+                submissionError.style.display = 'none';
+                submissionError.textContent = '';
+              }
+            });
           }
 
-          cardElement.on('change', onCardElementChange);
+          bindCardElementEvents(cardNumberElement, cardNumberContainer, 'numberComplete');
+          bindCardElementEvents(cardExpiryElement, cardExpiryContainer, 'expiryComplete');
+          bindCardElementEvents(cardCvcElement, cardCvcContainer, 'cvcComplete');
 
           proceedToPaymentButton.disabled = false;
           proceedToPaymentButton.textContent = 'Buy Now';
@@ -667,13 +688,13 @@
           return;
         }
 
-        if (!stripe || !cardElement) {
+        if (!stripe || !cardNumberElement || !cardExpiryElement || !cardCvcElement) {
           submissionError.textContent = 'Secure card form is still loading. Please wait a moment and try again.';
           submissionError.style.display = 'block';
           return;
         }
 
-        if (!cardState.complete) {
+        if (!cardState.numberComplete || !cardState.expiryComplete || !cardState.cvcComplete) {
           submissionError.textContent = 'Please complete your card details before buying now.';
           submissionError.style.display = 'block';
           return;
@@ -692,7 +713,7 @@
           var shippingInput = getShippingAddressInput();
           var paymentMethodResult = await stripe.createPaymentMethod({
             type: 'card',
-            card: cardElement,
+            card: cardNumberElement,
             billing_details: {
               name: getFieldValue('fullName').trim(),
               email: getFieldValue('email').trim(),
