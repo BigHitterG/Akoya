@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
+const { sendCustomerEmail } = require('./lib/customer-email');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
@@ -130,6 +131,35 @@ async function calculateStripeTax(stripe, params) {
   };
 }
 
+
+
+async function sendBuyNowCustomerEmail({
+  email,
+  fullName,
+  paymentIntentId,
+  totalAmountCents,
+  trackingNumber,
+  shippingServiceName,
+  receiptUrl
+}) {
+  return sendCustomerEmail({
+    toEmail: email,
+    subject: 'Thank you for your order — Payment received',
+    textLines: [
+      `Hi ${fullName},`,
+      '',
+      'Thank you for your order with Akoya. Your payment has been received.',
+      `Payment ID: ${paymentIntentId}`,
+      `Amount paid: $${(totalAmountCents / 100).toFixed(2)}`,
+      shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
+      trackingNumber ? `Tracking number: ${trackingNumber}` : null,
+      receiptUrl ? `Stripe receipt: ${receiptUrl}` : null,
+      '',
+      'Thank you,',
+      'Akoya'
+    ]
+  });
+}
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -315,6 +345,23 @@ module.exports = async function handler(req, res) {
       metadata
     });
 
+    let customerEmail = { attempted: false, sent: false, reason: 'payment_not_succeeded' };
+    if (paymentIntent.status === 'succeeded') {
+      const charge = paymentIntent.latest_charge
+        ? await stripe.charges.retrieve(paymentIntent.latest_charge)
+        : null;
+
+      customerEmail = await sendBuyNowCustomerEmail({
+        email: payload.email.trim(),
+        fullName: payload.fullName.trim(),
+        paymentIntentId: paymentIntent.id,
+        totalAmountCents,
+        trackingNumber: shipmentResult.shipment.trackingNumber || '',
+        shippingServiceName: shipmentResult.shipment.serviceName || '',
+        receiptUrl: charge?.receipt_url || null
+      });
+    }
+
     res.status(200).json({
       success: true,
       status: paymentIntent.status,
@@ -326,7 +373,8 @@ module.exports = async function handler(req, res) {
       taxAmountCents: taxData.taxAmountCents,
       totalAmountCents,
       fedexTrackingNumber: shipmentResult.shipment.trackingNumber || null,
-      taxCalculationId: taxData.taxCalculationId || null
+      taxCalculationId: taxData.taxCalculationId || null,
+      customerEmail
     });
   } catch (error) {
     res.status(500).json({

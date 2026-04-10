@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const { sendCustomerEmail } = require('./lib/customer-email');
 
 function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -142,6 +143,47 @@ async function createFedexShipmentForSession(req, session) {
   };
 }
 
+
+
+async function sendCheckoutCustomerEmail({ stripe, session, trackingNumber, shippingServiceName }) {
+  const customerEmail = session.customer_details?.email || session.customer_email || session.metadata?.email || '';
+  const customerName = session.customer_details?.name || session.metadata?.fullName || 'there';
+
+  if (!required(customerEmail)) {
+    return { attempted: false, sent: false, reason: 'missing_customer_email' };
+  }
+
+  let receiptUrl = null;
+  if (required(session.payment_intent)) {
+    try {
+      const intent = await stripe.paymentIntents.retrieve(session.payment_intent);
+      if (intent?.latest_charge) {
+        const charge = await stripe.charges.retrieve(intent.latest_charge);
+        receiptUrl = charge?.receipt_url || null;
+      }
+    } catch (error) {
+      receiptUrl = null;
+    }
+  }
+
+  return sendCustomerEmail({
+    toEmail: customerEmail,
+    subject: 'Thank you for your order — Payment received',
+    textLines: [
+      `Hi ${customerName},`,
+      '',
+      'Thank you for your order with Akoya. Your checkout payment has been received.',
+      `Checkout session: ${session.id}`,
+      Number.isFinite(session.amount_total) ? `Amount paid: $${(session.amount_total / 100).toFixed(2)}` : null,
+      shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
+      trackingNumber ? `Tracking number: ${trackingNumber}` : null,
+      receiptUrl ? `Stripe receipt: ${receiptUrl}` : null,
+      '',
+      'Thank you,',
+      'Akoya'
+    ]
+  });
+}
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -220,10 +262,18 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    const checkoutCustomerEmail = await sendCheckoutCustomerEmail({
+      stripe,
+      session,
+      trackingNumber: shipmentResult?.shipment?.trackingNumber || (session.metadata?.fedexTrackingNumber || ''),
+      shippingServiceName: session.metadata?.shippingServiceName || ''
+    });
+
     res.status(200).json({
       received: true,
       eventType: event.type,
-      shipmentResult
+      shipmentResult,
+      checkoutCustomerEmail
     });
   } catch (error) {
     res.status(500).json({

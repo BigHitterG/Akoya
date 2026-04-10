@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const { sendCustomerEmail } = require('./lib/customer-email');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
@@ -100,6 +101,44 @@ async function sendInternalNotification({
   }
 }
 
+
+
+async function sendCustomerInvoiceEmail({
+  email,
+  fullName,
+  invoiceId,
+  amountDue,
+  trackingNumber,
+  shippingServiceName,
+  hostedInvoiceUrl,
+  invoicePdf,
+  dueDateUnix
+}) {
+  const dueDateText = Number.isFinite(dueDateUnix)
+    ? new Date(dueDateUnix * 1000).toISOString().slice(0, 10)
+    : 'See invoice for due date';
+
+  return sendCustomerEmail({
+    toEmail: email,
+    subject: `Thank you for your order — Invoice ${invoiceId}`,
+    textLines: [
+      `Hi ${fullName},`,
+      '',
+      'Thank you for your order with Akoya.',
+      trackingNumber ? `Tracking number: ${trackingNumber}` : null,
+      shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
+      `Invoice amount due: $${(amountDue / 100).toFixed(2)}`,
+      `Payment due date: ${dueDateText}`,
+      hostedInvoiceUrl ? `Pay your invoice: ${hostedInvoiceUrl}` : null,
+      invoicePdf ? `Download invoice PDF: ${invoicePdf}` : null,
+      '',
+      'If you have any questions, reply to this email and our team will help right away.',
+      '',
+      'Thank you,',
+      'Akoya'
+    ]
+  });
+}
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -221,6 +260,18 @@ module.exports = async function handler(req, res) {
       sendResult = 'sent';
     }
 
+    const customerEmail = await sendCustomerInvoiceEmail({
+      email: payload.email.trim(),
+      fullName: payload.fullName.trim(),
+      invoiceId: finalizedInvoice.id,
+      amountDue: finalizedInvoice.amount_due,
+      trackingNumber,
+      shippingServiceName,
+      hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
+      invoicePdf: finalizedInvoice.invoice_pdf || null,
+      dueDateUnix: finalizedInvoice.due_date
+    });
+
     const internalEmail = await sendInternalNotification({
       orderEmail: payload.email.trim(),
       fullName: payload.fullName.trim(),
@@ -245,6 +296,7 @@ module.exports = async function handler(req, res) {
       shippingServiceName,
       sendAttempted,
       sendResult,
+      customerEmail,
       internalEmail
     });
   } catch (error) {

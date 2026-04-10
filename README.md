@@ -52,6 +52,12 @@ FEDEX_RATE_BOX1_HEIGHT_IN=4
 
 # Optional (defaults to sandbox if omitted)
 FEDEX_API_BASE_URL=https://apis-sandbox.fedex.com
+
+# Optional customer/internals emails via Resend
+RESEND_API_KEY=re_...
+CUSTOMER_EMAIL_FROM=orders@yourdomain.com
+ORDER_NOTIFICATION_EMAIL=ops@yourdomain.com
+ORDER_NOTIFICATION_FROM=orders@yourdomain.com
 ```
 
 FedEx credentials are required for the shipping-address validation flow used by `request-invoice.html`.
@@ -104,3 +110,14 @@ Then visit `http://localhost:8000`.
 For the Buy Now embedded checkout flow (`buy-now.html` → `POST /api/create-stripe-checkout-session`), both Stripe keys are required. If the publishable key is missing, the checkout API now returns a clear configuration error message.
 
 Buy Now checkout now creates a FedEx shipment immediately before creating the Stripe Checkout Session, then uses the actual shipment charge (`shippingFeeCents`) in Stripe line items. Stripe automatic tax is enabled by default unless `ENABLE_STRIPE_AUTOMATIC_TAX=false` is explicitly set.
+
+
+Customer-facing order emails (thank-you + tracking + invoice links) are sent when `RESEND_API_KEY` and `CUSTOMER_EMAIL_FROM` are configured.
+
+For Buy Now:
+- Stripe still sends its native card receipt when `receipt_email` is set.
+- Backend now also sends a custom thank-you email that includes tracking details and the Stripe receipt link (when available).
+
+For Invoice:
+- Stripe sends the hosted invoice email/pay link (`sendInvoice`).
+- Backend now also sends a custom thank-you email with tracking number, hosted invoice payment link, and invoice PDF URL.
