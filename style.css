@@ -805,6 +805,10 @@
       align-items: start;
     }
 
+    .stripe-card-grid-inline {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     .stripe-card-field {
       display: grid;
       gap: 8px;
