@@ -415,7 +415,7 @@
     .two-up {
       margin-top: 20px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 20px;
     }
 
@@ -450,10 +450,11 @@
       border-radius: 28px;
       padding: 34px 28px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       gap: 20px;
       align-items: center;
       flex-wrap: wrap;
+      text-align: center;
     }
 
     .cta-block p {
