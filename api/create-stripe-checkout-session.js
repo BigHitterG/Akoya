@@ -51,7 +51,28 @@ function getBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
-async function createFedexShipmentBeforeCheckout(baseUrl, payload) {
+function buildInternalApiHeaders(req) {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  if (required(req.headers.cookie)) {
+    headers.Cookie = req.headers.cookie;
+  }
+
+  if (required(req.headers.authorization)) {
+    headers.Authorization = req.headers.authorization;
+  }
+
+  if (required(process.env.VERCEL_AUTOMATION_BYPASS_SECRET)) {
+    headers['x-vercel-protection-bypass'] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET.trim();
+    headers['x-vercel-set-bypass-cookie'] = 'true';
+  }
+
+  return headers;
+}
+
+async function createFedexShipmentBeforeCheckout(req, baseUrl, payload) {
   const shipmentPayload = {
     quantityRequested: Number.parseInt(payload.quantityRequested, 10),
     shippingStreetLines: [payload.shippingStreet1, payload.shippingStreet2].filter((line) => required(line)),
@@ -66,7 +87,7 @@ async function createFedexShipmentBeforeCheckout(baseUrl, payload) {
 
   const response = await fetch(`${baseUrl}/api/create-fedex-shipment`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildInternalApiHeaders(req),
     body: JSON.stringify(shipmentPayload)
   });
   const body = await response.json().catch(() => null);
@@ -183,7 +204,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const shipmentResult = await createFedexShipmentBeforeCheckout(baseUrl, payload);
+    const shipmentResult = await createFedexShipmentBeforeCheckout(req, baseUrl, payload);
     if (!shipmentResult.success) {
       res.status(502).json({
         error: 'Unable to create FedEx shipment before checkout.',
