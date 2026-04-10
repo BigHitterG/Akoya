@@ -758,6 +758,7 @@
       min-height: 52px;
       display: flex;
       align-items: center;
+      color: #12283a;
       cursor: text;
       pointer-events: auto;
     }

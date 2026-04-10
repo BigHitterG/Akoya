@@ -585,37 +585,34 @@
           }
 
           stripe = window.Stripe(keyBody.publishableKey);
+
+          var stripeCardBaseStyle = {
+            fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
+            fontSize: '16px',
+            lineHeight: '22px',
+            fontWeight: '500',
+            color: '#12283a',
+            caretColor: '#12283a',
+            fontSmoothing: 'antialiased',
+            '::placeholder': { color: '#6b7c93' },
+            ':-webkit-autofill': { color: '#12283a' }
+          };
           var elements = stripe.elements();
           cardNumberElement = elements.create('cardNumber', {
             style: {
-              base: {
-                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-                fontSize: '16px',
-                color: '#12283a',
-                '::placeholder': { color: '#6b7c93' }
-              },
+              base: stripeCardBaseStyle,
               invalid: { color: '#b42318' }
             }
           });
           cardExpiryElement = elements.create('cardExpiry', {
             style: {
-              base: {
-                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-                fontSize: '16px',
-                color: '#12283a',
-                '::placeholder': { color: '#6b7c93' }
-              },
+              base: stripeCardBaseStyle,
               invalid: { color: '#b42318' }
             }
           });
           cardCvcElement = elements.create('cardCvc', {
             style: {
-              base: {
-                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-                fontSize: '16px',
-                color: '#12283a',
-                '::placeholder': { color: '#6b7c93' }
-              },
+              base: stripeCardBaseStyle,
               invalid: { color: '#b42318' }
             }
           });
