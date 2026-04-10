@@ -753,11 +753,13 @@
     .card-element-container {
       border: 1px solid #c9d6e1;
       border-radius: 14px;
-      padding: 14px;
+      padding: 15px 14px;
       background: #ffffff;
-      min-height: 52px;
+      min-height: 56px;
       display: flex;
       align-items: center;
+      justify-content: flex-start;
+      text-align: left;
       color: #12283a;
       cursor: text;
       pointer-events: auto;
@@ -767,7 +769,7 @@
     .card-element-container .StripeElement,
     .card-element-container iframe {
       width: 100%;
-      min-height: 22px;
+      min-height: 24px;
       display: block;
       opacity: 1;
     }
