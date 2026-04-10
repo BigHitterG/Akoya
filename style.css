@@ -922,6 +922,23 @@
       color: #b42318;
     }
 
+    .shipping-retry-button {
+      justify-self: start;
+      margin-top: 4px;
+      border: 1px solid #f3c7cd;
+      background: #ffffff;
+      color: #912018;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .shipping-retry-button:hover {
+      background: #ffe5e8;
+    }
+
     .shipping-option-selector {
       margin-bottom: 14px;
       border: 1px solid #d7e4ee;
