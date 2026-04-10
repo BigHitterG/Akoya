@@ -791,7 +791,7 @@
 
     .stripe-card-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(12, minmax(0, 1fr));
       gap: 12px;
       align-items: start;
     }
@@ -804,6 +804,19 @@
       letter-spacing: 0.08em;
       color: #5b6b78;
       font-weight: 700;
+    }
+
+    .stripe-card-field-number {
+      grid-column: span 6;
+    }
+
+    .stripe-card-field-expiry,
+    .stripe-card-field-cvc {
+      grid-column: span 3;
+    }
+
+    .stripe-card-grid .shipping-helper-copy {
+      grid-column: 1 / -1;
     }
 
     .invoice-form input,
@@ -1095,6 +1108,12 @@
 
       .stripe-card-grid {
         grid-template-columns: 1fr;
+      }
+
+      .stripe-card-field-number,
+      .stripe-card-field-expiry,
+      .stripe-card-field-cvc {
+        grid-column: auto;
       }
 
       .survey-table-wrap {
