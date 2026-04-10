@@ -758,6 +758,17 @@
       min-height: 52px;
       display: flex;
       align-items: center;
+      cursor: text;
+      pointer-events: auto;
+    }
+
+    .card-element-container .StripeElement {
+      width: 100%;
+    }
+
+    .card-element-container.is-ready:focus-within {
+      border-color: #2f6ed9;
+      box-shadow: 0 0 0 3px rgba(47, 110, 217, 0.15);
     }
 
     .stripe-card-grid {

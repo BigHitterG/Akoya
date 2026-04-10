@@ -622,6 +622,24 @@
           cardNumberElement.mount('#cardNumberElementContainer');
           cardExpiryElement.mount('#cardExpiryElementContainer');
           cardCvcElement.mount('#cardCvcElementContainer');
+          var cardNumberContainer = document.getElementById('cardNumberElementContainer');
+          var cardExpiryContainer = document.getElementById('cardExpiryElementContainer');
+          var cardCvcContainer = document.getElementById('cardCvcElementContainer');
+
+          function bindCardContainerFocus(container, cardElement) {
+            if (!container || !cardElement) {
+              return;
+            }
+
+            container.classList.add('is-ready');
+            container.addEventListener('click', function () {
+              cardElement.focus();
+            });
+          }
+
+          bindCardContainerFocus(cardNumberContainer, cardNumberElement);
+          bindCardContainerFocus(cardExpiryContainer, cardExpiryElement);
+          bindCardContainerFocus(cardCvcContainer, cardCvcElement);
 
           function onCardElementChange(fieldName, event) {
             cardState[fieldName] = !!event.complete;
