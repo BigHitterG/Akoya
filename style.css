@@ -757,9 +757,7 @@
       padding: 15px 14px;
       background: #ffffff;
       min-height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
+      display: block;
       text-align: left;
       text-transform: none;
       letter-spacing: normal;
@@ -772,10 +770,10 @@
     }
 
     .card-element-container .StripeElement,
+    .card-element-container > div,
     .card-element-container iframe {
       width: 100%;
       min-width: 0;
-      flex: 1 1 auto;
       min-height: 24px;
       display: block;
       opacity: 1;
