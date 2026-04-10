@@ -39,7 +39,7 @@
       <div class="card">
         <div class="card-pad">
           <div class="kicker">Akoya Medical</div>
-          <h2>Buy Now Checkout</h2>
+          <h2>Akoya Eye Shield Buy Now Checkout</h2>
 
           <form id="buyNowForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
@@ -121,17 +121,9 @@
             <fieldset class="shipping-fieldset">
               <legend>Card Details*</legend>
               <div class="stripe-card-grid">
-                <div class="stripe-card-field stripe-card-field-number" role="group" aria-label="Card number">
-                  <span>Card Number</span>
-                  <div id="cardNumberElementContainer" class="card-element-container"></div>
-                </div>
-                <div class="stripe-card-field stripe-card-field-expiry" role="group" aria-label="Expiration date">
-                  <span>Expiration (MM / YY)</span>
-                  <div id="cardExpiryElementContainer" class="card-element-container"></div>
-                </div>
-                <div class="stripe-card-field stripe-card-field-cvc" role="group" aria-label="Security code">
-                  <span>Security Code</span>
-                  <div id="cardCvcElementContainer" class="card-element-container"></div>
+                <div class="stripe-card-field stripe-card-field-number" role="group" aria-label="Card details">
+                  <span>Card Number / Expiration / CVC</span>
+                  <div id="cardElementContainer" class="card-element-container"></div>
                 </div>
                 <p id="cardElementHint" class="shipping-helper-copy">Card details are encrypted by Stripe and never touch our servers.</p>
               </div>
@@ -175,13 +167,9 @@
       var unitsPerBox = 15;
       var pricePerUnit = 12;
       var stripe = null;
-      var cardNumberElement = null;
-      var cardExpiryElement = null;
-      var cardCvcElement = null;
+      var cardElement = null;
       var cardState = {
-        numberComplete: false,
-        expiryComplete: false,
-        cvcComplete: false
+        complete: false
       };
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
@@ -586,22 +574,35 @@
 
           stripe = window.Stripe(keyBody.publishableKey);
 
+          var stripeCardStyle = {
+            base: {
+              fontFamily: 'Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif',
+              fontSize: '17px',
+              lineHeight: '24px',
+              fontWeight: '500',
+              color: '#12283a',
+              iconColor: '#35536a',
+              fontSmoothing: 'antialiased',
+              '::placeholder': {
+                color: '#6b7c93'
+              },
+              ':-webkit-autofill': {
+                color: '#12283a'
+              }
+            },
+            invalid: {
+              color: '#b42318',
+              iconColor: '#b42318'
+            }
+          };
+
           var elements = stripe.elements();
-          cardNumberElement = elements.create('cardNumber', {
-            placeholder: '1234 1234 1234 1234'
+          cardElement = elements.create('card', {
+            style: stripeCardStyle,
+            hidePostalCode: true
           });
-          cardExpiryElement = elements.create('cardExpiry', {
-            placeholder: 'MM / YY'
-          });
-          cardCvcElement = elements.create('cardCvc', {
-            placeholder: 'CVC'
-          });
-          cardNumberElement.mount('#cardNumberElementContainer');
-          cardExpiryElement.mount('#cardExpiryElementContainer');
-          cardCvcElement.mount('#cardCvcElementContainer');
-          var cardNumberContainer = document.getElementById('cardNumberElementContainer');
-          var cardExpiryContainer = document.getElementById('cardExpiryElementContainer');
-          var cardCvcContainer = document.getElementById('cardCvcElementContainer');
+          cardElement.mount('#cardElementContainer');
+          var cardContainer = document.getElementById('cardElementContainer');
 
           function bindCardContainerFocus(container, cardElement) {
             if (!container || !cardElement) {
@@ -614,33 +615,16 @@
             });
           }
 
-          bindCardContainerFocus(cardNumberContainer, cardNumberElement);
-          bindCardContainerFocus(cardExpiryContainer, cardExpiryElement);
-          bindCardContainerFocus(cardCvcContainer, cardCvcElement);
+          bindCardContainerFocus(cardContainer, cardElement);
 
-          cardNumberElement.on('focus', function () { cardNumberContainer.classList.add('is-focus'); });
-          cardNumberElement.on('blur', function () { cardNumberContainer.classList.remove('is-focus'); });
-          cardExpiryElement.on('focus', function () { cardExpiryContainer.classList.add('is-focus'); });
-          cardExpiryElement.on('blur', function () { cardExpiryContainer.classList.remove('is-focus'); });
-          cardCvcElement.on('focus', function () { cardCvcContainer.classList.add('is-focus'); });
-          cardCvcElement.on('blur', function () { cardCvcContainer.classList.remove('is-focus'); });
+          cardElement.on('focus', function () { cardContainer.classList.add('is-focus'); });
+          cardElement.on('blur', function () { cardContainer.classList.remove('is-focus'); });
 
-          function onCardElementChange(fieldName, event) {
-            cardState[fieldName] = !!event.complete;
+          function onCardElementChange(event) {
+            cardState.complete = !!event.complete;
 
-            var container = null;
-            if (fieldName === 'numberComplete') {
-              container = cardNumberContainer;
-            } else if (fieldName === 'expiryComplete') {
-              container = cardExpiryContainer;
-            } else if (fieldName === 'cvcComplete') {
-              container = cardCvcContainer;
-            }
-
-            if (container) {
-              container.classList.toggle('is-complete', !!event.complete);
-              container.classList.toggle('is-invalid', !!event.error);
-            }
+            cardContainer.classList.toggle('is-complete', !!event.complete);
+            cardContainer.classList.toggle('is-invalid', !!event.error);
 
             if (event.error) {
               submissionError.textContent = event.error.message;
@@ -651,9 +635,7 @@
             }
           }
 
-          cardNumberElement.on('change', function (event) { onCardElementChange('numberComplete', event); });
-          cardExpiryElement.on('change', function (event) { onCardElementChange('expiryComplete', event); });
-          cardCvcElement.on('change', function (event) { onCardElementChange('cvcComplete', event); });
+          cardElement.on('change', onCardElementChange);
 
           proceedToPaymentButton.disabled = false;
           proceedToPaymentButton.textContent = 'Buy Now';
@@ -686,14 +668,14 @@
           return;
         }
 
-        if (!stripe || !cardNumberElement || !cardExpiryElement || !cardCvcElement) {
+        if (!stripe || !cardElement) {
           submissionError.textContent = 'Secure card form is still loading. Please wait a moment and try again.';
           submissionError.style.display = 'block';
           return;
         }
 
-        if (!cardState.numberComplete || !cardState.expiryComplete || !cardState.cvcComplete) {
-          submissionError.textContent = 'Please complete card number, expiration date, and security code before buying now.';
+        if (!cardState.complete) {
+          submissionError.textContent = 'Please complete your card details before buying now.';
           submissionError.style.display = 'block';
           return;
         }
@@ -711,7 +693,7 @@
           var shippingInput = getShippingAddressInput();
           var paymentMethodResult = await stripe.createPaymentMethod({
             type: 'card',
-            card: cardNumberElement,
+            card: cardElement,
             billing_details: {
               name: getFieldValue('fullName').trim(),
               email: getFieldValue('email').trim(),
