@@ -760,6 +760,10 @@
       align-items: center;
       justify-content: flex-start;
       text-align: left;
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 1rem;
+      font-weight: 500;
       color: #12283a;
       cursor: text;
       pointer-events: auto;
