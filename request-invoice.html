@@ -13,7 +13,6 @@
 <body>
   <div class="top-banner">
     <div>Order now with invoice support for clinics, hospitals, and bulk purchasing teams.</div>
-    <a href="buy.html">Back to Buy</a>
   </div>
 
   <header>
@@ -148,10 +147,7 @@
 
             <div class="cta-row">
               <button type="submit" class="btn btn-primary" id="submitOrderDetailsButton">Submit Order Details</button>
-              <button type="button" class="btn btn-secondary" id="createFedexShipmentDebugButton">Debug: Create FedEx Shipment</button>
-              <a href="buy.html" class="btn btn-secondary">Back to Buy</a>
             </div>
-            <p class="body-copy shipping-debug-note">Debug button is temporary. It is intentionally separate from Submit Order Details while we validate the FedEx shipment payload/response flow.</p>
           </form>
         </div>
       </div>
@@ -947,7 +943,9 @@
         }
       });
 
-      createFedexShipmentDebugButton.addEventListener('click', runFedexShipmentDebugFlow);
+      if (createFedexShipmentDebugButton) {
+        createFedexShipmentDebugButton.addEventListener('click', runFedexShipmentDebugFlow);
+      }
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
