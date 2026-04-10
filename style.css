@@ -816,7 +816,7 @@
     }
 
     .stripe-card-field-number {
-      grid-column: span 6;
+      grid-column: 1 / -1;
     }
 
     .stripe-card-field-expiry,
