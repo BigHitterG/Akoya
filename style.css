@@ -761,15 +761,30 @@
       color: #12283a;
       cursor: text;
       pointer-events: auto;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
     }
 
-    .card-element-container .StripeElement {
+    .card-element-container .StripeElement,
+    .card-element-container iframe {
       width: 100%;
+      opacity: 1;
     }
 
-    .card-element-container.is-ready:focus-within {
+    .card-element-container.is-ready:focus-within,
+    .card-element-container.is-focus {
       border-color: #2f6ed9;
       box-shadow: 0 0 0 3px rgba(47, 110, 217, 0.15);
+    }
+
+    .card-element-container.is-complete {
+      border-color: #1d7f4b;
+      background: #f7fffb;
+    }
+
+    .card-element-container.is-invalid {
+      border-color: #b42318;
+      box-shadow: 0 0 0 2px rgba(180, 35, 24, 0.12);
+      background: #fff9f8;
     }
 
     .stripe-card-grid {
