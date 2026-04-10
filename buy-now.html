@@ -192,7 +192,8 @@
         serviceType: '',
         quoteSignature: '',
         options: [],
-        selectedOptionId: ''
+        selectedOptionId: '',
+        retryCount: 0
       };
       var taxState = {
         status: 'idle',
@@ -209,7 +210,8 @@
           serviceType: '',
           quoteSignature: '',
           options: [],
-          selectedOptionId: ''
+          selectedOptionId: '',
+          retryCount: 0
         };
       }
 
@@ -235,6 +237,23 @@
         shippingRateEstimateMessage.innerHTML = html;
         shippingRateEstimateMessage.className = 'shipping-validation-message ' + (stateClass || '');
         shippingRateEstimateMessage.style.display = 'block';
+      }
+
+      function setShippingRateRetryMessage(errorMessage) {
+        var safeMessage = escapeHtml(errorMessage || 'Unable to fetch shipping estimate right now.');
+        setShippingRateMessage(
+          '<strong>' + safeMessage + '</strong>' +
+            '<span>Try again to fetch a live FedEx quote. Payment stays disabled until a shipping option is selected.</span>' +
+            '<button type="button" class="shipping-retry-button" id="retryShippingQuoteButton">Retry quote</button>',
+          'is-error'
+        );
+
+        var retryButton = document.getElementById('retryShippingQuoteButton');
+        if (retryButton) {
+          retryButton.addEventListener('click', function () {
+            refreshShippingRateEstimate({ force: true });
+          });
+        }
       }
 
       function hideShippingOptions() {
@@ -479,7 +498,10 @@
         updateInvoicePreviewTotals();
       }
 
-      async function refreshShippingRateEstimate() {
+      var latestShippingQuoteRequestId = 0;
+
+      async function refreshShippingRateEstimate(options) {
+        var refreshOptions = options || {};
         var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
         var shippingInput = getShippingAddressInput();
         var quoteSignature = buildRateQuoteSignature();
@@ -508,13 +530,15 @@
           return;
         }
 
-        if (shippingRateState.status === 'ready' && shippingRateState.quoteSignature === quoteSignature && shippingRateState.options.length) {
+        if (!refreshOptions.force && shippingRateState.status === 'ready' && shippingRateState.quoteSignature === quoteSignature && shippingRateState.options.length) {
           renderShippingOptions();
           updateInvoicePreviewTotals();
           return;
         }
 
+        var requestId = ++latestShippingQuoteRequestId;
         resetShippingRateState('pending');
+        shippingRateState.retryCount = refreshOptions.retryCount || 0;
         setShippingRateMessage('<strong>Fetching live FedEx shipping options…</strong>', '');
         hideShippingOptions();
         resetTaxState('idle');
@@ -537,9 +561,13 @@
           });
 
           var responseBody = await response.json().catch(function () { return {}; });
+          if (requestId !== latestShippingQuoteRequestId) {
+            return;
+          }
           var shippingOptions = normalizeShippingOptions(responseBody);
           if (!response.ok || !shippingOptions.length) {
-            throw new Error(responseBody && responseBody.error ? responseBody.error : 'Unable to fetch live shipping quote.');
+            var details = [responseBody && responseBody.error, responseBody && responseBody.hint, responseBody && responseBody.details].filter(Boolean).join(' ');
+            throw new Error(details || 'Unable to fetch live shipping quote.');
           }
 
           var previousOptionId = shippingRateState.selectedOptionId;
@@ -559,8 +587,20 @@
             applySelectedShippingOption(previousOptionId);
           }
         } catch (error) {
+          if (requestId !== latestShippingQuoteRequestId) {
+            return;
+          }
+          if ((refreshOptions.retryCount || 0) < 2) {
+            window.setTimeout(function () {
+              refreshShippingRateEstimate({
+                force: true,
+                retryCount: (refreshOptions.retryCount || 0) + 1
+              });
+            }, Math.pow(2, refreshOptions.retryCount || 0) * 600);
+            return;
+          }
           resetShippingRateState('error');
-          setShippingRateMessage('<strong>' + (error.message || 'Unable to fetch shipping estimate right now.') + '</strong>', 'is-error');
+          setShippingRateRetryMessage(error && error.message ? error.message : 'Unable to fetch shipping estimate right now.');
           hideShippingOptions();
           resetTaxState('idle');
           taxEstimateMessage.textContent = 'Tax estimate unavailable until shipping quote is available.';
