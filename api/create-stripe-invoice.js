@@ -41,7 +41,8 @@ async function sendInternalNotification({
   hostedInvoiceUrl,
   status,
   trackingNumber,
-  shippingServiceName
+  shippingServiceName,
+  shippingLabelUrl
 }) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const notifyTo = process.env.ORDER_NOTIFICATION_EMAIL;
@@ -63,6 +64,7 @@ async function sendInternalNotification({
       `Amount due: $${(amountDue / 100).toFixed(2)}`,
       shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
       trackingNumber ? `Tracking number: ${trackingNumber}` : null,
+      shippingLabelUrl ? `Shipping label URL: ${shippingLabelUrl}` : null,
       hostedInvoiceUrl ? `Hosted invoice URL: ${hostedInvoiceUrl}` : null
     ]
       .filter(Boolean)
@@ -185,9 +187,15 @@ module.exports = async function handler(req, res) {
   const shippingFeeCents = parseCents(payload.shippingFeeCents ?? process.env.DEFAULT_SHIPPING_FEE_CENTS) || 0;
   const shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
   const shippingServiceType = required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '';
-  const trackingNumber = required(payload.trackingNumber) ? payload.trackingNumber.trim() : '';
-  const shippingLabelUrl = required(payload.shippingLabelUrl) ? payload.shippingLabelUrl.trim() : '';
-  const shipDatestamp = required(payload.shipDatestamp) ? payload.shipDatestamp.trim() : '';
+  const trackingNumber = required(payload.trackingNumber)
+    ? payload.trackingNumber.trim()
+    : (required(payload.fedexTrackingNumber) ? payload.fedexTrackingNumber.trim() : '');
+  const shippingLabelUrl = required(payload.shippingLabelUrl)
+    ? payload.shippingLabelUrl.trim()
+    : (required(payload.fedexLabelUrl) ? payload.fedexLabelUrl.trim() : '');
+  const shipDatestamp = required(payload.shipDatestamp)
+    ? payload.shipDatestamp.trim()
+    : (required(payload.fedexShipDatestamp) ? payload.fedexShipDatestamp.trim() : '');
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
 
   const metadata = {
@@ -207,7 +215,10 @@ module.exports = async function handler(req, res) {
     shippingServiceType,
     trackingNumber,
     shippingLabelUrl,
-    shipDatestamp
+    shipDatestamp,
+    fedexTrackingNumber: trackingNumber,
+    fedexLabelUrl: shippingLabelUrl,
+    fedexShipDatestamp: shipDatestamp
   };
 
   try {
@@ -280,7 +291,8 @@ module.exports = async function handler(req, res) {
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
       status: finalizedInvoice.status,
       trackingNumber,
-      shippingServiceName
+      shippingServiceName,
+      shippingLabelUrl
     });
 
     res.status(200).json({
