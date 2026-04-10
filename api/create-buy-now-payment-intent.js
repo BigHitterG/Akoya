@@ -42,6 +42,19 @@ function normalizeCountryCode(value) {
   return value.trim().toUpperCase();
 }
 
+function toMetadataValue(value, maxLength = 500) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return '';
+  }
+
+  return stringValue.slice(0, maxLength);
+}
+
 async function createFedexShipment(payload) {
   const shipmentPayload = {
     quantityRequested: Number.parseInt(payload.quantityRequested, 10),
@@ -218,27 +231,36 @@ module.exports = async function handler(req, res) {
   const goodsAmountCents = units * pricePerUnitCents;
 
   try {
-    const shipmentResult = await createFedexShipment(payload);
-    if (!shipmentResult.success) {
-      res.status(502).json({
-        error: 'Unable to create FedEx shipment before payment.',
-        details:
-          shipmentResult.body?.details ||
-          shipmentResult.body?.error ||
-          `FedEx shipment request failed with status ${shipmentResult.status}.`,
-        status: shipmentResult.status,
-        fedex: shipmentResult.body || null
-      });
-      return;
-    }
+    let actualShippingFeeCents = quotedShippingFeeCents;
+    let shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
+    let shippingServiceType = required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '';
+    let fedexShipmentCreated = false;
+    let fedexTrackingNumber = '';
+    let fedexLabelUrl = '';
+    let fedexShipDatestamp = '';
+    let fedexShipmentError = '';
+    let fedexShipmentStatus = 'label_not_created_quoted_fallback';
 
-    const actualShippingFeeCents = parseCents(shipmentResult.shipment.shippingFeeCents);
-    if (!Number.isFinite(actualShippingFeeCents)) {
-      res.status(502).json({
-        error: 'FedEx shipment did not return a usable shipping amount.',
-        fedex: shipmentResult.shipment
-      });
-      return;
+    const shipmentResult = await createFedexShipment(payload);
+    if (shipmentResult.success) {
+      const parsedFedexShippingFeeCents = parseCents(shipmentResult.shipment.shippingFeeCents);
+      if (Number.isFinite(parsedFedexShippingFeeCents)) {
+        actualShippingFeeCents = parsedFedexShippingFeeCents;
+        shippingServiceName = shipmentResult.shipment.serviceName || shippingServiceName;
+        shippingServiceType = shipmentResult.shipment.serviceType || shippingServiceType;
+        fedexShipmentCreated = true;
+        fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
+        fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
+        fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
+        fedexShipmentStatus = 'label_created';
+      } else {
+        fedexShipmentError = 'FedEx shipment succeeded but shipping charge was missing; used quoted shipping instead.';
+      }
+    } else {
+      fedexShipmentError =
+        shipmentResult.body?.details ||
+        shipmentResult.body?.error ||
+        `FedEx shipment request failed with status ${shipmentResult.status}.`;
     }
 
     const customer = await stripe.customers.create({
@@ -307,12 +329,14 @@ module.exports = async function handler(req, res) {
       goodsAmountCents: String(goodsAmountCents),
       shippingFeeCentsQuoted: String(quotedShippingFeeCents),
       shippingFeeCentsCharged: String(actualShippingFeeCents),
-      shippingServiceName: shipmentResult.shipment.serviceName || '',
-      shippingServiceType: shipmentResult.shipment.serviceType || '',
-      fedexShipmentCreated: 'true',
-      fedexTrackingNumber: shipmentResult.shipment.trackingNumber || '',
-      fedexLabelUrl: shipmentResult.shipment.labelUrl || '',
-      fedexShipDatestamp: shipmentResult.shipment.shipDatestamp || '',
+      shippingServiceName,
+      shippingServiceType,
+      fedexShipmentCreated: fedexShipmentCreated ? 'true' : 'false',
+      fedexShipmentStatus,
+      fedexShipmentError: toMetadataValue(fedexShipmentError),
+      fedexTrackingNumber,
+      fedexLabelUrl,
+      fedexShipDatestamp,
       stripeTaxAmountCents: String(taxData.taxAmountCents),
       stripeTaxCalculationId: taxData.taxCalculationId || '',
       stripeTaxSource: taxData.source
@@ -356,8 +380,8 @@ module.exports = async function handler(req, res) {
         fullName: payload.fullName.trim(),
         paymentIntentId: paymentIntent.id,
         totalAmountCents,
-        trackingNumber: shipmentResult.shipment.trackingNumber || '',
-        shippingServiceName: shipmentResult.shipment.serviceName || '',
+        trackingNumber: fedexTrackingNumber,
+        shippingServiceName,
         receiptUrl: charge?.receipt_url || null
       });
     }
@@ -372,7 +396,10 @@ module.exports = async function handler(req, res) {
       shippingFeeCentsCharged: actualShippingFeeCents,
       taxAmountCents: taxData.taxAmountCents,
       totalAmountCents,
-      fedexTrackingNumber: shipmentResult.shipment.trackingNumber || null,
+      fedexShipmentCreated,
+      fedexShipmentStatus,
+      fedexShipmentError: fedexShipmentError || null,
+      fedexTrackingNumber: fedexTrackingNumber || null,
       taxCalculationId: taxData.taxCalculationId || null,
       customerEmail
     });

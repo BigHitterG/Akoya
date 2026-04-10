@@ -33,6 +33,19 @@ function parseCents(value) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function toMetadataValue(value, maxLength = 500) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return '';
+  }
+
+  return stringValue.slice(0, maxLength);
+}
+
 async function sendInternalNotification({
   orderEmail,
   fullName,
@@ -196,6 +209,15 @@ module.exports = async function handler(req, res) {
   const shipDatestamp = required(payload.shipDatestamp)
     ? payload.shipDatestamp.trim()
     : (required(payload.fedexShipDatestamp) ? payload.fedexShipDatestamp.trim() : '');
+  const fedexShipmentCreated = required(payload.fedexShipmentCreated)
+    ? payload.fedexShipmentCreated.trim().toLowerCase() === 'true'
+    : Boolean(trackingNumber || shippingLabelUrl);
+  const fedexShipmentStatus = required(payload.fedexShipmentStatus)
+    ? payload.fedexShipmentStatus.trim()
+    : (fedexShipmentCreated ? 'label_created' : 'label_not_created_quoted_fallback');
+  const fedexShipmentError = required(payload.fedexShipmentError)
+    ? payload.fedexShipmentError.trim()
+    : '';
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
 
   const metadata = {
@@ -218,7 +240,10 @@ module.exports = async function handler(req, res) {
     shipDatestamp,
     fedexTrackingNumber: trackingNumber,
     fedexLabelUrl: shippingLabelUrl,
-    fedexShipDatestamp: shipDatestamp
+    fedexShipDatestamp: shipDatestamp,
+    fedexShipmentCreated: fedexShipmentCreated ? 'true' : 'false',
+    fedexShipmentStatus: toMetadataValue(fedexShipmentStatus, 100),
+    fedexShipmentError: toMetadataValue(fedexShipmentError)
   };
 
   try {
