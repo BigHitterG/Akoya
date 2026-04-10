@@ -776,13 +776,6 @@
             throw new Error(serverErrorMessage);
           }
 
-          if (responseBody.requiresAction && responseBody.clientSecret) {
-            var confirmResult = await stripe.confirmCardPayment(responseBody.clientSecret);
-            if (confirmResult.error) {
-              throw new Error(confirmResult.error.message || 'Additional payment authentication failed.');
-            }
-          }
-
           var confirmationUrl = '/order-confirmation.html?checkout=success';
           if (responseBody.paymentIntentId) {
             confirmationUrl += '&payment_intent=' + encodeURIComponent(responseBody.paymentIntentId);
@@ -790,6 +783,21 @@
           if (responseBody.fedexTrackingNumber) {
             confirmationUrl += '&tracking=' + encodeURIComponent(responseBody.fedexTrackingNumber);
           }
+
+          if (responseBody.requiresAction && responseBody.clientSecret) {
+            var absoluteConfirmationUrl = new URL(confirmationUrl, window.location.origin).toString();
+            var confirmResult = await stripe.confirmCardPayment(responseBody.clientSecret, {
+              return_url: absoluteConfirmationUrl
+            });
+            if (confirmResult.error) {
+              throw new Error(confirmResult.error.message || 'Additional payment authentication failed.');
+            }
+
+            if (confirmResult.paymentIntent && confirmResult.paymentIntent.status !== 'succeeded') {
+              return;
+            }
+          }
+
           window.location.href = confirmationUrl;
         } catch (error) {
           submissionError.textContent = error.message || 'Unable to complete checkout right now.';

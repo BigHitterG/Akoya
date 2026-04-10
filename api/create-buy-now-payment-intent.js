@@ -291,6 +291,10 @@ module.exports = async function handler(req, res) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmountCents,
       currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
       customer: customer.id,
       payment_method: payload.paymentMethodId.trim(),
       confirmation_method: 'automatic',
