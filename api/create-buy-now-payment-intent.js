@@ -297,7 +297,6 @@ module.exports = async function handler(req, res) {
       },
       customer: customer.id,
       payment_method: payload.paymentMethodId.trim(),
-      confirmation_method: 'automatic',
       confirm: true,
       receipt_email: payload.email.trim(),
       description: 'Akoya Eye Shield order',
