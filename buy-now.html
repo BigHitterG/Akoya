@@ -586,44 +586,14 @@
 
           stripe = window.Stripe(keyBody.publishableKey);
 
-          var stripeCardBaseStyle = {
-            fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-            fontSize: '17px',
-            lineHeight: '24px',
-            fontWeight: '500',
-            color: '#12283a',
-            caretColor: '#12283a',
-            iconColor: '#35536a',
-            fontSmoothing: 'antialiased',
-            '::placeholder': {
-              color: '#6b7c93'
-            }
-          };
-          var stripeCardStyle = {
-            base: stripeCardBaseStyle,
-            empty: {
-              color: '#12283a'
-            },
-            complete: {
-              color: '#12283a'
-            },
-            invalid: {
-              color: '#b42318',
-              iconColor: '#b42318'
-            }
-          };
-
           var elements = stripe.elements();
           cardNumberElement = elements.create('cardNumber', {
-            style: stripeCardStyle,
             placeholder: '1234 1234 1234 1234'
           });
           cardExpiryElement = elements.create('cardExpiry', {
-            style: stripeCardStyle,
             placeholder: 'MM / YY'
           });
           cardCvcElement = elements.create('cardCvc', {
-            style: stripeCardStyle,
             placeholder: 'CVC'
           });
           cardNumberElement.mount('#cardNumberElementContainer');
