@@ -821,7 +821,7 @@
 
     .stripe-card-field-expiry,
     .stripe-card-field-cvc {
-      grid-column: span 3;
+      grid-column: span 6;
     }
 
     .stripe-card-grid .shipping-helper-copy {
