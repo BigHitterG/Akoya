@@ -593,28 +593,37 @@
             fontWeight: '500',
             color: '#12283a',
             caretColor: '#12283a',
+            iconColor: '#35536a',
             fontSmoothing: 'antialiased',
             '::placeholder': { color: '#6b7c93' },
-            ':-webkit-autofill': { color: '#12283a' }
+            '::selection': { backgroundColor: '#d7e5ff' },
+            ':-webkit-autofill': {
+              color: '#12283a'
+            }
           };
+          var stripeCardStyle = {
+            base: stripeCardBaseStyle,
+            empty: {
+              color: '#12283a'
+            },
+            complete: {
+              color: '#12283a'
+            },
+            invalid: {
+              color: '#b42318',
+              iconColor: '#b42318'
+            }
+          };
+
           var elements = stripe.elements();
           cardNumberElement = elements.create('cardNumber', {
-            style: {
-              base: stripeCardBaseStyle,
-              invalid: { color: '#b42318' }
-            }
+            style: stripeCardStyle
           });
           cardExpiryElement = elements.create('cardExpiry', {
-            style: {
-              base: stripeCardBaseStyle,
-              invalid: { color: '#b42318' }
-            }
+            style: stripeCardStyle
           });
           cardCvcElement = elements.create('cardCvc', {
-            style: {
-              base: stripeCardBaseStyle,
-              invalid: { color: '#b42318' }
-            }
+            style: stripeCardStyle
           });
           cardNumberElement.mount('#cardNumberElementContainer');
           cardExpiryElement.mount('#cardExpiryElementContainer');
@@ -638,8 +647,30 @@
           bindCardContainerFocus(cardExpiryContainer, cardExpiryElement);
           bindCardContainerFocus(cardCvcContainer, cardCvcElement);
 
+          cardNumberElement.on('focus', function () { cardNumberContainer.classList.add('is-focus'); });
+          cardNumberElement.on('blur', function () { cardNumberContainer.classList.remove('is-focus'); });
+          cardExpiryElement.on('focus', function () { cardExpiryContainer.classList.add('is-focus'); });
+          cardExpiryElement.on('blur', function () { cardExpiryContainer.classList.remove('is-focus'); });
+          cardCvcElement.on('focus', function () { cardCvcContainer.classList.add('is-focus'); });
+          cardCvcElement.on('blur', function () { cardCvcContainer.classList.remove('is-focus'); });
+
           function onCardElementChange(fieldName, event) {
             cardState[fieldName] = !!event.complete;
+
+            var container = null;
+            if (fieldName === 'numberComplete') {
+              container = cardNumberContainer;
+            } else if (fieldName === 'expiryComplete') {
+              container = cardExpiryContainer;
+            } else if (fieldName === 'cvcComplete') {
+              container = cardCvcContainer;
+            }
+
+            if (container) {
+              container.classList.toggle('is-complete', !!event.complete);
+              container.classList.toggle('is-invalid', !!event.error);
+            }
+
             if (event.error) {
               submissionError.textContent = event.error.message;
               submissionError.style.display = 'block';
