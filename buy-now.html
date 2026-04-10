@@ -764,7 +764,16 @@
 
           var responseBody = await response.json().catch(function () { return {}; });
           if (!response.ok || !responseBody.success) {
-            throw new Error(responseBody && responseBody.error ? responseBody.error : 'Unable to process payment right now.');
+            var serverErrorMessage = '';
+            if (responseBody && typeof responseBody.details === 'string' && responseBody.details.trim()) {
+              serverErrorMessage = responseBody.details.trim();
+            } else if (responseBody && typeof responseBody.error === 'string' && responseBody.error.trim()) {
+              serverErrorMessage = responseBody.error.trim();
+            } else {
+              serverErrorMessage = 'Unable to process payment right now.';
+            }
+
+            throw new Error(serverErrorMessage);
           }
 
           if (responseBody.requiresAction && responseBody.clientSecret) {
