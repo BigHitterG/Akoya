@@ -120,18 +120,10 @@
 
             <fieldset class="shipping-fieldset">
               <legend>Card Details*</legend>
-              <div class="stripe-card-grid">
+              <div class="stripe-card-grid stripe-card-grid-inline">
                 <div class="stripe-card-field stripe-card-field-number">
-                  <span>Card Number</span>
-                  <div id="cardNumberElementContainer" class="card-element-container"></div>
-                </div>
-                <div class="stripe-card-field stripe-card-field-expiry">
-                  <span>Expiration</span>
-                  <div id="cardExpiryElementContainer" class="card-element-container"></div>
-                </div>
-                <div class="stripe-card-field stripe-card-field-cvc">
-                  <span>CVC</span>
-                  <div id="cardCvcElementContainer" class="card-element-container"></div>
+                  <span>Card Information</span>
+                  <div id="cardElementContainer" class="card-element-container"></div>
                 </div>
                 <p id="cardElementHint" class="shipping-helper-copy">Card details are encrypted by Stripe and never touch our servers.</p>
               </div>
@@ -175,16 +167,9 @@
       var unitsPerBox = 15;
       var pricePerUnit = 12;
       var stripe = null;
-      var cardNumberElement = null;
-      var cardExpiryElement = null;
-      var cardCvcElement = null;
+      var cardElement = null;
       var cardState = {
         complete: false
-      };
-      var cardFieldState = {
-        cardNumber: false,
-        cardExpiry: false,
-        cardCvc: false
       };
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
@@ -612,27 +597,13 @@
           };
 
           var elements = stripe.elements();
-          cardNumberElement = elements.create('cardNumber', {
-            style: stripeCardStyle
+          cardElement = elements.create('card', {
+            style: stripeCardStyle,
+            hidePostalCode: true
           });
-          cardExpiryElement = elements.create('cardExpiry', {
-            style: stripeCardStyle
-          });
-          cardCvcElement = elements.create('cardCvc', {
-            style: stripeCardStyle
-          });
-          cardNumberElement.mount('#cardNumberElementContainer');
-          cardExpiryElement.mount('#cardExpiryElementContainer');
-          cardCvcElement.mount('#cardCvcElementContainer');
-          cardFieldState.cardNumber = false;
-          cardFieldState.cardExpiry = false;
-          cardFieldState.cardCvc = false;
-
-          var containersByType = {
-            cardNumber: document.getElementById('cardNumberElementContainer'),
-            cardExpiry: document.getElementById('cardExpiryElementContainer'),
-            cardCvc: document.getElementById('cardCvcElementContainer')
-          };
+          cardElement.mount('#cardElementContainer');
+          cardState.complete = false;
+          var cardContainer = document.getElementById('cardElementContainer');
 
           function bindCardContainerFocus(container, cardElement) {
             if (!container || !cardElement) {
@@ -645,25 +616,14 @@
             });
           }
 
-          bindCardContainerFocus(containersByType.cardNumber, cardNumberElement);
-          bindCardContainerFocus(containersByType.cardExpiry, cardExpiryElement);
-          bindCardContainerFocus(containersByType.cardCvc, cardCvcElement);
-
-          cardNumberElement.on('focus', function () { containersByType.cardNumber.classList.add('is-focus'); });
-          cardNumberElement.on('blur', function () { containersByType.cardNumber.classList.remove('is-focus'); });
-          cardExpiryElement.on('focus', function () { containersByType.cardExpiry.classList.add('is-focus'); });
-          cardExpiryElement.on('blur', function () { containersByType.cardExpiry.classList.remove('is-focus'); });
-          cardCvcElement.on('focus', function () { containersByType.cardCvc.classList.add('is-focus'); });
-          cardCvcElement.on('blur', function () { containersByType.cardCvc.classList.remove('is-focus'); });
+          bindCardContainerFocus(cardContainer, cardElement);
+          cardElement.on('focus', function () { cardContainer.classList.add('is-focus'); });
+          cardElement.on('blur', function () { cardContainer.classList.remove('is-focus'); });
 
           function onCardElementChange(event) {
-            cardState.complete = !!(cardFieldState.cardNumber && cardFieldState.cardExpiry && cardFieldState.cardCvc);
-
-            var container = containersByType[event.elementType];
-            if (container) {
-              container.classList.toggle('is-complete', !!event.complete);
-              container.classList.toggle('is-invalid', !!event.error);
-            }
+            cardState.complete = !!event.complete;
+            cardContainer.classList.toggle('is-complete', !!event.complete);
+            cardContainer.classList.toggle('is-invalid', !!event.error);
 
             if (event.error) {
               submissionError.textContent = event.error.message;
@@ -674,18 +634,7 @@
             }
           }
 
-          cardNumberElement.on('change', function (event) {
-            cardFieldState.cardNumber = !!event.complete;
-            onCardElementChange(event);
-          });
-          cardExpiryElement.on('change', function (event) {
-            cardFieldState.cardExpiry = !!event.complete;
-            onCardElementChange(event);
-          });
-          cardCvcElement.on('change', function (event) {
-            cardFieldState.cardCvc = !!event.complete;
-            onCardElementChange(event);
-          });
+          cardElement.on('change', onCardElementChange);
 
           proceedToPaymentButton.disabled = false;
           proceedToPaymentButton.textContent = 'Buy Now';
@@ -718,7 +667,7 @@
           return;
         }
 
-        if (!stripe || !cardNumberElement || !cardExpiryElement || !cardCvcElement) {
+        if (!stripe || !cardElement) {
           submissionError.textContent = 'Secure card form is still loading. Please wait a moment and try again.';
           submissionError.style.display = 'block';
           return;
@@ -743,7 +692,7 @@
           var shippingInput = getShippingAddressInput();
           var paymentMethodResult = await stripe.createPaymentMethod({
             type: 'card',
-            card: cardNumberElement,
+            card: cardElement,
             billing_details: {
               name: getFieldValue('fullName').trim(),
               email: getFieldValue('email').trim(),
