@@ -809,6 +809,10 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
+    #cardElementHint {
+      grid-column: 1 / -1;
+    }
+
     .stripe-card-field {
       display: grid;
       gap: 8px;
