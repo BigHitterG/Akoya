@@ -126,7 +126,7 @@
                   <div id="cardNumberElementContainer" class="card-element-container"></div>
                 </div>
                 <div class="stripe-card-field stripe-card-field-expiry" role="group" aria-label="Expiration date">
-                  <span>Expiration Date</span>
+                  <span>Expiration (MM / YY)</span>
                   <div id="cardExpiryElementContainer" class="card-element-container"></div>
                 </div>
                 <div class="stripe-card-field stripe-card-field-cvc" role="group" aria-label="Security code">
@@ -588,14 +588,15 @@
 
           var stripeCardBaseStyle = {
             fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-            fontSize: '16px',
-            lineHeight: '22px',
+            fontSize: '17px',
+            lineHeight: '24px',
             fontWeight: '500',
             color: '#12283a',
             caretColor: '#12283a',
             iconColor: '#35536a',
             backgroundColor: '#ffffff',
             WebkitTextFillColor: '#12283a',
+            textAlign: 'left',
             fontSmoothing: 'antialiased',
             '::placeholder': { color: '#6b7c93' },
             '::selection': { backgroundColor: '#d7e5ff' },
@@ -619,13 +620,16 @@
 
           var elements = stripe.elements();
           cardNumberElement = elements.create('cardNumber', {
-            style: stripeCardStyle
+            style: stripeCardStyle,
+            placeholder: '1234 1234 1234 1234'
           });
           cardExpiryElement = elements.create('cardExpiry', {
-            style: stripeCardStyle
+            style: stripeCardStyle,
+            placeholder: 'MM / YY'
           });
           cardCvcElement = elements.create('cardCvc', {
-            style: stripeCardStyle
+            style: stripeCardStyle,
+            placeholder: 'CVC'
           });
           cardNumberElement.mount('#cardNumberElementContainer');
           cardExpiryElement.mount('#cardExpiryElementContainer');
