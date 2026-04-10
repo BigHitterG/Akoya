@@ -40,7 +40,31 @@
           <div class="kicker">Akoya Medical</div>
           <h2>Akoya Eye Shield Order Invoice / PO</h2>
 
+          <a href="buy.html" class="form-back-link" aria-label="Back to buy page">← Back to Buy</a>
+
           <form id="invoiceForm" class="invoice-form" novalidate>
+            <label class="quantity-requested-top">Quantity Requested*
+              <div class="quantity-requested-row">
+                <select id="quantityRequested" name="quantityRequested" required>
+                  <option value="" selected disabled>Select boxes</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
+                <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
+                  <span class="quantity-requested-preview-line1">Select boxes to see total units.</span>
+                  <span class="quantity-requested-preview-line2"></span>
+                </p>
+              </div>
+            </label>
+
             <div class="invoice-grid">
               <label>Full Name*
                 <input type="text" name="fullName" required>
@@ -56,15 +80,6 @@
               </label>
               <label>Phone Number*
                 <input type="tel" name="phone" required>
-              </label>
-              <label>Quantity Requested*
-                <div class="quantity-requested-row">
-                  <input id="quantityRequested" type="number" min="1" step="1" name="quantityRequested" required>
-                  <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
-                    <span class="quantity-requested-preview-line1">Enter boxes to see total units.</span>
-                    <span class="quantity-requested-preview-line2"></span>
-                  </p>
-                </div>
               </label>
             </div>
 
@@ -209,10 +224,10 @@
 
       function updateQuantityPreview() {
         var quantity = Number.parseInt(quantityInput.value, 10);
-        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0;
+        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 10;
 
         if (!hasValidQuantity) {
-          quantityPreviewLine1.textContent = 'Enter boxes to see total units.';
+          quantityPreviewLine1.textContent = 'Select boxes to see total units.';
           quantityPreviewLine2.textContent = '';
           updateInvoicePreviewTotals();
           return;
@@ -228,7 +243,7 @@
 
       function updateInvoicePreviewTotals() {
         var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
-        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0;
+        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 10;
         var goodsTotal = hasValidQuantity ? quantity * unitsPerBox * pricePerUnit : 0;
         var hasShippingEstimate = shippingRateState && Number.isFinite(shippingRateState.cents);
         var shippingTotal = hasShippingEstimate ? shippingRateState.cents / 100 : null;

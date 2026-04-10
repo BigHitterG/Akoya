@@ -708,6 +708,21 @@
       gap: 14px;
     }
 
+    .form-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      color: #23425a;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .form-back-link:hover {
+      text-decoration: underline;
+    }
+
     .invoice-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -722,6 +737,10 @@
       letter-spacing: 0.08em;
       color: #5b6b78;
       font-weight: 700;
+    }
+
+    .quantity-requested-top {
+      width: 100%;
     }
 
     .shipping-fieldset {
