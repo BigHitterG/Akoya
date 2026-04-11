@@ -72,8 +72,8 @@
               <label>Job Title*
                 <input type="text" name="jobTitle" required>
               </label>
-              <label>Hospital / Clinic / Business Name*
-                <input type="text" name="businessName" required>
+              <label>Institution Name*
+                <input type="text" name="institutionName" required>
               </label>
               <label>Email Address*
                 <input type="email" name="email" required>
@@ -191,7 +191,7 @@
       var fields = [
         ['Full Name', 'fullName'],
         ['Job Title', 'jobTitle'],
-        ['Hospital / Clinic / Business Name', 'businessName'],
+        ['Institution Name', 'institutionName'],
         ['Email Address', 'email'],
         ['Phone Number', 'phone'],
         ['Quantity Requested', 'quantityRequested'],
@@ -583,9 +583,9 @@
           shippingState: shippingInput.shippingState,
           shippingPostalCode: shippingInput.shippingPostalCode,
           shippingCountryCode: shippingInput.shippingCountryCode,
-          recipientName: getFieldValue('fullName').trim() || getFieldValue('businessName').trim(),
+          recipientName: getFieldValue('fullName').trim() || getFieldValue('institutionName').trim(),
           recipientPhone: getFieldValue('phone').trim(),
-          recipientCompanyName: getFieldValue('businessName').trim(),
+          recipientCompanyName: getFieldValue('institutionName').trim(),
           serviceType: shippingRateState.serviceType || ''
         };
       }
@@ -986,6 +986,7 @@
           accumulator[name] = getFieldValue(name).trim();
           return accumulator;
         }, {});
+        payload.businessName = payload.institutionName;
         payload.shippingAddress = buildShippingAddressMultiline();
         payload.shippingFeeCents = shippingRateState.cents;
         payload.shippingServiceName = shippingRateState.serviceName;

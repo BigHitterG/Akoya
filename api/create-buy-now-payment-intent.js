@@ -193,6 +193,7 @@ module.exports = async function handler(req, res) {
 
   const requiredFields = [
     'fullName',
+    'institutionName',
     'email',
     'phone',
     'shippingStreet1',
@@ -316,6 +317,7 @@ module.exports = async function handler(req, res) {
     const metadata = {
       flow: 'buy-now-payment-intent',
       fullName: payload.fullName.trim(),
+      institutionName: payload.institutionName.trim(),
       email: payload.email.trim(),
       phone: payload.phone.trim(),
       boxes: String(boxCount),
