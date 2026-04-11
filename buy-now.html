@@ -69,6 +69,9 @@
               <label>Full Name*
                 <input type="text" name="fullName" required>
               </label>
+              <label>Institution Name*
+                <input type="text" name="institutionName" required>
+              </label>
               <label>Email Address*
                 <input type="email" name="email" required>
               </label>
@@ -794,6 +797,7 @@
 
           var payload = {
             fullName: getFieldValue('fullName').trim(),
+            institutionName: getFieldValue('institutionName').trim(),
             email: getFieldValue('email').trim(),
             phone: getFieldValue('phone').trim(),
             quantityRequested: Number.parseInt(getFieldValue('quantityRequested').trim(), 10),

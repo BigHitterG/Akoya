@@ -175,7 +175,6 @@ module.exports = async function handler(req, res) {
   const requiredFields = [
     'fullName',
     'jobTitle',
-    'businessName',
     'email',
     'phone',
     'shippingAddress',
@@ -185,6 +184,11 @@ module.exports = async function handler(req, res) {
   const missingField = requiredFields.find((field) => !required(payload[field]));
   if (missingField) {
     res.status(400).json({ error: `Missing required field: ${missingField}` });
+    return;
+  }
+
+  if (!required(payload.institutionName) && !required(payload.businessName)) {
+    res.status(400).json({ error: 'Missing required field: institutionName' });
     return;
   }
 
@@ -219,11 +223,15 @@ module.exports = async function handler(req, res) {
     ? payload.fedexShipmentError.trim()
     : '';
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
+  const institutionName = required(payload.institutionName)
+    ? payload.institutionName.trim()
+    : (required(payload.businessName) ? payload.businessName.trim() : '');
 
   const metadata = {
     fullName: payload.fullName.trim(),
     jobTitle: payload.jobTitle.trim(),
-    businessName: payload.businessName.trim(),
+    institutionName,
+    businessName: institutionName,
     email: payload.email.trim(),
     phone: payload.phone.trim(),
     shippingAddress: payload.shippingAddress.trim(),
