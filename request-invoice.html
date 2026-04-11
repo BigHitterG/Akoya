@@ -46,7 +46,7 @@
             <label class="quantity-requested-top">Quantity Requested*
               <div class="quantity-requested-row">
                 <select id="quantityRequested" name="quantityRequested" required>
-                  <option value="" selected disabled>Select boxes</option>
+                  <option value="" selected disabled>Select sets</option>
                   <option value="1">1</option>
                   <option value="2">2</option>
                   <option value="3">3</option>
@@ -59,7 +59,7 @@
                   <option value="10">10</option>
                 </select>
                 <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
-                  <span class="quantity-requested-preview-line1">Select boxes to see total units.</span>
+                  <span class="quantity-requested-preview-line1">Select sets to see total units.</span>
                   <span class="quantity-requested-preview-line2"></span>
                 </p>
               </div>
@@ -227,7 +227,7 @@
         var hasValidQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 10;
 
         if (!hasValidQuantity) {
-          quantityPreviewLine1.textContent = 'Select boxes to see total units.';
+          quantityPreviewLine1.textContent = 'Select sets to see total units.';
           quantityPreviewLine2.textContent = '';
           updateInvoicePreviewTotals();
           return;
@@ -235,8 +235,8 @@
 
         var unitCount = quantity * unitsPerBox;
         var preTaxTotal = unitCount * pricePerUnit;
-        var boxLabel = quantity === 1 ? 'box' : 'boxes';
-        quantityPreviewLine1.textContent = quantity + ' ' + boxLabel + ' (' + unitCount + ' units)';
+        var setLabel = quantity === 1 ? 'set' : 'sets';
+        quantityPreviewLine1.textContent = quantity + ' ' + setLabel + ' (' + unitCount + ' units)';
         quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
         updateInvoicePreviewTotals();
       }
@@ -729,7 +729,7 @@
           shippingRateState.serviceName = '';
           shippingRateState.serviceType = '';
           shippingRateState.quoteSignature = '';
-          setShippingRateMessage('<strong>Live shipping quote currently supports 1 box only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
+          setShippingRateMessage('<strong>Live shipping quote currently supports 1 set only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
           return;
         }
 
