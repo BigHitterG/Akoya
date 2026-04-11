@@ -569,6 +569,12 @@
       font-size: 1rem;
     }
 
+    .order-summary strong small {
+      color: #435563;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
     .purchase-note {
       margin-top: 10px;
     }
