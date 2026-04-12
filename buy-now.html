@@ -530,13 +530,6 @@
           return;
         }
 
-        if (quantity !== 1) {
-          resetShippingRateState('unsupported_quantity');
-          setShippingRateMessage('<strong>Live shipping quote currently supports 1 set only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
-          hideShippingOptions();
-          updateInvoicePreviewTotals();
-          return;
-        }
 
         if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
           resetShippingRateState('incomplete');
