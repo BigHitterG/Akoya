@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const { sendCustomerEmail } = require('./lib/customer-email');
+const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
@@ -201,7 +202,16 @@ module.exports = async function handler(req, res) {
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
   const productAmountCents = units * pricePerUnitCents;
-  const shippingFeeCents = parseCents(payload.shippingFeeCents ?? process.env.DEFAULT_SHIPPING_FEE_CENTS) || 0;
+  const parsedPayloadShippingFeeCents = parseCents(payload.shippingFeeCents);
+  const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
+  const envDefaultShippingFeeCents = parseCents(process.env.DEFAULT_SHIPPING_FEE_CENTS);
+  const shippingFeeCents = Number.isFinite(parsedPayloadShippingFeeCents)
+    ? parsedPayloadShippingFeeCents
+    : Number.isFinite(fallbackShippingFeeCents)
+      ? fallbackShippingFeeCents
+      : Number.isFinite(envDefaultShippingFeeCents)
+        ? envDefaultShippingFeeCents
+        : 0;
   const shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
   const shippingServiceType = required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '';
   const trackingNumber = required(payload.trackingNumber)
