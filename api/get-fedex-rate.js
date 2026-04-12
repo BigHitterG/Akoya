@@ -1,5 +1,4 @@
 const { getShippingPackageConfig } = require('./lib/shipping-packages');
-const { getFallbackShippingRateCents, getFallbackRateMetadata } = require('./lib/fallback-shipping-rates');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -197,60 +196,6 @@ async function getFedexAccessToken(baseUrl, clientId, clientSecret) {
   return tokenBody.access_token;
 }
 
-
-function buildFallbackRateResponse({ quantityRequested, shippingPackageConfig, responseDebug, reason, details }) {
-  const shippingFeeCents = getFallbackShippingRateCents(quantityRequested);
-
-  if (!Number.isFinite(shippingFeeCents)) {
-    return {
-      status: 502,
-      body: {
-        error: 'No live FedEx quote and no fallback rate available.',
-        details: details || null,
-        debug: {
-          ...responseDebug,
-          failureReason: reason,
-          fallbackRateUnavailable: true
-        }
-      }
-    };
-  }
-
-  return {
-    status: 200,
-    body: {
-      success: true,
-      quantityRequested,
-      shippingFeeCents,
-      serviceType: 'FALLBACK_TABLE',
-      serviceName: 'Fallback FedEx Ground Estimate',
-      transitTime: null,
-      shippingOptions: [
-        {
-          shippingFeeCents,
-          serviceType: 'FALLBACK_TABLE',
-          serviceName: 'Fallback FedEx Ground Estimate',
-          transitTime: null
-        }
-      ],
-      packageProfile: {
-        quantity: shippingPackageConfig.quantity,
-        packageCount: shippingPackageConfig.packageCount,
-        packages: shippingPackageConfig.packages
-      },
-      fallbackUsed: true,
-      fallbackReason: reason,
-      fallbackDetails: details || null,
-      fallbackMetadata: getFallbackRateMetadata(),
-      debug: {
-        ...responseDebug,
-        failureReason: reason,
-        fallbackRateApplied: shippingFeeCents
-      }
-    }
-  };
-}
-
 function pickLowestRateQuote(rateReplyDetails) {
   const candidates = pickUsableRateQuotes(rateReplyDetails);
   return candidates[0] || null;
@@ -326,15 +271,11 @@ module.exports = async function handler(req, res) {
   ].filter((entry) => !required(entry[1])).map((entry) => entry[0]);
 
   if (missingCoreConfig.length) {
-    const fallbackResponse = buildFallbackRateResponse({
-      quantityRequested,
-      shippingPackageConfig,
-      responseDebug: { missingConfig: missingCoreConfig },
-      reason: 'fedex_core_config_missing',
-      details: `Missing ${missingCoreConfig.join(', ')}.`
+    res.status(500).json({
+      error: 'FedEx rate quote is not configured.',
+      hint: `Missing ${missingCoreConfig.join(', ')}.`,
+      missingConfig: missingCoreConfig
     });
-
-    res.status(fallbackResponse.status).json(fallbackResponse.body);
     return;
   }
 
@@ -352,15 +293,11 @@ module.exports = async function handler(req, res) {
   ].filter((entry) => !required(entry[1])).map((entry) => entry[0]);
 
   if (missingShipperConfig.length) {
-    const fallbackResponse = buildFallbackRateResponse({
-      quantityRequested,
-      shippingPackageConfig,
-      responseDebug: { missingConfig: missingShipperConfig },
-      reason: 'fedex_shipper_config_missing',
-      details: `Set ${missingShipperConfig.join(', ')}.`
+    res.status(500).json({
+      error: 'FedEx shipper origin is not configured.',
+      hint: `Set ${missingShipperConfig.join(', ')}.`,
+      missingConfig: missingShipperConfig
     });
-
-    res.status(fallbackResponse.status).json(fallbackResponse.body);
     return;
   }
 
@@ -453,15 +390,14 @@ module.exports = async function handler(req, res) {
 
     if (!quoteResponse.ok) {
       const fedexMessage = summarizeFedexErrors(quoteBody);
-      const fallbackResponse = buildFallbackRateResponse({
-        quantityRequested,
-        shippingPackageConfig,
-        responseDebug,
-        reason: 'fedex_http_error',
-        details: fedexMessage || `HTTP ${quoteResponse.status}`
+      res.status(502).json({
+        error: 'FedEx rate quote failed.',
+        details: fedexMessage || `HTTP ${quoteResponse.status}`,
+        debug: {
+          ...responseDebug,
+          failureReason: 'fedex_http_error'
+        }
       });
-
-      res.status(fallbackResponse.status).json(fallbackResponse.body);
       return;
     }
 
@@ -473,19 +409,17 @@ module.exports = async function handler(req, res) {
     }).length;
 
     if (!selectedQuote) {
-      const fallbackResponse = buildFallbackRateResponse({
-        quantityRequested,
-        shippingPackageConfig,
-        responseDebug: {
+      res.status(502).json({
+        error: 'FedEx returned no usable rate quote.',
+        details: summarizeFedexErrors(quoteBody) || null,
+        debug: {
           ...responseDebug,
+          failureReason: 'no_usable_quote',
           rateReplyDetailsMissingOrEmpty: !Array.isArray(rateReplyDetails) || !rateReplyDetails.length,
-          filteredOutCandidateCountMissingCharges: filteredOutCount
-        },
-        reason: 'no_usable_quote',
-        details: summarizeFedexErrors(quoteBody) || null
+          filteredOutCandidateCountMissingCharges: filteredOutCount,
+          parsedSelection: null
+        }
       });
-
-      res.status(fallbackResponse.status).json(fallbackResponse.body);
       return;
     }
 
@@ -511,14 +445,13 @@ module.exports = async function handler(req, res) {
       }
     });
   } catch (error) {
-    const fallbackResponse = buildFallbackRateResponse({
-      quantityRequested,
-      shippingPackageConfig,
-      responseDebug,
-      reason: 'handler_exception',
-      details: error && error.message ? error.message : 'Unknown error.'
+    res.status(500).json({
+      error: 'Unable to fetch live shipping rate.',
+      details: error && error.message ? error.message : 'Unknown error.',
+      debug: {
+        ...responseDebug,
+        failureReason: 'handler_exception'
+      }
     });
-
-    res.status(fallbackResponse.status).json(fallbackResponse.body);
   }
 };
