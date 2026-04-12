@@ -1,3 +1,5 @@
+const { getShippingPackageConfig } = require('./lib/shipping-packages');
+
 function parseJson(req) {
   if (typeof req.body === 'string') {
     try {
@@ -218,10 +220,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (quantityRequested !== 1) {
+  const shippingPackageConfig = getShippingPackageConfig(quantityRequested);
+  if (!shippingPackageConfig) {
     res.status(400).json({
-      error: 'FedEx shipment creation currently supports exactly 1 box.',
-      hint: 'Set quantityRequested to 1 while packaging profiles are still in beta.'
+      error: 'quantityRequested is not supported for FedEx shipment creation.',
+      hint: 'Choose a quantity from 1 through 12.'
     });
     return;
   }
@@ -277,10 +280,6 @@ module.exports = async function handler(req, res) {
   }
 
   const baseUrl = (process.env.FEDEX_API_BASE_URL || 'https://apis-sandbox.fedex.com').replace(/\/+$/, '');
-  const packageWeightLbs = Number.parseFloat(process.env.FEDEX_RATE_BOX1_WEIGHT_LB || '1.0');
-  const packageLengthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_LENGTH_IN || '10', 10);
-  const packageWidthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_WIDTH_IN || '8', 10);
-  const packageHeightIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_HEIGHT_IN || '4', 10);
   const configuredDefaultServiceType = parseServiceType(process.env.FEDEX_DEFAULT_SERVICE_TYPE) || 'FEDEX_GROUND';
   const resolvedServiceType = parseServiceType(payload.serviceType) || configuredDefaultServiceType;
 
@@ -302,6 +301,19 @@ module.exports = async function handler(req, res) {
 
   try {
     const accessToken = await getFedexAccessToken(baseUrl, clientId, clientSecret);
+    const requestedPackageLineItems = shippingPackageConfig.packages.map((pkg) => ({
+      groupPackageCount: 1,
+      weight: {
+        units: pkg.weight.units,
+        value: pkg.weight.value
+      },
+      dimensions: {
+        length: pkg.dimensions.length,
+        width: pkg.dimensions.width,
+        height: pkg.dimensions.height,
+        units: pkg.dimensions.units
+      }
+    }));
     const shipmentRequestBody = {
       labelResponseOptions: 'URL_ONLY',
       accountNumber: {
@@ -350,21 +362,7 @@ module.exports = async function handler(req, res) {
             address: recipientAddress
           }
         ],
-        requestedPackageLineItems: [
-          {
-            groupPackageCount: 1,
-            weight: {
-              units: 'LB',
-              value: packageWeightLbs
-            },
-            dimensions: {
-              length: packageLengthIn,
-              width: packageWidthIn,
-              height: packageHeightIn,
-              units: 'IN'
-            }
-          }
-        ]
+        requestedPackageLineItems
       }
     };
 
