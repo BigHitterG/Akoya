@@ -1,3 +1,5 @@
+const { getShippingPackageConfig } = require('./lib/shipping-packages');
+
 function parseJson(req) {
   if (typeof req.body === 'string') {
     try {
@@ -240,10 +242,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (quantityRequested !== 1) {
+  const shippingPackageConfig = getShippingPackageConfig(quantityRequested);
+  if (!shippingPackageConfig) {
     res.status(400).json({
-      error: 'Live shipping quote currently supports exactly 1 box.',
-      hint: 'Set quantityRequested to 1 while placeholder packaging is active.'
+      error: 'quantityRequested is not supported for live shipping quotes.',
+      hint: 'Choose a quantity from 1 through 12.'
     });
     return;
   }
@@ -319,13 +322,21 @@ module.exports = async function handler(req, res) {
     }
   };
 
-  const packageWeightLbs = Number.parseFloat(process.env.FEDEX_RATE_BOX1_WEIGHT_LB || '1.0');
-  const packageLengthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_LENGTH_IN || '10', 10);
-  const packageWidthIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_WIDTH_IN || '8', 10);
-  const packageHeightIn = Number.parseInt(process.env.FEDEX_RATE_BOX1_HEIGHT_IN || '4', 10);
-
   try {
     const accessToken = await getFedexAccessToken(baseUrl, clientId, clientSecret);
+    const requestedPackageLineItems = shippingPackageConfig.packages.map((pkg) => ({
+      groupPackageCount: 1,
+      weight: {
+        units: pkg.weight.units,
+        value: pkg.weight.value
+      },
+      dimensions: {
+        length: pkg.dimensions.length,
+        width: pkg.dimensions.width,
+        height: pkg.dimensions.height,
+        units: pkg.dimensions.units
+      }
+    }));
 
     const rateRequestBody = {
       accountNumber: {
@@ -347,21 +358,7 @@ module.exports = async function handler(req, res) {
         recipient: {
           address: recipientAddress
         },
-        requestedPackageLineItems: [
-          {
-            groupPackageCount: 1,
-            weight: {
-              units: 'LB',
-              value: packageWeightLbs
-            },
-            dimensions: {
-              length: packageLengthIn,
-              width: packageWidthIn,
-              height: packageHeightIn,
-              units: 'IN'
-            }
-          }
-        ]
+        requestedPackageLineItems
       }
     };
     responseDebug.fedexRateRequestBody = rateRequestBody;
@@ -435,10 +432,9 @@ module.exports = async function handler(req, res) {
       transitTime: selectedQuote.transitTime,
       shippingOptions: parsedQuotes,
       packageProfile: {
-        weightLb: packageWeightLbs,
-        lengthIn: packageLengthIn,
-        widthIn: packageWidthIn,
-        heightIn: packageHeightIn
+        quantity: shippingPackageConfig.quantity,
+        packageCount: shippingPackageConfig.packageCount,
+        packages: shippingPackageConfig.packages
       },
       debug: {
         ...responseDebug,
