@@ -596,9 +596,6 @@
         var flow = shipmentOptions.flow || 'request-invoice-submit';
         var endpoint = '/api/create-fedex-shipment';
 
-        if (!Number.isFinite(payload.quantityRequested) || payload.quantityRequested !== 1) {
-          throw new Error('FedEx shipment creation currently supports quantity = 1 only.');
-        }
 
         setFedexShipmentDebug({
           flow: flow,
@@ -723,15 +720,6 @@
           return;
         }
 
-        if (quantityValue !== 1) {
-          shippingRateState.status = 'unsupported_quantity';
-          shippingRateState.cents = null;
-          shippingRateState.serviceName = '';
-          shippingRateState.serviceType = '';
-          shippingRateState.quoteSignature = '';
-          setShippingRateMessage('<strong>Live shipping quote currently supports 1 set only.</strong> Please set quantity to 1 for this beta flow.', 'is-error');
-          return;
-        }
 
         if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
           shippingRateState.status = 'incomplete';
