@@ -88,6 +88,18 @@ FedEx integration needs two config groups:
 
 If you only set `FEDEX_CLIENT_ID` + `FEDEX_CLIENT_SECRET`, rate quotes will fail because `FEDEX_ACCOUNT_NUMBER` and shipper-origin fields are still missing.
 
+### Final shipping fallback rates (editable in repo)
+
+Final fallback flat-rate shipping values are stored in:
+
+- `api/lib/shipping-packages.js` → `FINAL_FALLBACK_SHIPPING_RATE_CENTS_BY_QUANTITY`
+
+This table is used for quantities `1` through `10` when:
+1. live FedEx shipment creation fails, and
+2. live FedEx quote is unavailable.
+
+Both order flows (`request-invoice` and `buy-now`) use this same fallback table so pricing stays consistent.
+
 
 ## Local development
 

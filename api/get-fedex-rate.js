@@ -1,4 +1,4 @@
-const { getShippingPackageConfig } = require('./lib/shipping-packages');
+const { getShippingPackageConfig, getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -224,6 +224,61 @@ function pickUsableRateQuotes(rateReplyDetails) {
     .sort((a, b) => a.shippingFeeCents - b.shippingFeeCents);
 }
 
+function createFallbackQuote(quantityRequested) {
+  const fallbackFeeCents = getFinalFallbackShippingFeeCents(quantityRequested);
+  if (!Number.isFinite(fallbackFeeCents)) {
+    return null;
+  }
+
+  return {
+    shippingFeeCents: fallbackFeeCents,
+    serviceType: 'FEDEX_GROUND',
+    serviceName: 'FedEx Ground (Fallback Flat Rate)',
+    transitTime: null
+  };
+}
+
+function respondWithFallback({
+  res,
+  quantityRequested,
+  shippingPackageConfig,
+  error,
+  details,
+  debug
+}) {
+  const fallbackQuote = createFallbackQuote(quantityRequested);
+  if (!fallbackQuote) {
+    res.status(502).json({
+      error,
+      details: details || 'No fallback shipping rate configured for this quantity.',
+      debug
+    });
+    return true;
+  }
+
+  res.status(200).json({
+    success: true,
+    quantityRequested,
+    shippingFeeCents: fallbackQuote.shippingFeeCents,
+    serviceType: fallbackQuote.serviceType,
+    serviceName: fallbackQuote.serviceName,
+    transitTime: fallbackQuote.transitTime,
+    shippingOptions: [fallbackQuote],
+    fallbackUsed: true,
+    fallbackReason: error,
+    packageProfile: {
+      quantity: shippingPackageConfig.quantity,
+      packageCount: shippingPackageConfig.packageCount,
+      packages: shippingPackageConfig.packages
+    },
+    debug: {
+      ...(debug || {}),
+      fallbackUsed: true
+    }
+  });
+  return true;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -271,10 +326,16 @@ module.exports = async function handler(req, res) {
   ].filter((entry) => !required(entry[1])).map((entry) => entry[0]);
 
   if (missingCoreConfig.length) {
-    res.status(500).json({
+    respondWithFallback({
+      res,
+      quantityRequested,
+      shippingPackageConfig,
       error: 'FedEx rate quote is not configured.',
-      hint: `Missing ${missingCoreConfig.join(', ')}.`,
-      missingConfig: missingCoreConfig
+      details: `Missing ${missingCoreConfig.join(', ')}.`,
+      debug: {
+        missingConfig: missingCoreConfig,
+        failureReason: 'missing_fedex_core_config'
+      }
     });
     return;
   }
@@ -293,10 +354,16 @@ module.exports = async function handler(req, res) {
   ].filter((entry) => !required(entry[1])).map((entry) => entry[0]);
 
   if (missingShipperConfig.length) {
-    res.status(500).json({
+    respondWithFallback({
+      res,
+      quantityRequested,
+      shippingPackageConfig,
       error: 'FedEx shipper origin is not configured.',
-      hint: `Set ${missingShipperConfig.join(', ')}.`,
-      missingConfig: missingShipperConfig
+      details: `Set ${missingShipperConfig.join(', ')}.`,
+      debug: {
+        missingConfig: missingShipperConfig,
+        failureReason: 'missing_fedex_shipper_config'
+      }
     });
     return;
   }
@@ -390,7 +457,10 @@ module.exports = async function handler(req, res) {
 
     if (!quoteResponse.ok) {
       const fedexMessage = summarizeFedexErrors(quoteBody);
-      res.status(502).json({
+      respondWithFallback({
+        res,
+        quantityRequested,
+        shippingPackageConfig,
         error: 'FedEx rate quote failed.',
         details: fedexMessage || `HTTP ${quoteResponse.status}`,
         debug: {
@@ -409,7 +479,10 @@ module.exports = async function handler(req, res) {
     }).length;
 
     if (!selectedQuote) {
-      res.status(502).json({
+      respondWithFallback({
+        res,
+        quantityRequested,
+        shippingPackageConfig,
         error: 'FedEx returned no usable rate quote.',
         details: summarizeFedexErrors(quoteBody) || null,
         debug: {
@@ -431,6 +504,7 @@ module.exports = async function handler(req, res) {
       serviceName: selectedQuote.serviceName,
       transitTime: selectedQuote.transitTime,
       shippingOptions: parsedQuotes,
+      fallbackUsed: false,
       packageProfile: {
         quantity: shippingPackageConfig.quantity,
         packageCount: shippingPackageConfig.packageCount,
@@ -445,7 +519,10 @@ module.exports = async function handler(req, res) {
       }
     });
   } catch (error) {
-    res.status(500).json({
+    respondWithFallback({
+      res,
+      quantityRequested,
+      shippingPackageConfig,
       error: 'Unable to fetch live shipping rate.',
       details: error && error.message ? error.message : 'Unknown error.',
       debug: {

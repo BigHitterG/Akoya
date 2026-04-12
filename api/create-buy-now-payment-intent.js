@@ -1,6 +1,8 @@
 const Stripe = require('stripe');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
+const getFedexRateHandler = require('./get-fedex-rate');
 const { sendCustomerEmail } = require('./lib/customer-email');
+const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
@@ -96,6 +98,48 @@ async function createFedexShipment(payload) {
   return {
     success: true,
     shipment: responseBody
+  };
+}
+
+async function createFedexRateQuote(payload) {
+  const quotePayload = {
+    quantityRequested: Number.parseInt(payload.quantityRequested, 10),
+    shippingStreetLines: [payload.shippingStreet1, payload.shippingStreet2].filter((line) => required(line)),
+    shippingCity: payload.shippingCity.trim(),
+    shippingState: payload.shippingState.trim().toUpperCase(),
+    shippingPostalCode: payload.shippingPostalCode.trim(),
+    shippingCountryCode: normalizeCountryCode(payload.shippingCountryCode),
+    flow: 'buy-now-submit-fallback-quote'
+  };
+
+  let responseStatus = 500;
+  let responseBody = null;
+
+  await getFedexRateHandler(
+    { method: 'POST', body: quotePayload },
+    {
+      status(code) {
+        responseStatus = code;
+        return this;
+      },
+      json(body) {
+        responseBody = body;
+        return this;
+      }
+    }
+  );
+
+  if (responseStatus < 200 || responseStatus > 299 || !responseBody?.success) {
+    return {
+      success: false,
+      status: responseStatus,
+      body: responseBody
+    };
+  }
+
+  return {
+    success: true,
+    quote: responseBody
   };
 }
 
@@ -262,6 +306,27 @@ module.exports = async function handler(req, res) {
         shipmentResult.body?.details ||
         shipmentResult.body?.error ||
         `FedEx shipment request failed with status ${shipmentResult.status}.`;
+
+      const quoteResult = await createFedexRateQuote(payload);
+      if (quoteResult.success) {
+        const parsedQuoteShippingFeeCents = parseCents(quoteResult.quote.shippingFeeCents);
+        if (Number.isFinite(parsedQuoteShippingFeeCents)) {
+          actualShippingFeeCents = parsedQuoteShippingFeeCents;
+          shippingServiceName = quoteResult.quote.serviceName || shippingServiceName || 'FedEx Ground (Fallback Flat Rate)';
+          shippingServiceType = quoteResult.quote.serviceType || shippingServiceType || 'FEDEX_GROUND';
+          fedexShipmentStatus = quoteResult.quote.fallbackUsed
+            ? 'label_not_created_final_flat_rate_fallback'
+            : 'label_not_created_live_quote';
+        }
+      } else {
+        const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
+        if (Number.isFinite(fallbackShippingFeeCents)) {
+          actualShippingFeeCents = fallbackShippingFeeCents;
+          shippingServiceName = 'FedEx Ground (Fallback Flat Rate)';
+          shippingServiceType = 'FEDEX_GROUND';
+          fedexShipmentStatus = 'label_not_created_final_flat_rate_fallback';
+        }
+      }
     }
 
     const customer = await stripe.customers.create({

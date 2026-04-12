@@ -1,11 +1,29 @@
 /**
  * Shipping package specifications used for FedEx live rating requests.
  *
- * - This file is the source of truth for package specs sent to FedEx Rates API.
+ * - This file is the source of truth for package specs sent to FedEx APIs.
  * - Dimensions are in inches (IN).
  * - Weight is in pounds (LB).
  * - Quantities 1 through 12 are currently mapped to a single package each.
+ *
+ * FINAL FALLBACK SHIPPING RATES (FedEx Ground flat-rate fallback):
+ * - Used when live shipment creation fails, then live quote also fails.
+ * - Kept in-repo so non-engineering teams can update values safely.
+ * - Values are in cents.
  */
+
+const FINAL_FALLBACK_SHIPPING_RATE_CENTS_BY_QUANTITY = {
+  1: 2071,
+  2: 2507,
+  3: 3264,
+  4: 4052,
+  5: 5652,
+  6: 5652,
+  7: 7053,
+  8: 7053,
+  9: 13361,
+  10: 13361
+};
 
 const SHIPPING_PACKAGE_CONFIGS = [
   {
@@ -134,7 +152,19 @@ function getShippingPackageConfig(quantity) {
   return SHIPPING_PACKAGE_CONFIGS.find((config) => config.quantity === quantity) || null;
 }
 
+function getFinalFallbackShippingFeeCents(quantity) {
+  if (!Number.isFinite(quantity)) {
+    return null;
+  }
+
+  return Number.isFinite(FINAL_FALLBACK_SHIPPING_RATE_CENTS_BY_QUANTITY[quantity])
+    ? FINAL_FALLBACK_SHIPPING_RATE_CENTS_BY_QUANTITY[quantity]
+    : null;
+}
+
 module.exports = {
+  FINAL_FALLBACK_SHIPPING_RATE_CENTS_BY_QUANTITY,
   SHIPPING_PACKAGE_CONFIGS,
-  getShippingPackageConfig
+  getShippingPackageConfig,
+  getFinalFallbackShippingFeeCents
 };
