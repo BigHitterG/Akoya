@@ -139,7 +139,7 @@ FEDEX_FALLBACK_RATE_TABLE_JSON={"1":20.71,"2":25.07,"3":32.64,"4":40.52,"5":56.5
 
 ### Scheduled fallback report + email
 
-Use `GET` or `POST /api/refresh-fallback-shipping-rates` in a scheduler (for example, Vercel Cron) to generate a fallback-rate report and optionally email it.
+Use `GET /api/get-fedex-rate?action=refresh-fallback-rates` in a scheduler (for example, Vercel Cron) to generate a fallback-rate report and optionally email it.
 
 Optional environment variables:
 
@@ -150,6 +150,8 @@ FALLBACK_RATE_REPORT_FROM=orders@yourdomain.com
 ```
 
 You can pass the refresh token either as `Authorization: Bearer <token>` or `x-refresh-token`.
+
+This endpoint reports the currently configured fallback table. To automatically refresh the actual values, run a separate job that computes fresh averages and updates `FEDEX_FALLBACK_RATE_TABLE_JSON` in your environment store.
 
 ### Suggested refresh cadence
 

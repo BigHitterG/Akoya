@@ -1,4 +1,4 @@
-const { getFallbackRateTableUsd, getFallbackRateMetadata } = require('./lib/fallback-shipping-rates');
+const { getFallbackRateTableUsd, getFallbackRateMetadata } = require('./fallback-shipping-rates');
 
 function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -16,6 +16,24 @@ function getAuthToken(req) {
   }
 
   return '';
+}
+
+function authorizeRefreshRequest(req) {
+  const expectedToken = process.env.FALLBACK_RATE_REFRESH_TOKEN;
+  if (!required(expectedToken)) {
+    return { ok: true };
+  }
+
+  const providedToken = getAuthToken(req);
+  if (providedToken !== expectedToken.trim()) {
+    return {
+      ok: false,
+      status: 401,
+      body: { error: 'Unauthorized.' }
+    };
+  }
+
+  return { ok: true };
 }
 
 async function sendRefreshSummaryEmail({ toEmail, fromEmail, subject, text }) {
@@ -61,21 +79,7 @@ async function sendRefreshSummaryEmail({ toEmail, fromEmail, subject, text }) {
   }
 }
 
-module.exports = async function handler(req, res) {
-  if (!['GET', 'POST'].includes(req.method)) {
-    res.status(405).json({ error: 'Method not allowed.' });
-    return;
-  }
-
-  const expectedToken = process.env.FALLBACK_RATE_REFRESH_TOKEN;
-  if (required(expectedToken)) {
-    const providedToken = getAuthToken(req);
-    if (providedToken !== expectedToken.trim()) {
-      res.status(401).json({ error: 'Unauthorized.' });
-      return;
-    }
-  }
-
+async function buildFallbackRefreshReportResponse() {
   const table = getFallbackRateTableUsd();
   const metadata = getFallbackRateMetadata();
   const generatedAtIso = new Date().toISOString();
@@ -109,11 +113,19 @@ module.exports = async function handler(req, res) {
     text: reportLines.join('\n')
   });
 
-  res.status(200).json({
-    success: true,
-    generatedAt: generatedAtIso,
-    fallbackRateTable: sortedRows,
-    metadata,
-    email: emailResult
-  });
+  return {
+    status: 200,
+    body: {
+      success: true,
+      generatedAt: generatedAtIso,
+      fallbackRateTable: sortedRows,
+      metadata,
+      email: emailResult
+    }
+  };
+}
+
+module.exports = {
+  authorizeRefreshRequest,
+  buildFallbackRefreshReportResponse
 };

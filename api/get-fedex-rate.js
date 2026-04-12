@@ -1,5 +1,6 @@
 const { getShippingPackageConfig } = require('./lib/shipping-packages');
 const { getFallbackShippingRateCents, getFallbackRateMetadata } = require('./lib/fallback-shipping-rates');
+const { authorizeRefreshRequest, buildFallbackRefreshReportResponse } = require('./lib/fallback-rate-refresh');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -280,6 +281,24 @@ function pickUsableRateQuotes(rateReplyDetails) {
 }
 
 module.exports = async function handler(req, res) {
+  if (req.method === 'GET') {
+    const action = typeof req.query?.action === 'string' ? req.query.action.trim() : '';
+    if (action !== 'refresh-fallback-rates') {
+      res.status(405).json({ error: 'Method not allowed.' });
+      return;
+    }
+
+    const authResult = authorizeRefreshRequest(req);
+    if (!authResult.ok) {
+      res.status(authResult.status).json(authResult.body);
+      return;
+    }
+
+    const refreshResponse = await buildFallbackRefreshReportResponse();
+    res.status(refreshResponse.status).json(refreshResponse.body);
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
     return;
