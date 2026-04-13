@@ -69,7 +69,7 @@ async function calculateStripeTax(stripe, params) {
       },
       {
         amount: params.shippingAmountCents,
-        reference: 'shipping'
+        reference: 'shipping_fee'
       }
     ]
   });
