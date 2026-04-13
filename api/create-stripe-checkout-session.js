@@ -51,6 +51,18 @@ function getBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
+function getStripeCustomerDisplayName(payload) {
+  if (required(payload.institutionName)) {
+    return payload.institutionName.trim();
+  }
+
+  if (required(payload.businessName)) {
+    return payload.businessName.trim();
+  }
+
+  return payload.fullName.trim();
+}
+
 function buildInternalApiHeaders(req) {
   const headers = {
     'Content-Type': 'application/json'
@@ -229,7 +241,7 @@ module.exports = async function handler(req, res) {
 
     const customer = await stripe.customers.create({
       email: payload.email.trim(),
-      name: payload.fullName.trim(),
+      name: getStripeCustomerDisplayName(payload),
       phone: payload.phone.trim(),
       address: {
         line1: payload.shippingStreet1.trim(),
