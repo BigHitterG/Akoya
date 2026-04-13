@@ -91,6 +91,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const buyPageQuantitySelect = document.getElementById('buyPageQuantityRequested');
+  const buyPageQuantityPreview = document.getElementById('buyPageQuantityPreview');
+  const buyPageCheckoutLink = document.getElementById('buyPageCheckoutLink');
+
+  if (buyPageQuantitySelect && buyPageQuantityPreview && buyPageCheckoutLink) {
+    const unitsPerBox = 15;
+    const pricePerBox = 180;
+
+    const renderBuyPageQuantityPreview = () => {
+      const quantity = Number.parseInt(buyPageQuantitySelect.value, 10);
+      const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+      const unitCount = safeQuantity * unitsPerBox;
+      const totalPrice = safeQuantity * pricePerBox;
+      const setLabel = safeQuantity === 1 ? 'set' : 'sets';
+      buyPageQuantityPreview.textContent = `${safeQuantity} ${setLabel} (${unitCount} units) · $${totalPrice.toFixed(2)} pre-tax`;
+      buyPageCheckoutLink.href = `buy-now.html?quantity=${safeQuantity}`;
+    };
+
+    buyPageQuantitySelect.addEventListener('change', renderBuyPageQuantityPreview);
+    renderBuyPageQuantityPreview();
+  }
+
   const slides = Array.from(document.querySelectorAll('.carousel-slide'));
   const dots = Array.from(document.querySelectorAll('.carousel-dot'));
   const playPauseButton = document.getElementById('carouselPlayPause');

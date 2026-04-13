@@ -579,6 +579,44 @@
       margin-top: 10px;
     }
 
+    .buy-quantity-label {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+      color: #5b6b78;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .buy-quantity-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .buy-quantity-row select {
+      border: 1px solid #c9d6e1;
+      border-radius: 14px;
+      font-size: 1rem;
+      color: #12283a;
+      padding: 14px;
+      font-family: inherit;
+      font-weight: 500;
+      background: #ffffff;
+    }
+
+    .buy-quantity-preview {
+      color: #2a4a63;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: normal;
+      text-transform: none;
+      white-space: nowrap;
+    }
+
     .justified-copy {
       text-align: justify;
       text-justify: inter-word;
@@ -747,6 +785,35 @@
 
     .quantity-requested-top {
       width: 100%;
+    }
+
+    .checkout-quantity-banner {
+      border: 1px solid #d2e1ec;
+      border-radius: 16px;
+      padding: 14px;
+      background: #f4f9fd;
+      display: grid;
+      gap: 6px;
+    }
+
+    .checkout-quantity-title {
+      color: #5b6b78;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .checkout-quantity-line1 {
+      color: #102435;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .checkout-quantity-line2 {
+      color: #2a4a63;
+      font-size: 1rem;
+      font-weight: 600;
     }
 
     .shipping-fieldset {
@@ -1218,6 +1285,15 @@
       }
 
       .quantity-requested-preview {
+        white-space: normal;
+      }
+
+      .buy-quantity-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .buy-quantity-preview {
         white-space: normal;
       }
 
