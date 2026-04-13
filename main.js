@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const unitCount = safeQuantity * unitsPerBox;
       const totalPrice = safeQuantity * pricePerBox;
       const setLabel = safeQuantity === 1 ? 'set' : 'sets';
-      buyPageQuantityPreview.textContent = `${safeQuantity} ${setLabel} (${unitCount} units) · $${totalPrice.toFixed(2)} pre-tax`;
+      buyPageQuantityPreview.textContent = `${safeQuantity} ${setLabel} (${unitCount} units) · $${totalPrice.toFixed(2)}`;
       buyPageCheckoutLink.href = `buy-now.html?quantity=${safeQuantity}`;
     };
 
