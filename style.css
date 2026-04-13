@@ -749,13 +749,6 @@
       width: 100%;
     }
 
-    .buy-now-summary-top {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
-      align-items: start;
-    }
-
     .shipping-fieldset {
       border: 1px solid #c9d6e1;
       border-radius: 16px;
@@ -923,6 +916,60 @@
     .invoice-form .btn-secondary:hover {
       background: #e2edf4;
       transform: translateY(-1px);
+    }
+
+    .checkout-mode-selector {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .checkout-mode-button {
+      border: 1px solid #c9d6e1;
+      border-radius: 12px;
+      background: #ffffff;
+      color: #123149;
+      min-height: 52px;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .checkout-mode-button:hover {
+      border-color: #97adc0;
+      background: #f6fafd;
+    }
+
+    .checkout-mode-button.is-selected {
+      border-color: #16354b;
+      background: #ecf4fa;
+    }
+
+    .checkout-mode-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid #9bb0c2;
+      color: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      line-height: 1;
+    }
+
+    .checkout-mode-button.is-selected .checkout-mode-check {
+      border-color: #16354b;
+      color: #16354b;
+      background: #ffffff;
     }
 
     .shipping-validation-message {
@@ -1161,7 +1208,7 @@
         grid-template-columns: 1fr;
       }
 
-      .buy-now-summary-top {
+      .checkout-mode-selector {
         grid-template-columns: 1fr;
       }
 
