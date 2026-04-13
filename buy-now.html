@@ -140,7 +140,7 @@
             <div class="checkout-mode-selector" role="group" aria-label="Checkout method">
               <button type="button" class="checkout-mode-button is-selected" id="buyNowModeButton" aria-pressed="true">
                 <span class="checkout-mode-check" aria-hidden="true">✓</span>
-                <span>Buy now</span>
+                <span>Buy</span>
               </button>
               <button type="button" class="checkout-mode-button" id="invoiceModeButton" aria-pressed="false">
                 <span class="checkout-mode-check" aria-hidden="true">✓</span>
@@ -170,7 +170,7 @@
             <p id="checkoutSubmissionError" class="body-copy" style="color: #b42318; display: none; margin-top: 8px;"></p>
 
             <div class="cta-row">
-              <button type="submit" class="btn btn-primary" id="proceedToPaymentButton">Buy Now</button>
+              <button type="submit" class="btn btn-primary" id="proceedToPaymentButton">Buy</button>
             </div>
           </form>
         </div>
@@ -683,7 +683,7 @@
             selectedOptionId: ''
           };
 
-          setShippingRateMessage('<strong>Choose one FedEx shipping option, then click Buy Now.</strong>', 'is-success');
+          setShippingRateMessage('<strong>Choose one FedEx shipping option, then click Buy.</strong>', 'is-success');
           renderShippingOptions();
           if (previousOptionId) {
             applySelectedShippingOption(previousOptionId);
@@ -806,7 +806,7 @@
           bindCardElementEvents(cardCvcElement, cardCvcContainer, 'cvcComplete');
 
           proceedToPaymentButton.disabled = false;
-          proceedToPaymentButton.textContent = 'Buy Now';
+          proceedToPaymentButton.textContent = 'Buy';
         } catch (error) {
           submissionError.textContent = error.message || 'Unable to initialize secure card form.';
           submissionError.style.display = 'block';
@@ -828,6 +828,15 @@
         submissionError.textContent = '';
 
         if (!form.reportValidity()) {
+          var firstInvalidField = form.querySelector(':invalid');
+          if (firstInvalidField && typeof firstInvalidField.scrollIntoView === 'function') {
+            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstInvalidField.focus === 'function') {
+              firstInvalidField.focus({ preventScroll: true });
+            }
+          }
+          submissionError.textContent = 'Please complete all required fields before continuing.';
+          submissionError.style.display = 'block';
           return;
         }
 
@@ -1004,7 +1013,7 @@
           submissionError.textContent = error.message || 'Unable to complete checkout right now.';
           submissionError.style.display = 'block';
           proceedToPaymentButton.disabled = false;
-          proceedToPaymentButton.textContent = 'Buy Now';
+          proceedToPaymentButton.textContent = 'Buy';
         }
       });
 
