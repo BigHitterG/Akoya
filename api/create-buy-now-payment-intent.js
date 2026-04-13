@@ -221,6 +221,10 @@ async function createStripeTaxTransaction(stripe, params) {
   }
 }
 
+function supportsStripeTaxHooks(taxCalculationId) {
+  return required(taxCalculationId);
+}
+
 async function sendBuyNowCustomerEmail({
   email,
   fullName,
@@ -446,7 +450,7 @@ module.exports = async function handler(req, res) {
       stripeTaxSource: taxData.source
     };
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntentPayload = {
       amount: totalAmountCents,
       currency: 'usd',
       automatic_payment_methods: {
@@ -471,7 +475,38 @@ module.exports = async function handler(req, res) {
         }
       },
       metadata
-    });
+    };
+
+    if (supportsStripeTaxHooks(taxData.taxCalculationId)) {
+      paymentIntentPayload.hooks = {
+        inputs: {
+          tax: {
+            calculation: taxData.taxCalculationId
+          }
+        }
+      };
+    }
+
+    let paymentIntent;
+    let stripeTaxHooksApplied = Boolean(paymentIntentPayload.hooks);
+    try {
+      paymentIntent = await stripe.paymentIntents.create(paymentIntentPayload);
+    } catch (paymentIntentError) {
+      const shouldRetryWithoutTaxHooks = Boolean(
+        paymentIntentPayload.hooks &&
+        paymentIntentError &&
+        typeof paymentIntentError.message === 'string' &&
+        paymentIntentError.message.toLowerCase().includes('hooks')
+      );
+
+      if (!shouldRetryWithoutTaxHooks) {
+        throw paymentIntentError;
+      }
+
+      delete paymentIntentPayload.hooks;
+      stripeTaxHooksApplied = false;
+      paymentIntent = await stripe.paymentIntents.create(paymentIntentPayload);
+    }
 
     let customerEmail = { attempted: false, sent: false, reason: 'payment_not_succeeded' };
     let taxTransaction = { attempted: false, created: false, reason: 'payment_not_succeeded', taxTransactionId: '' };
@@ -511,6 +546,7 @@ module.exports = async function handler(req, res) {
       fedexShipmentError: fedexShipmentError || null,
       fedexTrackingNumber: fedexTrackingNumber || null,
       taxCalculationId: taxData.taxCalculationId || null,
+      stripeTaxHooksApplied,
       taxTransactionId: taxTransaction.taxTransactionId || null,
       taxTransaction,
       customerEmail
