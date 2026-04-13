@@ -56,6 +56,18 @@ function normalizeCountryCode(value) {
   return value.trim().toUpperCase();
 }
 
+function getStripeCustomerDisplayName(payload) {
+  if (required(payload.institutionName)) {
+    return payload.institutionName.trim();
+  }
+
+  if (required(payload.businessName)) {
+    return payload.businessName.trim();
+  }
+
+  return payload.fullName.trim();
+}
+
 function buildStructuredShippingAddress(payload) {
   if (!required(payload.shippingStreet1) || !required(payload.shippingCity) || !required(payload.shippingState) || !required(payload.shippingPostalCode)) {
     return null;
@@ -496,7 +508,7 @@ module.exports = async function handler(req, res) {
   try {
     const customer = await stripe.customers.create({
       email: payload.email.trim(),
-      name: payload.fullName.trim(),
+      name: getStripeCustomerDisplayName(payload),
       phone: payload.phone.trim(),
       metadata,
       address: structuredShippingAddress || undefined,
