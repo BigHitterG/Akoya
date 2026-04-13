@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
+const createFedexShipmentHandler = require('./create-fedex-shipment');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
@@ -151,7 +152,8 @@ async function sendCustomerInvoiceEmail({
   shippingServiceName,
   hostedInvoiceUrl,
   invoicePdf,
-  dueDateUnix
+  dueDateUnix,
+  labelPending
 }) {
   const dueDateText = Number.isFinite(dueDateUnix)
     ? new Date(dueDateUnix * 1000).toISOString().slice(0, 10)
@@ -165,6 +167,9 @@ async function sendCustomerInvoiceEmail({
       '',
       'Thank you for your order with Akoya.',
       trackingNumber ? `Tracking number: ${trackingNumber}` : null,
+      labelPending
+        ? 'Your shipping label is still being generated. We will email your tracking details as soon as they are available.'
+        : null,
       shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
       `Invoice amount due: $${(amountDue / 100).toFixed(2)}`,
       `Payment due date: ${dueDateText}`,
@@ -177,6 +182,206 @@ async function sendCustomerInvoiceEmail({
       'Akoya'
     ]
   });
+}
+
+function getFedexLabelRetryConfig() {
+  const maxAttempts = Number.parseInt(process.env.FEDEX_LABEL_RETRY_MAX_ATTEMPTS || '10', 10);
+  const initialDelayMs = Number.parseInt(process.env.FEDEX_LABEL_RETRY_INITIAL_DELAY_MS || '30000', 10);
+  const maxDelayMs = Number.parseInt(process.env.FEDEX_LABEL_RETRY_MAX_DELAY_MS || '300000', 10);
+
+  return {
+    maxAttempts: Number.isFinite(maxAttempts) && maxAttempts > 0 ? maxAttempts : 10,
+    initialDelayMs: Number.isFinite(initialDelayMs) && initialDelayMs >= 1000 ? initialDelayMs : 30000,
+    maxDelayMs: Number.isFinite(maxDelayMs) && maxDelayMs >= 1000 ? maxDelayMs : 300000
+  };
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function createFedexShipment(payload) {
+  const shipmentPayload = {
+    quantityRequested: Number.parseInt(payload.quantityRequested, 10),
+    shippingStreetLines: [payload.shippingStreet1, payload.shippingStreet2].filter((line) => required(line)),
+    shippingCity: payload.shippingCity.trim(),
+    shippingState: payload.shippingState.trim().toUpperCase(),
+    shippingPostalCode: payload.shippingPostalCode.trim(),
+    shippingCountryCode: normalizeCountryCode(payload.shippingCountryCode),
+    recipientName: payload.fullName.trim(),
+    recipientPhone: payload.phone.trim(),
+    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
+  };
+
+  let responseStatus = 500;
+  let responseBody = null;
+
+  await createFedexShipmentHandler(
+    { method: 'POST', body: shipmentPayload },
+    {
+      status(code) {
+        responseStatus = code;
+        return this;
+      },
+      json(body) {
+        responseBody = body;
+        return this;
+      }
+    }
+  );
+
+  if (responseStatus < 200 || responseStatus > 299 || !responseBody?.success) {
+    return {
+      success: false,
+      status: responseStatus,
+      body: responseBody
+    };
+  }
+
+  return {
+    success: true,
+    shipment: responseBody
+  };
+}
+
+async function sendInvoiceShippingLabelUpdateEmail({
+  email,
+  fullName,
+  invoiceId,
+  trackingNumber,
+  shippingServiceName,
+  hostedInvoiceUrl
+}) {
+  return sendCustomerEmail({
+    toEmail: email,
+    subject: `Shipping update — tracking available for invoice ${invoiceId}`,
+    textLines: [
+      `Hi ${fullName},`,
+      '',
+      'Good news — your shipping label has been created.',
+      `Invoice ID: ${invoiceId}`,
+      shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
+      trackingNumber ? `Tracking number: ${trackingNumber}` : null,
+      hostedInvoiceUrl ? `Invoice: ${hostedInvoiceUrl}` : null,
+      '',
+      'Thank you,',
+      'Akoya'
+    ]
+  });
+}
+
+function scheduleInvoiceFedexLabelRecovery({
+  stripe,
+  invoiceId,
+  customerId,
+  payload,
+  customerEmail,
+  customerName,
+  shippingServiceType,
+  shippingServiceName,
+  hostedInvoiceUrl
+}) {
+  const retryConfig = getFedexLabelRetryConfig();
+
+  void (async () => {
+    let attempt = 0;
+    let delayMs = retryConfig.initialDelayMs;
+    let recoveredShipment = null;
+    let lastError = '';
+
+    while (attempt < retryConfig.maxAttempts && !recoveredShipment) {
+      if (attempt > 0) {
+        await delay(delayMs);
+        delayMs = Math.min(Math.round(delayMs * 1.75), retryConfig.maxDelayMs);
+      }
+
+      attempt += 1;
+      const retryPayload = {
+        ...payload,
+        shippingServiceType
+      };
+
+      try {
+        const retryResult = await createFedexShipment(retryPayload);
+        if (retryResult.success && required(retryResult.shipment?.trackingNumber)) {
+          recoveredShipment = retryResult.shipment;
+          break;
+        }
+
+        lastError =
+          retryResult.body?.details ||
+          retryResult.body?.error ||
+          'FedEx shipment retry did not produce a tracking number.';
+      } catch (error) {
+        lastError = error && error.message ? error.message : 'Unknown retry error.';
+      }
+    }
+
+    if (recoveredShipment) {
+      const metadataUpdate = {
+        fedexShipmentCreated: 'true',
+        fedexShipmentStatus: 'label_created_delayed_retry',
+        trackingNumber: recoveredShipment.trackingNumber || '',
+        shippingLabelUrl: recoveredShipment.labelUrl || '',
+        shipDatestamp: recoveredShipment.shipDatestamp || '',
+        fedexTrackingNumber: recoveredShipment.trackingNumber || '',
+        fedexLabelUrl: recoveredShipment.labelUrl || '',
+        fedexShipDatestamp: recoveredShipment.shipDatestamp || '',
+        fedexDelayedRetryAttempts: String(attempt)
+      };
+
+      try {
+        await stripe.invoices.update(invoiceId, { metadata: metadataUpdate });
+      } catch (error) {
+        console.error('Unable to update invoice metadata after delayed FedEx label recovery.', error);
+      }
+
+      if (required(customerId)) {
+        try {
+          await stripe.customers.update(customerId, { metadata: metadataUpdate });
+        } catch (error) {
+          console.error('Unable to update customer metadata after delayed invoice FedEx label recovery.', error);
+        }
+      }
+
+      try {
+        await sendInvoiceShippingLabelUpdateEmail({
+          email: customerEmail,
+          fullName: customerName,
+          invoiceId,
+          trackingNumber: recoveredShipment.trackingNumber || '',
+          shippingServiceName: recoveredShipment.serviceName || shippingServiceName || '',
+          hostedInvoiceUrl
+        });
+      } catch (error) {
+        console.error('Unable to send delayed invoice FedEx label success email.', error);
+      }
+
+      return;
+    }
+
+    const metadataUpdate = {
+      fedexShipmentStatus: 'label_retry_exhausted_manual_followup_required',
+      fedexDelayedRetryAttempts: String(attempt),
+      fedexShipmentError: toMetadataValue(lastError || 'FedEx label recovery retries exhausted.')
+    };
+
+    try {
+      await stripe.invoices.update(invoiceId, { metadata: metadataUpdate });
+    } catch (error) {
+      console.error('Unable to update invoice metadata after FedEx label retry exhaustion.', error);
+    }
+
+    if (required(customerId)) {
+      try {
+        await stripe.customers.update(customerId, { metadata: metadataUpdate });
+      } catch (error) {
+        console.error('Unable to update customer metadata after invoice FedEx label retry exhaustion.', error);
+      }
+    }
+  })();
 }
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -362,7 +567,8 @@ module.exports = async function handler(req, res) {
       shippingServiceName,
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
       invoicePdf: finalizedInvoice.invoice_pdf || null,
-      dueDateUnix: finalizedInvoice.due_date
+      dueDateUnix: finalizedInvoice.due_date,
+      labelPending: !fedexShipmentCreated
     });
 
     const internalEmail = await sendInternalNotification({
@@ -376,6 +582,20 @@ module.exports = async function handler(req, res) {
       shippingServiceName,
       shippingLabelUrl
     });
+
+    if (!fedexShipmentCreated) {
+      scheduleInvoiceFedexLabelRecovery({
+        stripe,
+        invoiceId: finalizedInvoice.id,
+        customerId: customer.id,
+        payload,
+        customerEmail: payload.email.trim(),
+        customerName: payload.fullName.trim(),
+        shippingServiceType,
+        shippingServiceName,
+        hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null
+      });
+    }
 
     res.status(200).json({
       success: true,
