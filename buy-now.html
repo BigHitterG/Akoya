@@ -593,7 +593,14 @@
 
           var body = await response.json().catch(function () { return {}; });
           if (!response.ok || !body.success || !Number.isFinite(body.taxAmountCents)) {
-            throw new Error(body && body.error ? body.error : 'Unable to preview Stripe tax.');
+            var debugDetails = [
+              body && body.error,
+              body && body.details,
+              body && body.code ? 'code=' + body.code : '',
+              body && body.type ? 'type=' + body.type : '',
+              body && body.warning
+            ].filter(Boolean).join(' | ');
+            throw new Error(debugDetails || 'Unable to preview Stripe tax.');
           }
 
           taxState.status = 'ready';
