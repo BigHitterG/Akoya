@@ -43,6 +43,55 @@
           <a href="buy.html" class="form-back-link" aria-label="Back to buy page">← Back to Buy</a>
 
           <form id="buyNowForm" class="invoice-form" novalidate>
+            <div class="buy-now-summary-top">
+              <label class="quantity-requested-top">Quantity Requested*
+                <div class="quantity-requested-row">
+                  <select id="quantityRequested" name="quantityRequested" required>
+                    <option value="" selected disabled>Select sets</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                  </select>
+                  <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
+                    <span class="quantity-requested-preview-line1">Select sets to see total units.</span>
+                    <span class="quantity-requested-preview-line2"></span>
+                  </p>
+                </div>
+              </label>
+
+              <div class="invoice-preview" aria-live="polite">
+                <p class="invoice-preview-title">Checkout Preview</p>
+                <div class="invoice-preview-line-item">
+                  <span>Total cost of goods</span>
+                  <strong id="invoiceGoodsTotal">$0.00</strong>
+                </div>
+                <div class="invoice-preview-line-item">
+                  <span>Estimated shipping</span>
+                  <strong id="invoiceShippingTotal">Select a shipping option</strong>
+                </div>
+                <div class="invoice-preview-line-item invoice-preview-line-item-muted">
+                  <span>Tax</span>
+                  <strong id="invoiceTaxTotal">Awaiting shipping selection</strong>
+                </div>
+                <div class="invoice-preview-line-item invoice-preview-line-item-total">
+                  <span>Estimated subtotal (pre-tax)</span>
+                  <strong id="invoiceEstimatedSubtotal">$0.00</strong>
+                </div>
+                <div class="invoice-preview-line-item invoice-preview-line-item-total">
+                  <span>Estimated total (incl. tax)</span>
+                  <strong id="invoiceEstimatedTotal">$0.00</strong>
+                </div>
+                <p id="taxEstimateMessage" class="invoice-preview-note"></p>
+              </div>
+            </div>
+
             <div class="invoice-grid">
               <label>Full Name*
                 <input type="text" name="fullName" required>
@@ -60,28 +109,6 @@
                 <input type="tel" name="phone" required>
               </label>
             </div>
-
-            <label class="quantity-requested-top">Quantity Requested*
-              <div class="quantity-requested-row">
-                <select id="quantityRequested" name="quantityRequested" required>
-                  <option value="" selected disabled>Select sets</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                </select>
-                <p class="quantity-requested-preview" id="quantityRequestedPreview" aria-live="polite">
-                  <span class="quantity-requested-preview-line1">Select sets to see total units.</span>
-                  <span class="quantity-requested-preview-line2"></span>
-                </p>
-              </div>
-            </label>
 
             <fieldset class="shipping-fieldset">
               <legend>Shipping Address*</legend>
@@ -126,31 +153,6 @@
 
             <div id="shippingRateEstimateMessage" class="shipping-validation-message" style="display: none;" aria-live="polite"></div>
             <div id="shippingOptionSelector" class="shipping-option-selector" style="display: none;" aria-live="polite"></div>
-
-            <div class="invoice-preview" aria-live="polite">
-              <p class="invoice-preview-title">Checkout Preview</p>
-              <div class="invoice-preview-line-item">
-                <span>Total cost of goods</span>
-                <strong id="invoiceGoodsTotal">$0.00</strong>
-              </div>
-              <div class="invoice-preview-line-item">
-                <span>Estimated shipping</span>
-                <strong id="invoiceShippingTotal">Select a shipping option</strong>
-              </div>
-              <div class="invoice-preview-line-item invoice-preview-line-item-muted">
-                <span>Tax</span>
-                <strong id="invoiceTaxTotal">Awaiting shipping selection</strong>
-              </div>
-              <div class="invoice-preview-line-item invoice-preview-line-item-total">
-                <span>Estimated subtotal (pre-tax)</span>
-                <strong id="invoiceEstimatedSubtotal">$0.00</strong>
-              </div>
-              <div class="invoice-preview-line-item invoice-preview-line-item-total">
-                <span>Estimated total (incl. tax)</span>
-                <strong id="invoiceEstimatedTotal">$0.00</strong>
-              </div>
-              <p id="taxEstimateMessage" class="invoice-preview-note"></p>
-            </div>
 
             <div class="cta-row">
               <button type="button" class="btn btn-secondary" id="buyViaInvoiceButton">Buy via invoice</button>
