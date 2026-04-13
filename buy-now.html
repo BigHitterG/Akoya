@@ -230,6 +230,7 @@
         expiryComplete: false,
         cvcComplete: false
       };
+      var checkoutMode = 'card';
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
       var shippingRateState = {
@@ -252,6 +253,7 @@
 
       function setCheckoutMode(mode) {
         var invoiceSelected = mode === 'invoice';
+        checkoutMode = invoiceSelected ? 'invoice' : 'card';
 
         if (buyNowModeButton) {
           buyNowModeButton.classList.toggle('is-selected', !invoiceSelected);
@@ -266,6 +268,54 @@
         if (cardDetailsFieldset) {
           cardDetailsFieldset.style.display = invoiceSelected ? 'none' : 'grid';
         }
+      }
+
+      function buildShippingAddressMultiline() {
+        var line1 = getFieldValue('shippingStreet1').trim();
+        var line2 = getFieldValue('shippingStreet2').trim();
+        var city = getFieldValue('shippingCity').trim();
+        var state = getFieldValue('shippingState').trim().toUpperCase();
+        var postalCode = getFieldValue('shippingPostalCode').trim();
+        var lines = [line1];
+
+        if (line2) {
+          lines.push(line2);
+        }
+        lines.push([city, state].filter(Boolean).join(', ') + (postalCode ? ' ' + postalCode : ''));
+
+        return lines.filter(Boolean).join('\n');
+      }
+
+      function buildFedexShipmentPayload() {
+        var shippingInput = getShippingAddressInput();
+        return {
+          quantityRequested: Number.parseInt(getFieldValue('quantityRequested').trim(), 10),
+          shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+          shippingCity: shippingInput.shippingCity,
+          shippingState: shippingInput.shippingState,
+          shippingPostalCode: shippingInput.shippingPostalCode,
+          shippingCountryCode: shippingInput.shippingCountryCode,
+          recipientName: getFieldValue('fullName').trim() || getFieldValue('institutionName').trim(),
+          recipientPhone: getFieldValue('phone').trim(),
+          recipientCompanyName: getFieldValue('institutionName').trim(),
+          serviceType: shippingRateState.serviceType || ''
+        };
+      }
+
+      async function createFedexShipment(options) {
+        var shipmentOptions = options || {};
+        var response = await fetch('/api/create-fedex-shipment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildFedexShipmentPayload())
+        });
+
+        var responseBody = await response.json();
+        if (!response.ok || !responseBody.success) {
+          throw new Error(responseBody.error || responseBody.details || shipmentOptions.errorMessage || 'Unable to create FedEx shipment right now.');
+        }
+
+        return responseBody;
       }
 
       function resetShippingRateState(status) {
@@ -793,18 +843,6 @@
           return;
         }
 
-        if (!stripe || !cardNumberElement || !cardExpiryElement || !cardCvcElement) {
-          submissionError.textContent = 'Secure card form is still loading. Please wait a moment and try again.';
-          submissionError.style.display = 'block';
-          return;
-        }
-
-        if (!cardState.numberComplete || !cardState.expiryComplete || !cardState.cvcComplete) {
-          submissionError.textContent = 'Please complete your card details before buying now.';
-          submissionError.style.display = 'block';
-          return;
-        }
-
         if (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents)) {
           submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
           submissionError.style.display = 'block';
@@ -816,29 +854,7 @@
 
         try {
           var shippingInput = getShippingAddressInput();
-          var paymentMethodResult = await stripe.createPaymentMethod({
-            type: 'card',
-            card: cardNumberElement,
-            billing_details: {
-              name: getFieldValue('fullName').trim(),
-              email: getFieldValue('email').trim(),
-              phone: getFieldValue('phone').trim(),
-              address: {
-                line1: shippingInput.shippingStreet1,
-                line2: shippingInput.shippingStreet2 || undefined,
-                city: shippingInput.shippingCity,
-                state: shippingInput.shippingState,
-                postal_code: shippingInput.shippingPostalCode,
-                country: shippingInput.shippingCountryCode
-              }
-            }
-          });
-
-          if (paymentMethodResult.error || !paymentMethodResult.paymentMethod) {
-            throw new Error(paymentMethodResult.error && paymentMethodResult.error.message ? paymentMethodResult.error.message : 'Unable to validate card details.');
-          }
-
-          var payload = {
+          var basePayload = {
             fullName: getFieldValue('fullName').trim(),
             jobTitle: getFieldValue('jobTitle').trim(),
             institutionName: getFieldValue('institutionName').trim(),
@@ -856,7 +872,100 @@
             shippingServiceType: shippingRateState.serviceType,
             billingAddress: getFieldValue('billingAddress').trim(),
             poNumber: getFieldValue('poNumber').trim(),
-            notes: getFieldValue('notes').trim(),
+            notes: getFieldValue('notes').trim()
+          };
+
+          if (checkoutMode === 'invoice') {
+            var invoicePayload = Object.assign({}, basePayload, {
+              businessName: basePayload.institutionName,
+              shippingAddress: buildShippingAddressMultiline()
+            });
+
+            try {
+              var shipmentResponse = await createFedexShipment();
+              invoicePayload.shippingFeeCents = shipmentResponse.shippingFeeCents;
+              invoicePayload.shippingServiceName = shipmentResponse.serviceName || 'FedEx Shipment (paid label)';
+              invoicePayload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
+              invoicePayload.trackingNumber = shipmentResponse.trackingNumber || '';
+              invoicePayload.shippingLabelUrl = shipmentResponse.labelUrl || '';
+              invoicePayload.shipDatestamp = shipmentResponse.shipDatestamp || '';
+              invoicePayload.fedexShipmentCreated = 'true';
+              invoicePayload.fedexShipmentStatus = 'label_created';
+              invoicePayload.fedexShipmentError = '';
+            } catch (shipmentError) {
+              invoicePayload.shippingFeeCents = shippingRateState.cents;
+              invoicePayload.shippingServiceName = shippingRateState.serviceName || 'FedEx Estimated Shipping (quoted)';
+              invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
+              invoicePayload.trackingNumber = '';
+              invoicePayload.shippingLabelUrl = '';
+              invoicePayload.shipDatestamp = '';
+              invoicePayload.fedexShipmentCreated = 'false';
+              invoicePayload.fedexShipmentStatus = 'label_not_created_quoted_fallback';
+              invoicePayload.fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : '').slice(0, 300);
+            }
+
+            var invoiceResponse = await fetch('/api/create-stripe-invoice', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(invoicePayload)
+            });
+            var invoiceResponseBody = await invoiceResponse.json().catch(function () { return {}; });
+            if (!invoiceResponse.ok || !invoiceResponseBody.success) {
+              throw new Error(invoiceResponseBody.error || 'Unable to submit order details right now.');
+            }
+            window.location.href = 'order-confirmation.html';
+            return;
+          }
+
+          if (!stripe || !cardNumberElement || !cardExpiryElement || !cardCvcElement) {
+            throw new Error('Secure card form is still loading. Please wait a moment and try again.');
+          }
+
+          if (!cardState.numberComplete || !cardState.expiryComplete || !cardState.cvcComplete) {
+            throw new Error('Please complete your card details before buying now.');
+          }
+
+          var paymentMethodResult = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardNumberElement,
+            billing_details: {
+              name: basePayload.fullName,
+              email: basePayload.email,
+              phone: basePayload.phone,
+              address: {
+                line1: shippingInput.shippingStreet1,
+                line2: shippingInput.shippingStreet2 || undefined,
+                city: shippingInput.shippingCity,
+                state: shippingInput.shippingState,
+                postal_code: shippingInput.shippingPostalCode,
+                country: shippingInput.shippingCountryCode
+              }
+            }
+          });
+
+          if (paymentMethodResult.error || !paymentMethodResult.paymentMethod) {
+            throw new Error(paymentMethodResult.error && paymentMethodResult.error.message ? paymentMethodResult.error.message : 'Unable to validate card details.');
+          }
+
+          var payload = {
+            fullName: basePayload.fullName,
+            jobTitle: basePayload.jobTitle,
+            institutionName: basePayload.institutionName,
+            email: basePayload.email,
+            phone: basePayload.phone,
+            quantityRequested: basePayload.quantityRequested,
+            shippingStreet1: basePayload.shippingStreet1,
+            shippingStreet2: basePayload.shippingStreet2,
+            shippingCity: basePayload.shippingCity,
+            shippingState: basePayload.shippingState,
+            shippingPostalCode: basePayload.shippingPostalCode,
+            shippingCountryCode: basePayload.shippingCountryCode,
+            shippingFeeCents: basePayload.shippingFeeCents,
+            shippingServiceName: basePayload.shippingServiceName,
+            shippingServiceType: basePayload.shippingServiceType,
+            billingAddress: basePayload.billingAddress,
+            poNumber: basePayload.poNumber,
+            notes: basePayload.notes,
             paymentMethodId: paymentMethodResult.paymentMethod.id
           };
 
