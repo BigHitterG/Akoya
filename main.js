@@ -52,7 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  const galleryImages = Array.from(document.querySelectorAll('.product-gallery img'));
+  const galleryRoot = document.querySelector('[data-gallery]');
+  const primaryImage = document.getElementById('productGalleryPrimaryImage');
+  const thumbContainer = document.getElementById('productGalleryThumbs');
+  const galleryMainButton = document.querySelector('.product-gallery-main');
   const lightbox = document.getElementById('productLightbox');
   const lightboxImage = lightbox?.querySelector('.lightbox-image');
   const lightboxCloseButton = lightbox?.querySelector('.lightbox-close');
@@ -68,27 +71,73 @@ document.addEventListener('DOMContentLoaded', () => {
     lightboxImage.alt = '';
   };
 
-  if (galleryImages.length && lightbox && lightboxImage && lightboxCloseButton) {
-    galleryImages.forEach((image) => {
-      image.addEventListener('click', () => {
-        lightboxImage.src = image.src;
-        lightboxImage.alt = image.alt;
-        lightbox.classList.add('is-open');
-        lightbox.setAttribute('aria-hidden', 'false');
-      });
-    });
+  if (galleryRoot && primaryImage && thumbContainer) {
+    const galleryImages = [
+      { src: 'assets/images/Product%20Image%201.JPG', alt: 'Akoya eyewear product image 1' },
+      { src: 'assets/images/Product%20Image%202.JPG', alt: 'Akoya eyewear product image 2' },
+      { src: 'assets/images/Product%20Image%203.JPG', alt: 'Akoya eyewear product image 3' },
+      { src: 'assets/images/Product%20Image%204.JPG', alt: 'Akoya eyewear product image 4' },
+    ];
 
-    lightboxCloseButton.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (event) => {
-      if (event.target === lightbox) {
-        closeLightbox();
+    let activeIndex = 0;
+
+    const openLightbox = () => {
+      if (!lightbox || !lightboxImage) {
+        return;
       }
-    });
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        closeLightbox();
-      }
-    });
+
+      lightboxImage.src = galleryImages[activeIndex].src;
+      lightboxImage.alt = galleryImages[activeIndex].alt;
+      lightbox.classList.add('is-open');
+      lightbox.setAttribute('aria-hidden', 'false');
+    };
+
+    const renderGallery = () => {
+      const activeImage = galleryImages[activeIndex];
+      primaryImage.src = activeImage.src;
+      primaryImage.alt = activeImage.alt;
+
+      thumbContainer.innerHTML = '';
+      galleryImages
+        .filter((_, index) => index !== activeIndex)
+        .forEach((image, displayIndex) => {
+          const actualIndex = galleryImages.findIndex((entry) => entry.src === image.src && entry.alt === image.alt);
+          const thumbButton = document.createElement('button');
+          thumbButton.type = 'button';
+          thumbButton.className = 'product-gallery-thumb';
+          thumbButton.setAttribute('aria-label', `Show image ${displayIndex + 1}`);
+
+          const thumbImage = document.createElement('img');
+          thumbImage.src = image.src;
+          thumbImage.alt = image.alt;
+          thumbButton.appendChild(thumbImage);
+
+          thumbButton.addEventListener('click', () => {
+            activeIndex = actualIndex;
+            renderGallery();
+          });
+
+          thumbContainer.appendChild(thumbButton);
+        });
+    };
+
+    galleryMainButton?.addEventListener('click', openLightbox);
+
+    if (lightbox && lightboxCloseButton) {
+      lightboxCloseButton.addEventListener('click', closeLightbox);
+      lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+          closeLightbox();
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeLightbox();
+        }
+      });
+    }
+
+    renderGallery();
   }
 
   const buyPageQuantitySelect = document.getElementById('buyPageQuantityRequested');
