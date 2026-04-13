@@ -103,7 +103,8 @@ async function createFedexShipment(payload) {
     return {
       success: false,
       status: responseStatus,
-      body: responseBody
+      body: responseBody,
+      isInvalidAddress: responseStatus === 422 && responseBody?.code === 'invalid_shipping_address'
     };
   }
 
@@ -145,7 +146,8 @@ async function createFedexRateQuote(payload) {
     return {
       success: false,
       status: responseStatus,
-      body: responseBody
+      body: responseBody,
+      isInvalidAddress: responseStatus === 422 && responseBody?.code === 'invalid_shipping_address'
     };
   }
 
@@ -538,6 +540,14 @@ module.exports = async function handler(req, res) {
         shipmentResult.body?.error ||
         `FedEx shipment request failed with status ${shipmentResult.status}.`;
 
+      if (shipmentResult.isInvalidAddress) {
+        res.status(400).json({
+          error: 'Shipping address is invalid.',
+          details: shipmentResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
+        });
+        return;
+      }
+
       const quoteResult = await createFedexRateQuote(payload);
       if (quoteResult.success) {
         const parsedQuoteShippingFeeCents = parseCents(quoteResult.quote.shippingFeeCents);
@@ -549,6 +559,12 @@ module.exports = async function handler(req, res) {
             ? 'label_not_created_final_flat_rate_fallback'
             : 'label_not_created_live_quote';
         }
+      } else if (quoteResult.isInvalidAddress) {
+        res.status(400).json({
+          error: 'Shipping address is invalid.',
+          details: quoteResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
+        });
+        return;
       } else {
         const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
         if (Number.isFinite(fallbackShippingFeeCents)) {

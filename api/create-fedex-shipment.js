@@ -109,6 +109,30 @@ function summarizeFedexErrors(body) {
   return parts.join(' | ');
 }
 
+function collectFedexMessages(body) {
+  const errorMessages = Array.isArray(body?.errors)
+    ? body.errors.map((item) => [item?.code, item?.message].filter(Boolean).join(' ')).filter(Boolean)
+    : [];
+  const alertMessages = Array.isArray(body?.output?.alerts)
+    ? body.output.alerts.map((item) => [item?.code, item?.message].filter(Boolean).join(' ')).filter(Boolean)
+    : [];
+
+  return [...errorMessages, ...alertMessages];
+}
+
+function isLikelyInvalidAddressError(body) {
+  const combinedText = collectFedexMessages(body).join(' ').toLowerCase();
+  if (!combinedText) {
+    return false;
+  }
+
+  const addressTerms = ['address', 'street', 'postal', 'zip', 'city', 'state', 'province', 'country', 'recipient'];
+  const invalidTerms = ['invalid', 'not valid', 'unable to geocode', 'missing or invalid'];
+
+  return addressTerms.some((term) => combinedText.includes(term))
+    && invalidTerms.some((term) => combinedText.includes(term));
+}
+
 function maskAccountNumber(value) {
   const raw = typeof value === 'string' ? value.replace(/\s+/g, '') : '';
   if (!raw) {
@@ -383,6 +407,19 @@ module.exports = async function handler(req, res) {
     responseDebug.fedexErrorSummary = summarizeFedexErrors(shipmentBody) || null;
 
     if (!createShipmentResponse.ok) {
+      if (isLikelyInvalidAddressError(shipmentBody)) {
+        res.status(422).json({
+          error: 'Shipping address is invalid.',
+          details: summarizeFedexErrors(shipmentBody) || 'Please check street, city, state, and ZIP code.',
+          code: 'invalid_shipping_address',
+          debug: {
+            ...responseDebug,
+            failureReason: 'invalid_shipping_address'
+          }
+        });
+        return;
+      }
+
       res.status(502).json({
         error: 'FedEx shipment creation failed.',
         details: summarizeFedexErrors(shipmentBody) || `HTTP ${createShipmentResponse.status}`,

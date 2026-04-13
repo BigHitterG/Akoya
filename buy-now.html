@@ -369,7 +369,9 @@
 
         var responseBody = await response.json();
         if (!response.ok || !responseBody.success) {
-          throw new Error(responseBody.error || responseBody.details || shipmentOptions.errorMessage || 'Unable to create FedEx shipment right now.');
+          var shipmentError = new Error(responseBody.error || responseBody.details || shipmentOptions.errorMessage || 'Unable to create FedEx shipment right now.');
+          shipmentError.isInvalidAddress = !!(responseBody && responseBody.code === 'invalid_shipping_address');
+          throw shipmentError;
         }
 
         return responseBody;
@@ -748,7 +750,9 @@
           var shippingOptions = normalizeShippingOptions(responseBody);
           if (!response.ok || !shippingOptions.length) {
             var details = [responseBody && responseBody.error, responseBody && responseBody.hint, responseBody && responseBody.details].filter(Boolean).join(' ');
-            throw new Error(details || 'Unable to fetch live shipping quote.');
+            var shippingError = new Error(details || 'Unable to fetch live shipping quote.');
+            shippingError.isInvalidAddress = !!(responseBody && responseBody.code === 'invalid_shipping_address');
+            throw shippingError;
           }
 
           var previousOptionId = shippingRateState.selectedOptionId;
@@ -771,6 +775,16 @@
           if (requestId !== latestShippingQuoteRequestId) {
             return;
           }
+          if (error && error.isInvalidAddress) {
+            resetShippingRateState('error');
+            setShippingRateMessage('<strong>Shipping address could not be validated.</strong> Please correct the address to continue.', 'is-error');
+            hideShippingOptions();
+            resetTaxState('idle');
+            taxEstimateMessage.textContent = 'Tax estimate unavailable until shipping quote is available.';
+            updateInvoicePreviewTotals();
+            return;
+          }
+
           if ((refreshOptions.retryCount || 0) < 2) {
             window.setTimeout(function () {
               refreshShippingRateEstimate({
@@ -968,7 +982,12 @@
               invoicePayload.fedexShipmentCreated = 'true';
               invoicePayload.fedexShipmentStatus = 'label_created';
               invoicePayload.fedexShipmentError = '';
+              invoicePayload.fedexShipmentErrorCode = '';
             } catch (shipmentError) {
+              if (shipmentError && shipmentError.isInvalidAddress) {
+                throw new Error(shipmentError.message || 'Shipping address is invalid. Please correct it before submitting.');
+              }
+
               invoicePayload.shippingFeeCents = shippingRateState.cents;
               invoicePayload.shippingServiceName = shippingRateState.serviceName || 'FedEx Estimated Shipping (quoted)';
               invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
@@ -978,6 +997,7 @@
               invoicePayload.fedexShipmentCreated = 'false';
               invoicePayload.fedexShipmentStatus = 'label_not_created_quoted_fallback';
               invoicePayload.fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : '').slice(0, 300);
+              invoicePayload.fedexShipmentErrorCode = '';
             }
 
             var invoiceResponse = await fetch('/api/create-stripe-invoice', {

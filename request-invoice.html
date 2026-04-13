@@ -623,7 +623,9 @@
         });
 
         if (!response.ok || !responseBody.success) {
-          throw new Error(responseBody.error || responseBody.details || 'Unable to create FedEx shipment right now.');
+          var shipmentError = new Error(responseBody.error || responseBody.details || 'Unable to create FedEx shipment right now.');
+          shipmentError.isInvalidAddress = !!(responseBody && responseBody.code === 'invalid_shipping_address');
+          throw shipmentError;
         }
 
         return {
@@ -988,6 +990,7 @@
           var fedexShipmentCreated = false;
           var fedexShipmentStatus = 'label_not_created_quoted_fallback';
           var fedexShipmentError = '';
+          var fedexShipmentErrorCode = '';
 
           try {
             var shipmentResult = await createFedexShipment({ flow: 'request-invoice-submit' });
@@ -1005,7 +1008,12 @@
 
             fedexShipmentCreated = true;
             fedexShipmentStatus = 'label_created';
+            fedexShipmentErrorCode = '';
           } catch (shipmentError) {
+            if (shipmentError && shipmentError.isInvalidAddress) {
+              throw new Error(shipmentError.message || 'Shipping address is invalid. Please correct it before submitting.');
+            }
+
             payload.shippingFeeCents = shippingRateState.cents;
             payload.shippingServiceName = shippingRateState.serviceName || payload.shippingServiceName || 'FedEx Estimated Shipping (quoted)';
             payload.shippingServiceType = shippingRateState.serviceType || payload.shippingServiceType || '';
@@ -1013,11 +1021,13 @@
             payload.shippingLabelUrl = '';
             payload.shipDatestamp = '';
             fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : 'Unable to create FedEx shipment right now.').slice(0, 300);
+            fedexShipmentErrorCode = '';
           }
 
           payload.fedexShipmentCreated = fedexShipmentCreated ? 'true' : 'false';
           payload.fedexShipmentStatus = fedexShipmentStatus;
           payload.fedexShipmentError = fedexShipmentError;
+          payload.fedexShipmentErrorCode = fedexShipmentErrorCode;
 
           submitButton.textContent = 'Creating Invoice...';
           var response = await fetch('/api/create-stripe-invoice', {
