@@ -190,6 +190,37 @@ async function calculateStripeTax(stripe, params) {
 
 
 
+async function createStripeTaxTransaction(stripe, params) {
+  if (!params.taxCalculationId) {
+    return {
+      attempted: false,
+      created: false,
+      reason: 'missing_tax_calculation_id',
+      taxTransactionId: ''
+    };
+  }
+
+  try {
+    const transaction = await stripe.tax.transactions.createFromCalculation({
+      calculation: params.taxCalculationId,
+      reference: params.reference
+    });
+
+    return {
+      attempted: true,
+      created: true,
+      taxTransactionId: transaction?.id || ''
+    };
+  } catch (error) {
+    return {
+      attempted: true,
+      created: false,
+      reason: error && error.message ? error.message : 'Unable to create Stripe tax transaction.',
+      taxTransactionId: ''
+    };
+  }
+}
+
 async function sendBuyNowCustomerEmail({
   email,
   fullName,
@@ -443,10 +474,16 @@ module.exports = async function handler(req, res) {
     });
 
     let customerEmail = { attempted: false, sent: false, reason: 'payment_not_succeeded' };
+    let taxTransaction = { attempted: false, created: false, reason: 'payment_not_succeeded', taxTransactionId: '' };
     if (paymentIntent.status === 'succeeded') {
       const charge = paymentIntent.latest_charge
         ? await stripe.charges.retrieve(paymentIntent.latest_charge)
         : null;
+
+      taxTransaction = await createStripeTaxTransaction(stripe, {
+        taxCalculationId: taxData.taxCalculationId,
+        reference: paymentIntent.id
+      });
 
       customerEmail = await sendBuyNowCustomerEmail({
         email: payload.email.trim(),
@@ -474,6 +511,8 @@ module.exports = async function handler(req, res) {
       fedexShipmentError: fedexShipmentError || null,
       fedexTrackingNumber: fedexTrackingNumber || null,
       taxCalculationId: taxData.taxCalculationId || null,
+      taxTransactionId: taxTransaction.taxTransactionId || null,
+      taxTransaction,
       customerEmail
     });
   } catch (error) {
