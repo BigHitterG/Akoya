@@ -749,6 +749,13 @@
       width: 100%;
     }
 
+    .buy-now-summary-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
     .shipping-fieldset {
       border: 1px solid #c9d6e1;
       border-radius: 16px;
@@ -1151,6 +1158,10 @@
       }
 
       .invoice-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .buy-now-summary-top {
         grid-template-columns: 1fr;
       }
 
