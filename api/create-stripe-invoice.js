@@ -26,6 +26,10 @@ function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function isInvalidAddressErrorCode(value) {
+  return typeof value === 'string' && value.trim().toLowerCase() === 'invalid_shipping_address';
+}
+
 function parseCents(value) {
   if (value === undefined || value === null || value === '') {
     return null;
@@ -472,6 +476,17 @@ module.exports = async function handler(req, res) {
   const fedexShipmentError = required(payload.fedexShipmentError)
     ? payload.fedexShipmentError.trim()
     : '';
+  const fedexShipmentErrorCode = required(payload.fedexShipmentErrorCode)
+    ? payload.fedexShipmentErrorCode.trim().toLowerCase()
+    : '';
+  const fedexShipmentErrorLooksLikeInvalidAddress = /invalid/i.test(fedexShipmentError) && /(address|street|city|state|postal|zip|recipient)/i.test(fedexShipmentError);
+  if (!fedexShipmentCreated && (isInvalidAddressErrorCode(fedexShipmentErrorCode) || fedexShipmentErrorLooksLikeInvalidAddress)) {
+    res.status(400).json({
+      error: 'Shipping address is invalid.',
+      details: 'Please correct the shipping address before submitting order details.'
+    });
+    return;
+  }
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX !== 'false';
   const structuredShippingAddress = buildStructuredShippingAddress(payload);
   const institutionName = required(payload.institutionName)
