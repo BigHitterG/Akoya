@@ -47,6 +47,29 @@ function toMetadataValue(value, maxLength = 500) {
   return stringValue.slice(0, maxLength);
 }
 
+function normalizeCountryCode(value) {
+  if (!required(value)) {
+    return 'US';
+  }
+
+  return value.trim().toUpperCase();
+}
+
+function buildStructuredShippingAddress(payload) {
+  if (!required(payload.shippingStreet1) || !required(payload.shippingCity) || !required(payload.shippingState) || !required(payload.shippingPostalCode)) {
+    return null;
+  }
+
+  return {
+    line1: payload.shippingStreet1.trim(),
+    line2: required(payload.shippingStreet2) ? payload.shippingStreet2.trim() : undefined,
+    city: payload.shippingCity.trim(),
+    state: payload.shippingState.trim().toUpperCase(),
+    postal_code: payload.shippingPostalCode.trim(),
+    country: normalizeCountryCode(payload.shippingCountryCode)
+  };
+}
+
 async function sendInternalNotification({
   orderEmail,
   fullName,
@@ -232,7 +255,8 @@ module.exports = async function handler(req, res) {
   const fedexShipmentError = required(payload.fedexShipmentError)
     ? payload.fedexShipmentError.trim()
     : '';
-  const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX === 'true';
+  const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX !== 'false';
+  const structuredShippingAddress = buildStructuredShippingAddress(payload);
   const institutionName = required(payload.institutionName)
     ? payload.institutionName.trim()
     : (required(payload.businessName) ? payload.businessName.trim() : '');
@@ -269,7 +293,15 @@ module.exports = async function handler(req, res) {
       email: payload.email.trim(),
       name: payload.fullName.trim(),
       phone: payload.phone.trim(),
-      metadata
+      metadata,
+      address: structuredShippingAddress || undefined,
+      shipping: structuredShippingAddress
+        ? {
+            name: payload.fullName.trim(),
+            phone: payload.phone.trim(),
+            address: structuredShippingAddress
+          }
+        : undefined
     });
 
     const invoice = await stripe.invoices.create({
@@ -279,7 +311,14 @@ module.exports = async function handler(req, res) {
       description: 'Akoya Eye Shield order request',
       metadata,
       auto_advance: true,
-      automatic_tax: { enabled: automaticTaxEnabled }
+      automatic_tax: { enabled: automaticTaxEnabled },
+      shipping_details: structuredShippingAddress
+        ? {
+            name: payload.fullName.trim(),
+            phone: payload.phone.trim(),
+            address: structuredShippingAddress
+          }
+        : undefined
     });
 
     await stripe.invoiceItems.create({
