@@ -63,9 +63,25 @@
             <div class="order-summary">
               <div><span>Price per box</span><strong>$180.00 <small>(15 units, $12.00 per unit)</small></strong></div>
             </div>
+            <label class="buy-quantity-label" for="buyPageQuantityRequested">Quantity</label>
+            <div class="buy-quantity-row">
+              <select id="buyPageQuantityRequested" name="buyPageQuantityRequested">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+              <p class="buy-quantity-preview" id="buyPageQuantityPreview" aria-live="polite"></p>
+            </div>
             <p class="body-copy purchase-note">Orders are placed by the box. Price is pre-tax and shipping is calculated at checkout.</p>
 
-            <a href="buy-now.html" class="btn btn-primary order-cta">Buy Now Checkout</a>
+            <a href="buy-now.html" class="btn btn-primary order-cta" id="buyPageCheckoutLink">Checkout</a>
           </div>
         </div>
       </div>
