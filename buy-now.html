@@ -236,6 +236,7 @@
                   <div id="cardCvcElementContainer" class="card-element-container"></div>
                 </div>
                 <p id="cardElementHint" class="shipping-helper-copy">Card details are encrypted by Stripe and never touch our servers.</p>
+                <p id="cardValidationError" class="body-copy" style="color: #b42318; display: none; margin-top: 4px;"></p>
               </div>
             </fieldset>
 
@@ -276,6 +277,7 @@
       var buyNowModeButton = document.getElementById('buyNowModeButton');
       var invoiceModeButton = document.getElementById('invoiceModeButton');
       var cardDetailsFieldset = document.getElementById('cardDetailsFieldset');
+      var cardValidationError = document.getElementById('cardValidationError');
       var unitsPerBox = 15;
       var pricePerUnit = 12;
       var stripe = null;
@@ -325,6 +327,27 @@
         if (cardDetailsFieldset) {
           cardDetailsFieldset.style.display = invoiceSelected ? 'none' : 'grid';
         }
+
+        if (invoiceSelected) {
+          hideCardValidationError();
+        }
+      }
+
+
+      function hideCardValidationError() {
+        if (!cardValidationError) {
+          return;
+        }
+        cardValidationError.style.display = 'none';
+        cardValidationError.textContent = '';
+      }
+
+      function showCardValidationError(message) {
+        if (!cardValidationError || !message) {
+          return;
+        }
+        cardValidationError.textContent = message;
+        cardValidationError.style.display = 'block';
       }
 
       function buildShippingAddressMultiline() {
@@ -885,11 +908,9 @@
               container.classList.toggle('is-invalid', !!event.error);
 
               if (event.error) {
-                submissionError.textContent = event.error.message;
-                submissionError.style.display = 'block';
-              } else if (submissionError.textContent && submissionError.textContent.toLowerCase().indexOf('card') !== -1) {
-                submissionError.style.display = 'none';
-                submissionError.textContent = '';
+                showCardValidationError(event.error.message);
+              } else if (cardValidationError && cardValidationError.textContent) {
+                hideCardValidationError();
               }
             });
           }
@@ -919,6 +940,7 @@
         event.preventDefault();
         submissionError.style.display = 'none';
         submissionError.textContent = '';
+        hideCardValidationError();
 
         if (!form.reportValidity()) {
           var firstInvalidField = form.querySelector(':invalid');
@@ -1018,6 +1040,7 @@
           }
 
           if (!cardState.numberComplete || !cardState.expiryComplete || !cardState.cvcComplete) {
+            showCardValidationError('Please complete your card details before buying now.');
             throw new Error('Please complete your card details before buying now.');
           }
 
@@ -1040,7 +1063,11 @@
           });
 
           if (paymentMethodResult.error || !paymentMethodResult.paymentMethod) {
-            throw new Error(paymentMethodResult.error && paymentMethodResult.error.message ? paymentMethodResult.error.message : 'Unable to validate card details.');
+            var paymentMethodErrorMessage = paymentMethodResult.error && paymentMethodResult.error.message
+              ? paymentMethodResult.error.message
+              : 'Unable to validate card details.';
+            showCardValidationError(paymentMethodErrorMessage);
+            throw new Error(paymentMethodErrorMessage);
           }
 
           var payload = {
@@ -1109,6 +1136,9 @@
 
           window.location.href = confirmationUrl;
         } catch (error) {
+          if (checkoutMode === 'card') {
+            showCardValidationError(error.message || 'Unable to validate card details.');
+          }
           submissionError.textContent = error.message || 'Unable to complete checkout right now.';
           submissionError.style.display = 'block';
           proceedToPaymentButton.disabled = false;
