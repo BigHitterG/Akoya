@@ -45,6 +45,14 @@ function parseStructuredShippingAddress(payload) {
     return null;
   }
 
+  if (!/^[A-Z]{2}$/.test(stateOrProvinceCode)) {
+    return null;
+  }
+
+  if (countryCode === 'US' && !/^\d{5}(?:-\d{4})?$/.test(postalCode)) {
+    return null;
+  }
+
   return {
     streetLines,
     city,
@@ -332,9 +340,11 @@ module.exports = async function handler(req, res) {
 
   const recipientAddress = parseStructuredShippingAddress(payload);
   if (!recipientAddress) {
-    res.status(400).json({
-      error: 'Shipping address format is invalid.',
-      hint: 'Expected street, city, state/province, and postal code.'
+    res.status(422).json({
+      error: 'Shipping address is invalid.',
+      details: 'Please check street, city, state, and ZIP code.',
+      code: 'invalid_shipping_address',
+      hint: 'Expected a valid US state code and ZIP code format (12345 or 12345-6789).'
     });
     return;
   }
