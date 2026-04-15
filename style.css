@@ -622,7 +622,10 @@
     }
 
     .purchase-note {
-      margin-top: 10px;
+      margin-top: 8px;
+      color: #6f8090;
+      font-size: 0.85rem;
+      font-weight: 500;
     }
 
     .buy-quantity-label {
