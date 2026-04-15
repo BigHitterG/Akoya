@@ -317,7 +317,7 @@
     .carousel-slide {
       position: absolute;
       inset: 0;
-      padding-top: 16px;
+      padding: 20px;
       opacity: 0;
       transform: scale(1.015);
       transition: opacity 0.7s ease, transform 0.7s ease;
@@ -766,6 +766,10 @@
       color: #334a5b;
       font-size: 1.06rem;
       line-height: 1.7;
+    }
+
+    .story-content .body-copy {
+      max-width: none;
     }
 
     .story-letter p:not(.signature-line) {
