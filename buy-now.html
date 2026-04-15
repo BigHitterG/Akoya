@@ -48,7 +48,13 @@
               <p class="checkout-quantity-title">Product</p>
               <p class="checkout-quantity-line1">Akoya Eye Shield</p>
               <p class="checkout-quantity-title">Quantity</p>
-              <p class="checkout-quantity-line1 quantity-requested-preview-line1">15 units</p>
+              <div class="checkout-quantity-controls">
+                <p class="checkout-quantity-line1 quantity-requested-preview-line1">15 units</p>
+                <div class="checkout-quantity-stepper" role="group" aria-label="Adjust quantity">
+                  <button type="button" class="checkout-quantity-stepper-button" id="quantityAdjustUp" aria-label="Increase quantity">▲</button>
+                  <button type="button" class="checkout-quantity-stepper-button" id="quantityAdjustDown" aria-label="Decrease quantity">▼</button>
+                </div>
+              </div>
               <p class="checkout-quantity-line2 quantity-requested-preview-line2">$180.00 pre-tax, pre-shipping</p>
             </div>
 
@@ -264,6 +270,8 @@
       var quantityPreview = document.getElementById('quantityRequestedPreview');
       var quantityPreviewLine1 = quantityPreview.querySelector('.quantity-requested-preview-line1');
       var quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
+      var quantityAdjustUp = document.getElementById('quantityAdjustUp');
+      var quantityAdjustDown = document.getElementById('quantityAdjustDown');
       var invoiceGoodsTotal = document.getElementById('invoiceGoodsTotal');
       var invoiceShippingTotal = document.getElementById('invoiceShippingTotal');
       var invoiceTaxTotal = document.getElementById('invoiceTaxTotal');
@@ -290,6 +298,8 @@
         cvcComplete: false
       };
       var checkoutMode = 'card';
+      var minQuantity = 1;
+      var maxQuantity = 10;
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
       var shippingRateState = {
@@ -586,7 +596,7 @@
 
       function updateQuantityPreview() {
         var quantity = Number.parseInt(quantityInput.value, 10);
-        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 10;
+        var hasValidQuantity = Number.isFinite(quantity) && quantity >= minQuantity && quantity <= maxQuantity;
 
         if (!hasValidQuantity) {
           quantityPreviewLine1.textContent = 'Select a quantity to see units.';
@@ -599,15 +609,32 @@
         var preTaxTotal = unitCount * pricePerUnit;
         quantityPreviewLine1.textContent = unitCount + ' units';
         quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
+        if (quantityAdjustUp) {
+          quantityAdjustUp.disabled = quantity >= maxQuantity;
+        }
+        if (quantityAdjustDown) {
+          quantityAdjustDown.disabled = quantity <= minQuantity;
+        }
         updateInvoicePreviewTotals();
+      }
+
+      function setQuantity(nextQuantity, options) {
+        var setOptions = options || {};
+        var parsedQuantity = Number.parseInt(nextQuantity, 10);
+        var safeQuantity = Number.isFinite(parsedQuantity) ? parsedQuantity : minQuantity;
+        var clampedQuantity = Math.min(maxQuantity, Math.max(minQuantity, safeQuantity));
+        quantityInput.value = String(clampedQuantity);
+        updateQuantityPreview();
+
+        if (setOptions.refreshShipping) {
+          refreshShippingRateEstimate({ force: true });
+        }
       }
 
       function initializeQuantityFromUrl() {
         var url = new URL(window.location.href);
         var quantityFromUrl = Number.parseInt(url.searchParams.get('quantity') || '', 10);
-        var safeQuantity = Number.isFinite(quantityFromUrl) && quantityFromUrl > 0 && quantityFromUrl <= 10 ? quantityFromUrl : 1;
-        quantityInput.value = String(safeQuantity);
-        updateQuantityPreview();
+        setQuantity(quantityFromUrl, { refreshShipping: false });
       }
 
       function updateInvoicePreviewTotals() {
@@ -934,6 +961,18 @@
           refreshShippingRateEstimate();
         });
       });
+
+      if (quantityAdjustUp) {
+        quantityAdjustUp.addEventListener('click', function () {
+          setQuantity(Number.parseInt(quantityInput.value, 10) + 1, { refreshShipping: true });
+        });
+      }
+
+      if (quantityAdjustDown) {
+        quantityAdjustDown.addEventListener('click', function () {
+          setQuantity(Number.parseInt(quantityInput.value, 10) - 1, { refreshShipping: true });
+        });
+      }
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
