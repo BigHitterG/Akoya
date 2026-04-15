@@ -48,7 +48,7 @@
               <p class="checkout-quantity-title">Product</p>
               <p class="checkout-quantity-line1">Akoya Eye Shield</p>
               <p class="checkout-quantity-title">Quantity</p>
-              <p class="checkout-quantity-line1 quantity-requested-preview-line1">1 set (15 units)</p>
+              <p class="checkout-quantity-line1 quantity-requested-preview-line1">15 units</p>
               <p class="checkout-quantity-line2 quantity-requested-preview-line2">$180.00 pre-tax, pre-shipping</p>
             </div>
 
@@ -589,7 +589,7 @@
         var hasValidQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 10;
 
         if (!hasValidQuantity) {
-          quantityPreviewLine1.textContent = 'Select sets to see total units.';
+          quantityPreviewLine1.textContent = 'Select a quantity to see units.';
           quantityPreviewLine2.textContent = '';
           updateInvoicePreviewTotals();
           return;
@@ -597,8 +597,7 @@
 
         var unitCount = quantity * unitsPerBox;
         var preTaxTotal = unitCount * pricePerUnit;
-        var setLabel = quantity === 1 ? 'set' : 'sets';
-        quantityPreviewLine1.textContent = quantity + ' ' + setLabel + ' (' + unitCount + ' units)';
+        quantityPreviewLine1.textContent = unitCount + ' units';
         quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
         updateInvoicePreviewTotals();
       }

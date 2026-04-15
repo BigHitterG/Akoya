@@ -558,7 +558,7 @@ module.exports = async function handler(req, res) {
       invoice: invoice.id,
       amount: productAmountCents,
       currency: 'usd',
-      description: `Akoya Eye Shield - ${boxCount} box(es) / ${units} units`
+      description: `Akoya Eye Shield - ${units} units`
     });
 
     if (shippingFeeCents > 0) {
