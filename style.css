@@ -308,7 +308,7 @@
     .procedure-carousel {
       position: relative;
       min-height: clamp(360px, 55vw, 580px);
-      margin: 0 20px 20px;
+      margin: 20px 20px 20px;
       border-radius: 24px;
       overflow: hidden;
       background: #e9eef2;
@@ -476,7 +476,7 @@
       .top-banner { font-size: 0.84rem; }
       .btn { width: 100%; }
       .cta-row { max-width: 420px; }
-      .procedure-carousel { margin: 0 14px 16px; min-height: 420px; }
+      .procedure-carousel { margin: 14px 14px 16px; min-height: 420px; }
       .slide-overlay { padding: 14px 16px 26px; }
       .slide-overlay p { max-width: 24ch; }
       .carousel-play { width: 48px; height: 48px; }
