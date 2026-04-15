@@ -42,7 +42,7 @@ const SHIPPING_PACKAGE_CONFIGS = [
     packages: [
       {
         weight: { units: 'LB', value: 2.6 },
-        dimensions: { length: 24, width: 12, height: 6, units: 'IN' }
+        dimensions: { length: 12, width: 12, height: 12, units: 'IN' }
       }
     ]
   },
