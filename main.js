@@ -143,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const buyPageQuantitySelect = document.getElementById('buyPageQuantityRequested');
   const buyPageQuantityPreview = document.getElementById('buyPageQuantityPreview');
   const buyPageCheckoutLink = document.getElementById('buyPageCheckoutLink');
+  const buyPageSelectedPrice = document.getElementById('buyPageSelectedPrice');
 
   if (buyPageQuantitySelect && buyPageQuantityPreview && buyPageCheckoutLink) {
     const unitsPerBox = 15;
@@ -153,8 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
       const unitCount = safeQuantity * unitsPerBox;
       const totalPrice = safeQuantity * pricePerBox;
-      const setLabel = safeQuantity === 1 ? 'set' : 'sets';
-      buyPageQuantityPreview.textContent = `${safeQuantity} ${setLabel} (${unitCount} units) · $${totalPrice.toFixed(2)}`;
+      buyPageQuantityPreview.textContent = `${unitCount} units · $${totalPrice.toFixed(2)}`;
+      if (buyPageSelectedPrice) {
+        buyPageSelectedPrice.innerHTML = `$${totalPrice.toFixed(2)} <small>(${unitCount} units, $12.00 per unit)</small>`;
+      }
       buyPageCheckoutLink.href = `buy-now.html?quantity=${safeQuantity}`;
     };
 
