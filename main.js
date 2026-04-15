@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalPrice = safeQuantity * pricePerBox;
       buyPageQuantityPreview.textContent = `${unitCount} units · $${totalPrice.toFixed(2)}`;
       if (buyPageSelectedPrice) {
-        buyPageSelectedPrice.innerHTML = `$${totalPrice.toFixed(2)} <small>(${unitCount} units, $12.00 per unit)</small>`;
+        buyPageSelectedPrice.textContent = '$12.00';
       }
       buyPageCheckoutLink.href = `buy-now.html?quantity=${safeQuantity}`;
     };
