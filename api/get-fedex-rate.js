@@ -329,7 +329,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const shippingPackageConfig = getShippingPackageConfig(quantityRequested);
+  const shippingPackageConfig = getShippingPackageConfig(quantityRequested, { testMode: payload.testMode });
   if (!shippingPackageConfig) {
     res.status(400).json({
       error: 'quantityRequested is not supported for live shipping quotes.',
@@ -362,7 +362,7 @@ module.exports = async function handler(req, res) {
   if (missingCoreConfig.length) {
     respondWithFallback({
       res,
-      quantityRequested,
+      quantityRequested: shippingPackageConfig.quantity,
       shippingPackageConfig,
       error: 'FedEx rate quote is not configured.',
       details: `Missing ${missingCoreConfig.join(', ')}.`,
@@ -390,7 +390,7 @@ module.exports = async function handler(req, res) {
   if (missingShipperConfig.length) {
     respondWithFallback({
       res,
-      quantityRequested,
+      quantityRequested: shippingPackageConfig.quantity,
       shippingPackageConfig,
       error: 'FedEx shipper origin is not configured.',
       details: `Set ${missingShipperConfig.join(', ')}.`,
@@ -506,7 +506,7 @@ module.exports = async function handler(req, res) {
 
       respondWithFallback({
         res,
-        quantityRequested,
+        quantityRequested: shippingPackageConfig.quantity,
         shippingPackageConfig,
         error: 'FedEx rate quote failed.',
         details: fedexMessage || `HTTP ${quoteResponse.status}`,
@@ -543,7 +543,7 @@ module.exports = async function handler(req, res) {
 
       respondWithFallback({
         res,
-        quantityRequested,
+        quantityRequested: shippingPackageConfig.quantity,
         shippingPackageConfig,
         error: 'FedEx returned no usable rate quote.',
         details: summarizeFedexErrors(quoteBody) || null,

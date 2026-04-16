@@ -1,6 +1,6 @@
 const Stripe = require('stripe');
 const { sendCustomerEmail } = require('./lib/customer-email');
-const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
+const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
 
 const unitsPerBox = 12;
@@ -236,7 +236,8 @@ async function createFedexShipment(payload) {
     shippingCountryCode: normalizeCountryCode(payload.shippingCountryCode),
     recipientName: payload.fullName.trim(),
     recipientPhone: payload.phone.trim(),
-    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
+    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '',
+    testMode: payload.testMode
   };
 
   let responseStatus = 500;
@@ -451,14 +452,15 @@ module.exports = async function handler(req, res) {
     return;
   }
   const testMode = normalizeTestMode(payload.testMode);
-  const shouldChargeShipping = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
-  const shouldChargeTax = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping_tax';
+  const shouldChargeShipping = testMode === 'standard' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
+  const fallbackShippingQuantity = shouldUseTestShippingProfile(testMode) ? 1 : boxCount;
 
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
   const productAmountCents = testMode === 'standard' ? units * pricePerUnitCents : testGoodsAmountCents;
   const parsedPayloadShippingFeeCents = parseCents(payload.shippingFeeCents);
-  const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
+  const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(fallbackShippingQuantity);
   const envDefaultShippingFeeCents = parseCents(process.env.DEFAULT_SHIPPING_FEE_CENTS);
   const shippingFeeCents = shouldChargeShipping
     ? (Number.isFinite(parsedPayloadShippingFeeCents)
