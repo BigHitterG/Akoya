@@ -244,7 +244,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const shippingPackageConfig = getShippingPackageConfig(quantityRequested);
+  const shippingPackageConfig = getShippingPackageConfig(quantityRequested, { testMode: payload.testMode });
   if (!shippingPackageConfig) {
     res.status(400).json({
       error: 'quantityRequested is not supported for FedEx shipment creation.',

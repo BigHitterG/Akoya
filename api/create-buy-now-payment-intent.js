@@ -2,7 +2,7 @@ const Stripe = require('stripe');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
 const getFedexRateHandler = require('./get-fedex-rate');
 const { sendCustomerEmail } = require('./lib/customer-email');
-const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
+const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
 
 const unitsPerBox = 12;
 const pricePerUnitCents = 1200;
@@ -87,7 +87,8 @@ async function createFedexShipment(payload) {
     shippingCountryCode: normalizeCountryCode(payload.shippingCountryCode),
     recipientName: payload.fullName.trim(),
     recipientPhone: payload.phone.trim(),
-    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
+    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '',
+    testMode: payload.testMode
   };
 
   let responseStatus = 500;
@@ -130,7 +131,8 @@ async function createFedexRateQuote(payload) {
     shippingState: payload.shippingState.trim().toUpperCase(),
     shippingPostalCode: payload.shippingPostalCode.trim(),
     shippingCountryCode: normalizeCountryCode(payload.shippingCountryCode),
-    flow: 'buy-now-submit-fallback-quote'
+    flow: 'buy-now-submit-fallback-quote',
+    testMode: payload.testMode
   };
 
   let responseStatus = 500;
@@ -501,8 +503,9 @@ module.exports = async function handler(req, res) {
   }
 
   const testMode = normalizeTestMode(payload.testMode);
-  const shouldChargeShipping = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
-  const shouldChargeTax = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping_tax';
+  const shouldChargeShipping = testMode === 'standard' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
+  const fallbackShippingQuantity = shouldUseTestShippingProfile(testMode) ? 1 : boxCount;
 
   const quotedShippingFeeCents = shouldChargeShipping ? parseCents(payload.shippingFeeCents) : 0;
   if (shouldChargeShipping && !Number.isFinite(quotedShippingFeeCents)) {
@@ -579,7 +582,7 @@ module.exports = async function handler(req, res) {
           });
           return;
         } else {
-          const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
+          const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(fallbackShippingQuantity);
           if (Number.isFinite(fallbackShippingFeeCents)) {
             actualShippingFeeCents = fallbackShippingFeeCents;
             shippingServiceName = 'FedEx Ground (Fallback Flat Rate)';

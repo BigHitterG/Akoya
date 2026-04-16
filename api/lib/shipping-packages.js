@@ -148,7 +148,38 @@ const SHIPPING_PACKAGE_CONFIGS = [
   }
 ];
 
-function getShippingPackageConfig(quantity) {
+const TEST_SHIPPING_PACKAGE_CONFIG = {
+  quantity: 1,
+  packageCount: 1,
+  packages: [
+    {
+      weight: { units: 'LB', value: 0.1 },
+      dimensions: { length: 4, width: 4, height: 1, units: 'IN' }
+    }
+  ]
+};
+
+function normalizeTestMode(value) {
+  if (typeof value !== 'string') {
+    return 'standard';
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return ['standard', 'test', 'test_shipping', 'test_shipping_tax'].includes(normalized)
+    ? normalized
+    : 'standard';
+}
+
+function shouldUseTestShippingProfile(testMode) {
+  const normalizedTestMode = normalizeTestMode(testMode);
+  return normalizedTestMode === 'test_shipping' || normalizedTestMode === 'test_shipping_tax';
+}
+
+function getShippingPackageConfig(quantity, options = {}) {
+  if (shouldUseTestShippingProfile(options.testMode)) {
+    return TEST_SHIPPING_PACKAGE_CONFIG;
+  }
+
   return SHIPPING_PACKAGE_CONFIGS.find((config) => config.quantity === quantity) || null;
 }
 
@@ -165,6 +196,8 @@ function getFinalFallbackShippingFeeCents(quantity) {
 module.exports = {
   FINAL_FALLBACK_SHIPPING_RATE_CENTS_BY_QUANTITY,
   SHIPPING_PACKAGE_CONFIGS,
+  TEST_SHIPPING_PACKAGE_CONFIG,
   getShippingPackageConfig,
-  getFinalFallbackShippingFeeCents
+  getFinalFallbackShippingFeeCents,
+  shouldUseTestShippingProfile
 };
