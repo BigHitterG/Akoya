@@ -1,6 +1,6 @@
 const Stripe = require('stripe');
 
-const unitsPerBox = 15;
+const unitsPerBox = 12;
 const pricePerUnitCents = 1200;
 
 function parseJson(req) {
@@ -293,8 +293,8 @@ module.exports = async function handler(req, res) {
             currency: 'usd',
             unit_amount: boxPriceCents,
             product_data: {
-              name: 'Akoya Eye Shield (Box of 15)',
-              description: '$12.00 per unit • 15 units per box',
+              name: 'Akoya Eye Shield (Box of 12)',
+              description: '$12.00 per unit • 12 units per box',
               metadata: {
                 unitsPerBox: String(unitsPerBox),
                 pricePerUnitCents: String(pricePerUnitCents)
