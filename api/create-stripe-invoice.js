@@ -5,6 +5,7 @@ const createFedexShipmentHandler = require('./create-fedex-shipment');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
+const testGoodsAmountCents = 25;
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -58,6 +59,13 @@ function normalizeCountryCode(value) {
   }
 
   return value.trim().toUpperCase();
+}
+
+function normalizeTestMode(value) {
+  const normalized = required(value) ? value.trim().toLowerCase() : 'standard';
+  return ['standard', 'test', 'test_shipping', 'test_shipping_tax'].includes(normalized)
+    ? normalized
+    : 'standard';
 }
 
 function getStripeCustomerDisplayName(payload) {
@@ -442,20 +450,25 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'quantityRequested must be at least 1.' });
     return;
   }
+  const testMode = normalizeTestMode(payload.testMode);
+  const shouldChargeShipping = testMode === 'standard' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
 
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
-  const productAmountCents = units * pricePerUnitCents;
+  const productAmountCents = testMode === 'standard' ? units * pricePerUnitCents : testGoodsAmountCents;
   const parsedPayloadShippingFeeCents = parseCents(payload.shippingFeeCents);
   const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
   const envDefaultShippingFeeCents = parseCents(process.env.DEFAULT_SHIPPING_FEE_CENTS);
-  const shippingFeeCents = Number.isFinite(parsedPayloadShippingFeeCents)
-    ? parsedPayloadShippingFeeCents
-    : Number.isFinite(fallbackShippingFeeCents)
-      ? fallbackShippingFeeCents
-      : Number.isFinite(envDefaultShippingFeeCents)
-        ? envDefaultShippingFeeCents
-        : 0;
+  const shippingFeeCents = shouldChargeShipping
+    ? (Number.isFinite(parsedPayloadShippingFeeCents)
+      ? parsedPayloadShippingFeeCents
+      : Number.isFinite(fallbackShippingFeeCents)
+        ? fallbackShippingFeeCents
+        : Number.isFinite(envDefaultShippingFeeCents)
+          ? envDefaultShippingFeeCents
+          : 0)
+    : 0;
   const shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
   const shippingServiceType = required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '';
   const trackingNumber = required(payload.trackingNumber)
@@ -487,7 +500,7 @@ module.exports = async function handler(req, res) {
     });
     return;
   }
-  const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX !== 'false';
+  const automaticTaxEnabled = shouldChargeTax && process.env.ENABLE_STRIPE_AUTOMATIC_TAX !== 'false';
   const structuredShippingAddress = buildStructuredShippingAddress(payload);
   const institutionName = required(payload.institutionName)
     ? payload.institutionName.trim()
@@ -503,6 +516,7 @@ module.exports = async function handler(req, res) {
     shippingAddress: payload.shippingAddress.trim(),
     billingAddress: payload.billingAddress.trim(),
     poNumber: (payload.poNumber || '').trim(),
+    testMode,
     notes: (payload.notes || '').trim(),
     boxes: String(boxCount),
     units: String(units),
@@ -558,7 +572,9 @@ module.exports = async function handler(req, res) {
       invoice: invoice.id,
       amount: productAmountCents,
       currency: 'usd',
-      description: `Akoya Eye Shield - ${units} units`
+      description: testMode === 'standard'
+        ? `Akoya Eye Shield - ${units} units`
+        : `Akoya troubleshooting order (${testMode})`
     });
 
     if (shippingFeeCents > 0) {
@@ -595,7 +611,7 @@ module.exports = async function handler(req, res) {
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
       invoicePdf: finalizedInvoice.invoice_pdf || null,
       dueDateUnix: finalizedInvoice.due_date,
-      labelPending: !fedexShipmentCreated
+      labelPending: shouldChargeShipping && !fedexShipmentCreated
     });
 
     const internalEmail = await sendInternalNotification({
@@ -610,7 +626,7 @@ module.exports = async function handler(req, res) {
       shippingLabelUrl
     });
 
-    if (!fedexShipmentCreated) {
+    if (shouldChargeShipping && !fedexShipmentCreated) {
       scheduleInvoiceFedexLabelRecovery({
         stripe,
         invoiceId: finalizedInvoice.id,

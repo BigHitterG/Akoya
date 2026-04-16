@@ -2,6 +2,7 @@ const Stripe = require('stripe');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
+const testGoodsAmountCents = 25;
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -38,6 +39,13 @@ function normalizeCountryCode(value) {
   }
 
   return value.trim().toUpperCase();
+}
+
+function normalizeTestMode(value) {
+  const normalized = required(value) ? value.trim().toLowerCase() : 'standard';
+  return ['standard', 'test', 'test_shipping', 'test_shipping_tax'].includes(normalized)
+    ? normalized
+    : 'standard';
 }
 
 async function calculateStripeTax(stripe, params) {
@@ -115,6 +123,8 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'quantityRequested must be at least 1.' });
     return;
   }
+  const testMode = normalizeTestMode(payload.testMode);
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
 
   const shippingFeeCents = parseCents(payload.shippingFeeCents);
   if (!Number.isFinite(shippingFeeCents)) {
@@ -128,8 +138,23 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const goodsAmountCents = testMode === 'standard'
+    ? boxCount * unitsPerBox * pricePerUnitCents
+    : testGoodsAmountCents;
+
+  if (!shouldChargeTax) {
+    res.status(200).json({
+      success: true,
+      taxAmountCents: 0,
+      taxCalculationId: null,
+      source: 'test_mode_tax_disabled',
+      goodsAmountCents,
+      shippingFeeCents
+    });
+    return;
+  }
+
   const stripe = new Stripe(apiKey);
-  const goodsAmountCents = boxCount * unitsPerBox * pricePerUnitCents;
 
   try {
     const taxData = await calculateStripeTax(stripe, {

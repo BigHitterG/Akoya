@@ -55,6 +55,15 @@
                   <button type="button" class="checkout-quantity-stepper-button" id="quantityAdjustDown" aria-label="Decrease quantity">▼</button>
                 </div>
               </div>
+              <div id="testQuantityModeRow" style="display: none; margin-top: 10px;">
+                <label for="testQuantityModeSelect" class="checkout-quantity-title" style="display: block; margin-bottom: 4px;">Troubleshooting mode</label>
+                <select id="testQuantityModeSelect" style="width: 100%; max-width: 340px;">
+                  <option value="standard">Standard quantity</option>
+                  <option value="test">Test ($0.25, no shipping, no tax)</option>
+                  <option value="test_shipping">Test + shipping ($0.25 + shipping)</option>
+                  <option value="test_shipping_tax">Test + shipping + tax ($0.25 + shipping + tax)</option>
+                </select>
+              </div>
               <p class="checkout-quantity-line2 quantity-requested-preview-line2">$180.00 pre-tax, pre-shipping</p>
             </div>
 
@@ -263,6 +272,7 @@
 
   <script src="https://js.stripe.com/v3"></script>
   <script src="main.js" defer></script>
+  <script src="checkout-toggles.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       var form = document.getElementById('buyNowForm');
@@ -272,6 +282,8 @@
       var quantityPreviewLine2 = quantityPreview.querySelector('.quantity-requested-preview-line2');
       var quantityAdjustUp = document.getElementById('quantityAdjustUp');
       var quantityAdjustDown = document.getElementById('quantityAdjustDown');
+      var testQuantityModeRow = document.getElementById('testQuantityModeRow');
+      var testQuantityModeSelect = document.getElementById('testQuantityModeSelect');
       var invoiceGoodsTotal = document.getElementById('invoiceGoodsTotal');
       var invoiceShippingTotal = document.getElementById('invoiceShippingTotal');
       var invoiceTaxTotal = document.getElementById('invoiceTaxTotal');
@@ -300,6 +312,48 @@
       var checkoutMode = 'card';
       var minQuantity = 1;
       var maxQuantity = 10;
+      var checkoutToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
+      var testCheckoutOptions = checkoutToggles.testCheckoutOptions || {};
+      var testModeEnabled = !!testCheckoutOptions.enabled;
+      var testGoodsAmountCents = Number.isFinite(testCheckoutOptions.priceCents) ? testCheckoutOptions.priceCents : 25;
+      var selectedTestMode = 'standard';
+
+      function isSupportedTestMode(mode) {
+        return mode === 'standard' || mode === 'test' || mode === 'test_shipping' || mode === 'test_shipping_tax';
+      }
+
+      function getTestModeLabel(mode) {
+        if (mode === 'test') {
+          return 'Test';
+        }
+        if (mode === 'test_shipping') {
+          return 'Test with shipping';
+        }
+        if (mode === 'test_shipping_tax') {
+          return 'Test with shipping + tax';
+        }
+        return 'Standard';
+      }
+
+      function shouldQuoteShipping() {
+        return selectedTestMode === 'standard' || selectedTestMode === 'test_shipping' || selectedTestMode === 'test_shipping_tax';
+      }
+
+      function shouldEstimateTax() {
+        return selectedTestMode === 'standard' || selectedTestMode === 'test_shipping_tax';
+      }
+
+      function getGoodsAmountCents() {
+        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var hasValidQuantity = Number.isFinite(quantity) && quantity >= minQuantity && quantity <= maxQuantity;
+        if (!hasValidQuantity) {
+          return 0;
+        }
+        if (selectedTestMode === 'standard') {
+          return quantity * unitsPerBox * pricePerUnit * 100;
+        }
+        return testGoodsAmountCents;
+      }
 
       var shippingFields = ['shippingStreet1', 'shippingStreet2', 'shippingCity', 'shippingState', 'shippingPostalCode', 'shippingCountryCode'];
       var shippingRateState = {
@@ -605,15 +659,20 @@
           return;
         }
 
-        var unitCount = quantity * unitsPerBox;
-        var preTaxTotal = unitCount * pricePerUnit;
-        quantityPreviewLine1.textContent = unitCount + ' units';
-        quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
+        if (selectedTestMode === 'standard') {
+          var unitCount = quantity * unitsPerBox;
+          var preTaxTotal = unitCount * pricePerUnit;
+          quantityPreviewLine1.textContent = unitCount + ' units';
+          quantityPreviewLine2.textContent = '$' + preTaxTotal.toFixed(2) + ' pre-tax, pre-shipping';
+        } else {
+          quantityPreviewLine1.textContent = getTestModeLabel(selectedTestMode) + ' checkout';
+          quantityPreviewLine2.textContent = '$' + (testGoodsAmountCents / 100).toFixed(2) + ' test amount';
+        }
         if (quantityAdjustUp) {
-          quantityAdjustUp.disabled = quantity >= maxQuantity;
+          quantityAdjustUp.disabled = selectedTestMode !== 'standard' || quantity >= maxQuantity;
         }
         if (quantityAdjustDown) {
-          quantityAdjustDown.disabled = quantity <= minQuantity;
+          quantityAdjustDown.disabled = selectedTestMode !== 'standard' || quantity <= minQuantity;
         }
         updateInvoicePreviewTotals();
       }
@@ -638,9 +697,7 @@
       }
 
       function updateInvoicePreviewTotals() {
-        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
-        var hasValidQuantity = Number.isFinite(quantity) && quantity > 0 && quantity <= 10;
-        var goodsTotal = hasValidQuantity ? quantity * unitsPerBox * pricePerUnit : 0;
+        var goodsTotal = getGoodsAmountCents() / 100;
         var hasShippingEstimate = Number.isFinite(shippingRateState.cents);
         var shippingTotal = hasShippingEstimate ? shippingRateState.cents / 100 : null;
         var subtotal = goodsTotal + (shippingTotal || 0);
@@ -668,6 +725,18 @@
       }
 
       async function refreshTaxEstimate() {
+        if (!shouldEstimateTax()) {
+          taxState = {
+            status: 'ready',
+            amountCents: 0,
+            source: 'test_mode_tax_disabled',
+            signature: buildTaxQuoteSignature()
+          };
+          taxEstimateMessage.textContent = 'Tax disabled for this troubleshooting mode.';
+          updateInvoicePreviewTotals();
+          return;
+        }
+
         var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
         var shippingInput = getShippingAddressInput();
         var quoteSignature = buildTaxQuoteSignature();
@@ -708,7 +777,8 @@
               shippingCity: shippingInput.shippingCity,
               shippingState: shippingInput.shippingState,
               shippingPostalCode: shippingInput.shippingPostalCode,
-              shippingCountryCode: shippingInput.shippingCountryCode
+              shippingCountryCode: shippingInput.shippingCountryCode,
+              testMode: selectedTestMode
             })
           });
 
@@ -753,6 +823,24 @@
           return;
         }
 
+        if (!shouldQuoteShipping()) {
+          shippingRateState = {
+            status: 'ready',
+            cents: 0,
+            serviceName: 'No shipping (test mode)',
+            serviceType: '',
+            quoteSignature: quoteSignature,
+            options: [],
+            selectedOptionId: '',
+            retryCount: 0
+          };
+          setShippingRateMessage('<strong>Shipping disabled for this troubleshooting mode.</strong>', 'is-success');
+          hideShippingOptions();
+          updateInvoicePreviewTotals();
+          refreshTaxEstimate();
+          return;
+        }
+
 
         if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
           resetShippingRateState('incomplete');
@@ -788,7 +876,8 @@
               shippingState: shippingInput.shippingState,
               shippingPostalCode: shippingInput.shippingPostalCode,
               shippingCountryCode: shippingInput.shippingCountryCode,
-              flow: 'buy-now'
+              flow: 'buy-now',
+              testMode: selectedTestMode
             })
           });
 
@@ -974,6 +1063,24 @@
         });
       }
 
+      if (testModeEnabled && testQuantityModeSelect) {
+        if (testQuantityModeRow) {
+          testQuantityModeRow.style.display = 'block';
+        }
+        var requestedDefaultMode = typeof testCheckoutOptions.defaultMode === 'string'
+          ? testCheckoutOptions.defaultMode.trim().toLowerCase()
+          : 'standard';
+        selectedTestMode = isSupportedTestMode(requestedDefaultMode) ? requestedDefaultMode : 'standard';
+        testQuantityModeSelect.value = selectedTestMode;
+        testQuantityModeSelect.addEventListener('change', function () {
+          selectedTestMode = isSupportedTestMode(testQuantityModeSelect.value) ? testQuantityModeSelect.value : 'standard';
+          updateQuantityPreview();
+          refreshShippingRateEstimate({ force: true });
+        });
+      } else if (testQuantityModeRow) {
+        testQuantityModeRow.style.display = 'none';
+      }
+
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
         submissionError.style.display = 'none';
@@ -993,7 +1100,7 @@
           return;
         }
 
-        if (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents)) {
+        if (shouldQuoteShipping() && (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents))) {
           submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
           submissionError.style.display = 'block';
           return;
@@ -1020,6 +1127,7 @@
             shippingFeeCents: shippingRateState.cents,
             shippingServiceName: shippingRateState.serviceName,
             shippingServiceType: shippingRateState.serviceType,
+            testMode: selectedTestMode,
             billingAddress: getFieldValue('billingAddress').trim(),
             poNumber: getFieldValue('poNumber').trim(),
             notes: getFieldValue('notes').trim()
@@ -1031,32 +1139,45 @@
               shippingAddress: buildShippingAddressMultiline()
             });
 
-            try {
-              var shipmentResponse = await createFedexShipment();
-              invoicePayload.shippingFeeCents = shipmentResponse.shippingFeeCents;
-              invoicePayload.shippingServiceName = shipmentResponse.serviceName || 'FedEx Shipment (paid label)';
-              invoicePayload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
-              invoicePayload.trackingNumber = shipmentResponse.trackingNumber || '';
-              invoicePayload.shippingLabelUrl = shipmentResponse.labelUrl || '';
-              invoicePayload.shipDatestamp = shipmentResponse.shipDatestamp || '';
-              invoicePayload.fedexShipmentCreated = 'true';
-              invoicePayload.fedexShipmentStatus = 'label_created';
-              invoicePayload.fedexShipmentError = '';
-              invoicePayload.fedexShipmentErrorCode = '';
-            } catch (shipmentError) {
-              if (shipmentError && shipmentError.isInvalidAddress) {
-                throw new Error(shipmentError.message || 'Shipping address is invalid. Please correct it before submitting.');
-              }
+            if (shouldQuoteShipping()) {
+              try {
+                var shipmentResponse = await createFedexShipment();
+                invoicePayload.shippingFeeCents = shipmentResponse.shippingFeeCents;
+                invoicePayload.shippingServiceName = shipmentResponse.serviceName || 'FedEx Shipment (paid label)';
+                invoicePayload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
+                invoicePayload.trackingNumber = shipmentResponse.trackingNumber || '';
+                invoicePayload.shippingLabelUrl = shipmentResponse.labelUrl || '';
+                invoicePayload.shipDatestamp = shipmentResponse.shipDatestamp || '';
+                invoicePayload.fedexShipmentCreated = 'true';
+                invoicePayload.fedexShipmentStatus = 'label_created';
+                invoicePayload.fedexShipmentError = '';
+                invoicePayload.fedexShipmentErrorCode = '';
+              } catch (shipmentError) {
+                if (shipmentError && shipmentError.isInvalidAddress) {
+                  throw new Error(shipmentError.message || 'Shipping address is invalid. Please correct it before submitting.');
+                }
 
-              invoicePayload.shippingFeeCents = shippingRateState.cents;
-              invoicePayload.shippingServiceName = shippingRateState.serviceName || 'FedEx Estimated Shipping (quoted)';
-              invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
+                invoicePayload.shippingFeeCents = shippingRateState.cents;
+                invoicePayload.shippingServiceName = shippingRateState.serviceName || 'FedEx Estimated Shipping (quoted)';
+                invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
+                invoicePayload.trackingNumber = '';
+                invoicePayload.shippingLabelUrl = '';
+                invoicePayload.shipDatestamp = '';
+                invoicePayload.fedexShipmentCreated = 'false';
+                invoicePayload.fedexShipmentStatus = 'label_not_created_quoted_fallback';
+                invoicePayload.fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : '').slice(0, 300);
+                invoicePayload.fedexShipmentErrorCode = '';
+              }
+            } else {
+              invoicePayload.shippingFeeCents = 0;
+              invoicePayload.shippingServiceName = 'No shipping (test mode)';
+              invoicePayload.shippingServiceType = '';
               invoicePayload.trackingNumber = '';
               invoicePayload.shippingLabelUrl = '';
               invoicePayload.shipDatestamp = '';
               invoicePayload.fedexShipmentCreated = 'false';
-              invoicePayload.fedexShipmentStatus = 'label_not_created_quoted_fallback';
-              invoicePayload.fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : '').slice(0, 300);
+              invoicePayload.fedexShipmentStatus = 'not_requested_test_mode';
+              invoicePayload.fedexShipmentError = '';
               invoicePayload.fedexShipmentErrorCode = '';
             }
 
@@ -1124,6 +1245,7 @@
             shippingFeeCents: basePayload.shippingFeeCents,
             shippingServiceName: basePayload.shippingServiceName,
             shippingServiceType: basePayload.shippingServiceType,
+            testMode: selectedTestMode,
             billingAddress: basePayload.billingAddress,
             poNumber: basePayload.poNumber,
             notes: basePayload.notes,
@@ -1207,3 +1329,20 @@
   </script>
 </body>
 </html>
+        if (!shouldQuoteShipping()) {
+          shippingRateState = {
+            status: 'ready',
+            cents: 0,
+            serviceName: 'No shipping (test mode)',
+            serviceType: '',
+            quoteSignature: quoteSignature,
+            options: [],
+            selectedOptionId: '',
+            retryCount: 0
+          };
+          setShippingRateMessage('<strong>Shipping disabled for this troubleshooting mode.</strong>', 'is-success');
+          hideShippingOptions();
+          updateInvoicePreviewTotals();
+          refreshTaxEstimate();
+          return;
+        }
