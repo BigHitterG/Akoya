@@ -6,6 +6,7 @@ const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
+const testGoodsAmountCents = 25;
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -42,6 +43,13 @@ function normalizeCountryCode(value) {
   }
 
   return value.trim().toUpperCase();
+}
+
+function normalizeTestMode(value) {
+  const normalized = required(value) ? value.trim().toLowerCase() : 'standard';
+  return ['standard', 'test', 'test_shipping', 'test_shipping_tax'].includes(normalized)
+    ? normalized
+    : 'standard';
 }
 
 function getStripeCustomerDisplayName(payload) {
@@ -492,8 +500,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const quotedShippingFeeCents = parseCents(payload.shippingFeeCents);
-  if (!Number.isFinite(quotedShippingFeeCents)) {
+  const testMode = normalizeTestMode(payload.testMode);
+  const shouldChargeShipping = testMode === 'standard' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
+
+  const quotedShippingFeeCents = shouldChargeShipping ? parseCents(payload.shippingFeeCents) : 0;
+  if (shouldChargeShipping && !Number.isFinite(quotedShippingFeeCents)) {
     res.status(400).json({ error: 'shippingFeeCents is required.' });
     return;
   }
@@ -506,7 +518,7 @@ module.exports = async function handler(req, res) {
 
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
-  const goodsAmountCents = units * pricePerUnitCents;
+  const goodsAmountCents = testMode === 'standard' ? units * pricePerUnitCents : testGoodsAmountCents;
 
   try {
     let actualShippingFeeCents = quotedShippingFeeCents;
@@ -519,61 +531,68 @@ module.exports = async function handler(req, res) {
     let fedexShipmentError = '';
     let fedexShipmentStatus = 'label_not_created_quoted_fallback';
 
-    const shipmentResult = await createFedexShipment(payload);
-    if (shipmentResult.success) {
-      const parsedFedexShippingFeeCents = parseCents(shipmentResult.shipment.shippingFeeCents);
-      if (Number.isFinite(parsedFedexShippingFeeCents)) {
-        actualShippingFeeCents = parsedFedexShippingFeeCents;
-        shippingServiceName = shipmentResult.shipment.serviceName || shippingServiceName;
-        shippingServiceType = shipmentResult.shipment.serviceType || shippingServiceType;
-        fedexShipmentCreated = true;
-        fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
-        fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
-        fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
-        fedexShipmentStatus = 'label_created';
+    if (shouldChargeShipping) {
+      const shipmentResult = await createFedexShipment(payload);
+      if (shipmentResult.success) {
+        const parsedFedexShippingFeeCents = parseCents(shipmentResult.shipment.shippingFeeCents);
+        if (Number.isFinite(parsedFedexShippingFeeCents)) {
+          actualShippingFeeCents = parsedFedexShippingFeeCents;
+          shippingServiceName = shipmentResult.shipment.serviceName || shippingServiceName;
+          shippingServiceType = shipmentResult.shipment.serviceType || shippingServiceType;
+          fedexShipmentCreated = true;
+          fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
+          fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
+          fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
+          fedexShipmentStatus = 'label_created';
+        } else {
+          fedexShipmentError = 'FedEx shipment succeeded but shipping charge was missing; used quoted shipping instead.';
+        }
       } else {
-        fedexShipmentError = 'FedEx shipment succeeded but shipping charge was missing; used quoted shipping instead.';
+        fedexShipmentError =
+          shipmentResult.body?.details ||
+          shipmentResult.body?.error ||
+          `FedEx shipment request failed with status ${shipmentResult.status}.`;
+
+        if (shipmentResult.isInvalidAddress) {
+          res.status(400).json({
+            error: 'Shipping address is invalid.',
+            details: shipmentResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
+          });
+          return;
+        }
+
+        const quoteResult = await createFedexRateQuote(payload);
+        if (quoteResult.success) {
+          const parsedQuoteShippingFeeCents = parseCents(quoteResult.quote.shippingFeeCents);
+          if (Number.isFinite(parsedQuoteShippingFeeCents)) {
+            actualShippingFeeCents = parsedQuoteShippingFeeCents;
+            shippingServiceName = quoteResult.quote.serviceName || shippingServiceName || 'FedEx Ground (Fallback Flat Rate)';
+            shippingServiceType = quoteResult.quote.serviceType || shippingServiceType || 'FEDEX_GROUND';
+            fedexShipmentStatus = quoteResult.quote.fallbackUsed
+              ? 'label_not_created_final_flat_rate_fallback'
+              : 'label_not_created_live_quote';
+          }
+        } else if (quoteResult.isInvalidAddress) {
+          res.status(400).json({
+            error: 'Shipping address is invalid.',
+            details: quoteResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
+          });
+          return;
+        } else {
+          const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
+          if (Number.isFinite(fallbackShippingFeeCents)) {
+            actualShippingFeeCents = fallbackShippingFeeCents;
+            shippingServiceName = 'FedEx Ground (Fallback Flat Rate)';
+            shippingServiceType = 'FEDEX_GROUND';
+            fedexShipmentStatus = 'label_not_created_final_flat_rate_fallback';
+          }
+        }
       }
     } else {
-      fedexShipmentError =
-        shipmentResult.body?.details ||
-        shipmentResult.body?.error ||
-        `FedEx shipment request failed with status ${shipmentResult.status}.`;
-
-      if (shipmentResult.isInvalidAddress) {
-        res.status(400).json({
-          error: 'Shipping address is invalid.',
-          details: shipmentResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
-        });
-        return;
-      }
-
-      const quoteResult = await createFedexRateQuote(payload);
-      if (quoteResult.success) {
-        const parsedQuoteShippingFeeCents = parseCents(quoteResult.quote.shippingFeeCents);
-        if (Number.isFinite(parsedQuoteShippingFeeCents)) {
-          actualShippingFeeCents = parsedQuoteShippingFeeCents;
-          shippingServiceName = quoteResult.quote.serviceName || shippingServiceName || 'FedEx Ground (Fallback Flat Rate)';
-          shippingServiceType = quoteResult.quote.serviceType || shippingServiceType || 'FEDEX_GROUND';
-          fedexShipmentStatus = quoteResult.quote.fallbackUsed
-            ? 'label_not_created_final_flat_rate_fallback'
-            : 'label_not_created_live_quote';
-        }
-      } else if (quoteResult.isInvalidAddress) {
-        res.status(400).json({
-          error: 'Shipping address is invalid.',
-          details: quoteResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
-        });
-        return;
-      } else {
-        const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(boxCount);
-        if (Number.isFinite(fallbackShippingFeeCents)) {
-          actualShippingFeeCents = fallbackShippingFeeCents;
-          shippingServiceName = 'FedEx Ground (Fallback Flat Rate)';
-          shippingServiceType = 'FEDEX_GROUND';
-          fedexShipmentStatus = 'label_not_created_final_flat_rate_fallback';
-        }
-      }
+      actualShippingFeeCents = 0;
+      shippingServiceName = 'No shipping (test mode)';
+      shippingServiceType = '';
+      fedexShipmentStatus = 'not_requested_test_mode';
     }
 
     const customer = await stripe.customers.create({
@@ -608,26 +627,35 @@ module.exports = async function handler(req, res) {
       source: 'none'
     };
 
-    try {
-      taxData = await calculateStripeTax(stripe, {
-        shippingStreet1: payload.shippingStreet1.trim(),
-        shippingStreet2: (payload.shippingStreet2 || '').trim(),
-        shippingCity: payload.shippingCity.trim(),
-        shippingState: payload.shippingState.trim().toUpperCase(),
-        shippingPostalCode: payload.shippingPostalCode.trim(),
-        shippingCountryCode: countryCode,
-        goodsAmountCents,
-        shippingAmountCents: actualShippingFeeCents
-      });
-    } catch (error) {
-      if (process.env.REQUIRE_STRIPE_TAX_CALCULATION === 'true') {
-        throw error;
+    if (shouldChargeTax) {
+      try {
+        taxData = await calculateStripeTax(stripe, {
+          shippingStreet1: payload.shippingStreet1.trim(),
+          shippingStreet2: (payload.shippingStreet2 || '').trim(),
+          shippingCity: payload.shippingCity.trim(),
+          shippingState: payload.shippingState.trim().toUpperCase(),
+          shippingPostalCode: payload.shippingPostalCode.trim(),
+          shippingCountryCode: countryCode,
+          goodsAmountCents,
+          shippingAmountCents: actualShippingFeeCents
+        });
+      } catch (error) {
+        if (process.env.REQUIRE_STRIPE_TAX_CALCULATION === 'true') {
+          throw error;
+        }
       }
+    } else {
+      taxData = {
+        taxAmountCents: 0,
+        taxCalculationId: '',
+        source: 'test_mode_tax_disabled'
+      };
     }
 
     const totalAmountCents = goodsAmountCents + actualShippingFeeCents + taxData.taxAmountCents;
     const metadata = {
       flow: 'buy-now-payment-intent',
+      testMode,
       fullName: payload.fullName.trim(),
       jobTitle: payload.jobTitle.trim(),
       institutionName: payload.institutionName.trim(),
@@ -671,7 +699,7 @@ module.exports = async function handler(req, res) {
       payment_method: payload.paymentMethodId.trim(),
       confirm: true,
       receipt_email: payload.email.trim(),
-      description: 'Akoya Eye Shield order',
+      description: testMode === 'standard' ? 'Akoya Eye Shield order' : `Akoya troubleshooting order (${testMode})`,
       shipping: {
         name: payload.fullName.trim(),
         phone: payload.phone.trim(),
@@ -741,7 +769,7 @@ module.exports = async function handler(req, res) {
         labelPending: !fedexShipmentCreated
       });
 
-      if (!fedexShipmentCreated) {
+      if (shouldChargeShipping && !fedexShipmentCreated) {
         scheduleFedexLabelRecovery({
           payload,
           paymentIntentId: paymentIntent.id,
