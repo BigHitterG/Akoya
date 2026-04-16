@@ -1,6 +1,6 @@
 const Stripe = require('stripe');
 
-const unitsPerBox = 15;
+const unitsPerBox = 12;
 const pricePerUnitCents = 1200;
 const testGoodsAmountCents = 100;
 

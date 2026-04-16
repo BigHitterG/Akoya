@@ -4,7 +4,7 @@ const getFedexRateHandler = require('./get-fedex-rate');
 const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents } = require('./lib/shipping-packages');
 
-const unitsPerBox = 15;
+const unitsPerBox = 12;
 const pricePerUnitCents = 1200;
 const testGoodsAmountCents = 100;
 
