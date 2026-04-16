@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const buyPageSelectedPrice = document.getElementById('buyPageSelectedPrice');
 
   if (buyPageQuantitySelect && buyPageQuantityPreview && buyPageCheckoutLink) {
-    const unitsPerBox = 15;
+    const unitsPerBox = 12;
     const pricePerBox = 180;
 
     const renderBuyPageQuantityPreview = () => {
