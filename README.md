@@ -133,3 +133,10 @@ For Buy Now:
 For Invoice:
 - Stripe sends the hosted invoice email/pay link (`sendInvoice`).
 - Backend now also sends a custom thank-you email with tracking number, hosted invoice payment link, and invoice PDF URL.
+
+## Feature toggle operations
+
+Toggle documentation and copy/paste prompt templates live in `TOGGLES.md`.
+
+- Toggle doc: `TOGGLES.md`
+- Current test-purchase toggle source: `checkout-toggles.js`
