@@ -2,6 +2,6 @@ window.AKOYA_CHECKOUT_TOGGLES = {
   testCheckoutOptions: {
     enabled: true,
     defaultMode: 'standard',
-    priceCents: 25
+    priceCents: 100
   }
 };
