@@ -2,7 +2,7 @@ const Stripe = require('stripe');
 
 const unitsPerBox = 15;
 const pricePerUnitCents = 1200;
-const testGoodsAmountCents = 25;
+const testGoodsAmountCents = 100;
 
 function parseJson(req) {
   if (typeof req.body === 'string') {

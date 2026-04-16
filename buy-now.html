@@ -59,9 +59,9 @@
                 <label for="testQuantityModeSelect" class="checkout-quantity-title" style="display: block; margin-bottom: 4px;">Troubleshooting mode</label>
                 <select id="testQuantityModeSelect" style="width: 100%; max-width: 340px;">
                   <option value="standard">Standard quantity</option>
-                  <option value="test">Test ($0.25, no shipping, no tax)</option>
-                  <option value="test_shipping">Test + shipping ($0.25 + shipping)</option>
-                  <option value="test_shipping_tax">Test + shipping + tax ($0.25 + shipping + tax)</option>
+                  <option value="test">Test ($1.00, no shipping, no tax)</option>
+                  <option value="test_shipping">Test + shipping ($1.00 + shipping)</option>
+                  <option value="test_shipping_tax">Test + shipping + tax ($1.00 + shipping + tax)</option>
                 </select>
               </div>
               <p class="checkout-quantity-line2 quantity-requested-preview-line2">$180.00 pre-tax, pre-shipping</p>
@@ -315,7 +315,7 @@
       var checkoutToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
       var testCheckoutOptions = checkoutToggles.testCheckoutOptions || {};
       var testModeEnabled = !!testCheckoutOptions.enabled;
-      var testGoodsAmountCents = Number.isFinite(testCheckoutOptions.priceCents) ? testCheckoutOptions.priceCents : 25;
+      var testGoodsAmountCents = Number.isFinite(testCheckoutOptions.priceCents) ? testCheckoutOptions.priceCents : 100;
       var selectedTestMode = 'standard';
 
       function isSupportedTestMode(mode) {
