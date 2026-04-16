@@ -451,8 +451,8 @@ module.exports = async function handler(req, res) {
     return;
   }
   const testMode = normalizeTestMode(payload.testMode);
-  const shouldChargeShipping = testMode === 'standard' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
-  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
+  const shouldChargeShipping = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping_tax';
 
   const stripe = new Stripe(apiKey);
   const units = boxCount * unitsPerBox;
@@ -574,7 +574,7 @@ module.exports = async function handler(req, res) {
       currency: 'usd',
       description: testMode === 'standard'
         ? `Akoya Eye Shield - ${units} units`
-        : `Akoya troubleshooting order (${testMode})`
+        : 'Akoya Eye Shield (Test purchase)'
     });
 
     if (shippingFeeCents > 0) {

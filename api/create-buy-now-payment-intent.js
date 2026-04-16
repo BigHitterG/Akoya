@@ -501,8 +501,8 @@ module.exports = async function handler(req, res) {
   }
 
   const testMode = normalizeTestMode(payload.testMode);
-  const shouldChargeShipping = testMode === 'standard' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
-  const shouldChargeTax = testMode === 'standard' || testMode === 'test_shipping_tax';
+  const shouldChargeShipping = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping' || testMode === 'test_shipping_tax';
+  const shouldChargeTax = testMode === 'standard' || testMode === 'test' || testMode === 'test_shipping_tax';
 
   const quotedShippingFeeCents = shouldChargeShipping ? parseCents(payload.shippingFeeCents) : 0;
   if (shouldChargeShipping && !Number.isFinite(quotedShippingFeeCents)) {
@@ -699,7 +699,7 @@ module.exports = async function handler(req, res) {
       payment_method: payload.paymentMethodId.trim(),
       confirm: true,
       receipt_email: payload.email.trim(),
-      description: testMode === 'standard' ? 'Akoya Eye Shield order' : `Akoya troubleshooting order (${testMode})`,
+      description: testMode === 'standard' ? 'Akoya Eye Shield order' : 'Akoya Eye Shield (Test purchase)',
       shipping: {
         name: payload.fullName.trim(),
         phone: payload.phone.trim(),
