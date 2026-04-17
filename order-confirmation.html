@@ -11,33 +11,136 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <section class="section" style="min-height: 100vh; display: flex; align-items: center;">
+  <div class="top-banner">
+    <div>Order received. Confirmation details are shown below and invoice/tracking updates are emailed shortly.</div>
+  </div>
+
+  <header>
+    <div class="nav">
+      <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="brand"><a href="index.html" aria-label="Akoya home"><img class="brand-logo" src="assets/images/IMG_1997.png" alt="Akoya"></a></div>
+      <div></div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+      <a href="buy.html">Buy</a>
+      <a href="clinical-feedback.html">Clinical Feedback</a>
+      <a href="our-journey.html">About Us</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </header>
+
+  <section class="section" style="min-height: calc(100vh - 128px); display: flex; align-items: center;">
     <div class="container invoice-layout">
-      <div class="card">
+      <div class="card confirmation-card">
         <div class="card-pad">
-          <h2>Thank you for your order.</h2>
+          <div class="kicker" id="confirmationKicker">Order Confirmation</div>
+          <h2 id="confirmationTitle">Thank you for your order.</h2>
           <p class="body-copy" id="confirmationMessage">Your invoice should be arriving shortly.</p>
+
+          <div class="confirmation-receipt" aria-live="polite">
+            <p class="invoice-preview-title">Order Receipt</p>
+            <div class="invoice-preview-line-item">
+              <span>Order type</span>
+              <strong id="receiptOrderType">Order via invoice</strong>
+            </div>
+            <div class="invoice-preview-line-item">
+              <span>Items total</span>
+              <strong id="receiptGoodsTotal">Pending</strong>
+            </div>
+            <div class="invoice-preview-line-item">
+              <span>Shipping</span>
+              <strong id="receiptShippingTotal">Pending</strong>
+            </div>
+            <div class="invoice-preview-line-item" id="receiptTaxRow">
+              <span>Tax</span>
+              <strong id="receiptTaxTotal">Calculated at checkout</strong>
+            </div>
+            <div class="invoice-preview-line-item invoice-preview-line-item-total">
+              <span>Total</span>
+              <strong id="receiptTotal">Pending</strong>
+            </div>
+          </div>
+
+          <p class="confirmation-helper-copy">Tracking details are sent by email shortly after fulfillment.</p>
+
           <div class="cta-row" style="margin-top: 24px;">
-            <a href="index.html" class="btn btn-primary">Home</a>
+            <a href="index.html" class="btn btn-primary">Return Home</a>
           </div>
         </div>
       </div>
     </div>
   </section>
 
+  <footer class="section">
+    <div class="container">© 2026 Akoya Medical. All rights reserved.</div>
+  </footer>
+
   <script src="main.js" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      var title = document.getElementById('confirmationTitle');
+      var kicker = document.getElementById('confirmationKicker');
       var message = document.getElementById('confirmationMessage');
+      var receiptOrderType = document.getElementById('receiptOrderType');
+      var receiptGoodsTotal = document.getElementById('receiptGoodsTotal');
+      var receiptShippingTotal = document.getElementById('receiptShippingTotal');
+      var receiptTaxRow = document.getElementById('receiptTaxRow');
+      var receiptTaxTotal = document.getElementById('receiptTaxTotal');
+      var receiptTotal = document.getElementById('receiptTotal');
       var params = new URLSearchParams(window.location.search);
-      if (params.get('checkout') === 'success') {
-        var tracking = params.get('tracking');
-        if (tracking) {
-          message.textContent = 'Your payment was successful, your order is confirmed, and your tracking number is ' + tracking + '.';
-        } else {
-          message.textContent = 'Your payment was successful and your order is confirmed.';
-        }
+
+      var draft = {};
+      try {
+        draft = JSON.parse(sessionStorage.getItem('akoyaOrderConfirmationDraft') || '{}');
+      } catch (error) {
+        draft = {};
       }
+
+      function formatCents(cents) {
+        if (!Number.isFinite(cents)) {
+          return 'Pending';
+        }
+        return '$' + (cents / 100).toFixed(2);
+      }
+
+      var checkoutSuccess = params.get('checkout') === 'success';
+      var flow = draft.flow || (checkoutSuccess ? 'buy-now' : 'invoice');
+
+      if (flow === 'buy-now') {
+        kicker.textContent = 'Payment Confirmation';
+        title.textContent = 'Thank you for your payment.';
+        message.textContent = 'Your order is confirmed. A tracking number will be emailed to you shortly.';
+        receiptOrderType.textContent = 'Buy now';
+        receiptTaxRow.style.display = '';
+        receiptTaxTotal.textContent = Number.isFinite(draft.taxCents)
+          ? formatCents(draft.taxCents)
+          : 'Calculated at checkout';
+      } else {
+        kicker.textContent = 'Invoice Request Received';
+        title.textContent = 'Thank you for your order request.';
+        message.textContent = 'Your invoice will be emailed to you shortly. A tracking number will be sent once your order ships.';
+        receiptOrderType.textContent = 'Order via invoice';
+        receiptTaxRow.style.display = 'none';
+      }
+
+      receiptGoodsTotal.textContent = formatCents(draft.goodsCents);
+      receiptShippingTotal.textContent = formatCents(draft.shippingCents);
+
+      if (Number.isFinite(draft.totalCents)) {
+        receiptTotal.textContent = formatCents(draft.totalCents);
+      } else if (flow === 'buy-now' && Number.isFinite(draft.goodsCents) && Number.isFinite(draft.shippingCents) && Number.isFinite(draft.taxCents)) {
+        receiptTotal.textContent = formatCents(draft.goodsCents + draft.shippingCents + draft.taxCents);
+      } else if (flow === 'invoice' && Number.isFinite(draft.goodsCents) && Number.isFinite(draft.shippingCents)) {
+        receiptTotal.textContent = formatCents(draft.goodsCents + draft.shippingCents);
+      } else {
+        receiptTotal.textContent = 'Pending';
+      }
+
+      sessionStorage.removeItem('akoyaOrderConfirmationDraft');
     });
   </script>
 </body>

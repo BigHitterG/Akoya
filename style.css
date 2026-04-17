@@ -1280,6 +1280,26 @@
       font-size: 0.84rem;
     }
 
+    .confirmation-card {
+      border-color: #d7e4ee;
+    }
+
+    .confirmation-receipt {
+      margin-top: 20px;
+      border: 1px solid #d7e4ee;
+      border-radius: 14px;
+      background: #f8fbfd;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .confirmation-helper-copy {
+      margin-top: 14px;
+      color: #49657a;
+      font-size: 0.9rem;
+    }
+
     .form-feedback {
       min-height: 1.2em;
       color: #5f6f7d;

@@ -1198,6 +1198,12 @@
             if (!invoiceResponse.ok || !invoiceResponseBody.success) {
               throw new Error(invoiceResponseBody.error || 'Unable to submit order details right now.');
             }
+            sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
+              flow: 'invoice',
+              goodsCents: Math.round(goodsTotal * 100),
+              shippingCents: Math.round(basePayload.shippingFeeCents),
+              totalCents: Math.round((goodsTotal * 100) + basePayload.shippingFeeCents)
+            }));
             window.location.href = 'order-confirmation.html';
             return;
           }
@@ -1287,6 +1293,13 @@
           if (responseBody.fedexTrackingNumber) {
             confirmationUrl += '&tracking=' + encodeURIComponent(responseBody.fedexTrackingNumber);
           }
+          sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
+            flow: 'buy-now',
+            goodsCents: Math.round(goodsTotal * 100),
+            shippingCents: Math.round(basePayload.shippingFeeCents),
+            taxCents: Math.round(Number.isFinite(taxCents) ? taxCents : 0),
+            totalCents: Math.round((goodsTotal * 100) + basePayload.shippingFeeCents + (Number.isFinite(taxCents) ? taxCents : 0))
+          }));
 
           if (responseBody.requiresAction && responseBody.clientSecret) {
             var absoluteConfirmationUrl = new URL(confirmationUrl, window.location.origin).toString();
