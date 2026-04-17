@@ -58,6 +58,13 @@ RESEND_API_KEY=re_...
 CUSTOMER_EMAIL_FROM=orders@yourdomain.com
 ORDER_NOTIFICATION_EMAIL=ops@yourdomain.com
 ORDER_NOTIFICATION_FROM=orders@yourdomain.com
+
+# Optional product context included in Stripe receipts/invoices and customer emails
+PRODUCT_SKU=AKOYA-EYE-SHIELD
+PRODUCT_LOT=LOT-2026-001
+PRODUCT_USE_NOTICE="NON-STERILE • SINGLE USE ONLY • DO NOT REUSE"
+PRODUCT_MANUFACTURER="Akoya Medical LLC"
+PRODUCT_ASSEMBLY_COUNTRY="Assembled in the USA"
 ```
 
 FedEx credentials are required for the shipping-address validation flow used by `request-invoice.html`.
@@ -128,11 +135,13 @@ Customer-facing order emails (thank-you + tracking + invoice links) are sent whe
 
 For Buy Now:
 - Stripe still sends its native card receipt when `receipt_email` is set.
+- Stripe payment descriptions now include tracking plus SKU/LOT (when configured) so these details are visible in Stripe-hosted payment records.
 - Backend now also sends a custom thank-you email that includes tracking details and the Stripe receipt link (when available).
 
 For Invoice:
 - Stripe sends the hosted invoice email/pay link (`sendInvoice`).
-- Backend now also sends a custom thank-you email with tracking number, hosted invoice payment link, and invoice PDF URL.
+- Stripe invoice custom fields/footer now include SKU/LOT and product-use/manufacturer notes when configured.
+- Backend now also sends a custom thank-you email with tracking number, product context, hosted invoice payment link, and invoice PDF URL.
 
 ## Feature toggle operations
 
