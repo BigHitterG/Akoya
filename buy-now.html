@@ -547,14 +547,21 @@
         }
 
         var parts = [];
+        var debug = responseBody.debug || {};
         if (typeof responseBody.fallbackReason === 'string' && responseBody.fallbackReason.trim()) {
           parts.push(responseBody.fallbackReason.trim());
         }
         if (typeof responseBody.details === 'string' && responseBody.details.trim()) {
           parts.push(responseBody.details.trim());
         }
-        if (responseBody.debug && typeof responseBody.debug.failureReason === 'string' && responseBody.debug.failureReason.trim()) {
-          parts.push('code: ' + responseBody.debug.failureReason.trim());
+        if (Number.isFinite(debug.fedexHttpStatus)) {
+          parts.push('FedEx HTTP status: ' + String(debug.fedexHttpStatus));
+        }
+        if (typeof debug.fedexErrorSummary === 'string' && debug.fedexErrorSummary.trim()) {
+          parts.push(debug.fedexErrorSummary.trim());
+        }
+        if (typeof debug.failureReason === 'string' && debug.failureReason.trim()) {
+          parts.push('code: ' + debug.failureReason.trim());
         }
 
         return parts.length
