@@ -111,6 +111,26 @@ function normalizeTestMode(value) {
     : 'standard';
 }
 
+function canRetryInvoiceCreateWithoutAdvancedFields(error) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const errorType = typeof error.type === 'string' ? error.type : '';
+  const errorCode = typeof error.code === 'string' ? error.code : '';
+  const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+
+  if (errorType === 'StripeInvalidRequestError') {
+    return true;
+  }
+
+  if (['parameter_unknown', 'invalid_request_error', 'customer_tax_location_invalid'].includes(errorCode)) {
+    return true;
+  }
+
+  return message.includes('automatic_tax') || message.includes('shipping_details') || message.includes('customer tax');
+}
+
 function getStripeCustomerDisplayName(payload) {
   if (required(payload.institutionName)) {
     return payload.institutionName.trim();
@@ -572,10 +592,10 @@ module.exports = async function handler(req, res) {
     shippingServiceName,
     shippingServiceType,
     trackingNumber,
-    shippingLabelUrl,
+    shippingLabelUrl: toMetadataValue(shippingLabelUrl),
     shipDatestamp,
     fedexTrackingNumber: trackingNumber,
-    fedexLabelUrl: shippingLabelUrl,
+    fedexLabelUrl: toMetadataValue(shippingLabelUrl),
     fedexShipDatestamp: shipDatestamp,
     fedexShipmentCreated: fedexShipmentCreated ? 'true' : 'false',
     fedexShipmentStatus: toMetadataValue(fedexShipmentStatus, 100),
@@ -603,7 +623,10 @@ module.exports = async function handler(req, res) {
         : undefined
     });
 
-    const invoice = await stripe.invoices.create({
+    let invoice = null;
+    let invoiceCreationMode = 'standard';
+    let automaticTaxUsed = automaticTaxEnabled;
+    const invoiceCreateParams = {
       customer: customer.id,
       collection_method: 'send_invoice',
       days_until_due: 30,
@@ -620,7 +643,27 @@ module.exports = async function handler(req, res) {
             address: structuredShippingAddress
           }
         : undefined
-    });
+    };
+
+    try {
+      invoice = await stripe.invoices.create(invoiceCreateParams);
+    } catch (invoiceError) {
+      if (!canRetryInvoiceCreateWithoutAdvancedFields(invoiceError)) {
+        throw invoiceError;
+      }
+
+      invoiceCreationMode = 'fallback_without_automatic_tax_and_shipping_details';
+      automaticTaxUsed = false;
+      invoice = await stripe.invoices.create({
+        customer: customer.id,
+        collection_method: 'send_invoice',
+        days_until_due: 30,
+        description: 'Akoya Eye Shield order request',
+        metadata,
+        auto_advance: true,
+        automatic_tax: { enabled: false }
+      });
+    }
 
     await stripe.invoiceItems.create({
       customer: customer.id,
@@ -707,7 +750,8 @@ module.exports = async function handler(req, res) {
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
       status: finalizedInvoice.status,
       amountDue: finalizedInvoice.amount_due,
-      automaticTaxEnabled,
+      automaticTaxEnabled: automaticTaxUsed,
+      invoiceCreationMode,
       shippingFeeCents,
       trackingNumber,
       shippingServiceName,

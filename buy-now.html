@@ -314,7 +314,13 @@
       var maxQuantity = 10;
       var checkoutToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
       var testCheckoutOptions = checkoutToggles.testCheckoutOptions || {};
+      var debugPanels = checkoutToggles.debugPanels || {};
+      var shippingDebugPanelToggle = debugPanels.shipping || {};
       var testModeEnabled = !!testCheckoutOptions.enabled;
+      var shippingDebugModeEnabled = !!(
+        shippingDebugPanelToggle.enabled ||
+        new URLSearchParams(window.location.search).get('debugShipping') === '1'
+      );
       var testGoodsAmountCents = Number.isFinite(testCheckoutOptions.priceCents) ? testCheckoutOptions.priceCents : 100;
       var selectedTestMode = 'standard';
       var processingDotsIntervalId = null;
@@ -551,22 +557,47 @@
         if (typeof responseBody.fallbackReason === 'string' && responseBody.fallbackReason.trim()) {
           parts.push(responseBody.fallbackReason.trim());
         }
-        if (typeof responseBody.details === 'string' && responseBody.details.trim()) {
+        if (shippingDebugModeEnabled && typeof responseBody.details === 'string' && responseBody.details.trim()) {
           parts.push(responseBody.details.trim());
         }
-        if (Number.isFinite(debug.fedexHttpStatus)) {
+        if (shippingDebugModeEnabled && Number.isFinite(debug.fedexHttpStatus)) {
           parts.push('FedEx HTTP status: ' + String(debug.fedexHttpStatus));
         }
-        if (typeof debug.fedexErrorSummary === 'string' && debug.fedexErrorSummary.trim()) {
+        if (shippingDebugModeEnabled && typeof debug.fedexErrorSummary === 'string' && debug.fedexErrorSummary.trim()) {
           parts.push(debug.fedexErrorSummary.trim());
         }
-        if (typeof debug.failureReason === 'string' && debug.failureReason.trim()) {
+        if (shippingDebugModeEnabled && typeof debug.failureReason === 'string' && debug.failureReason.trim()) {
           parts.push('code: ' + debug.failureReason.trim());
         }
 
         return parts.length
           ? '<span style="display:block; margin-top: 4px;">Fallback reason: ' + escapeHtml(parts.join(' | ')) + '</span>'
           : '';
+      }
+
+      function normalizeInlineErrorMessage(message, fallbackMessage) {
+        if (!message || typeof message !== 'string') {
+          return fallbackMessage;
+        }
+
+        var cleaned = message.replace(/\s+/g, ' ').trim();
+        if (!cleaned) {
+          return fallbackMessage;
+        }
+
+        if (shippingDebugModeEnabled) {
+          return cleaned;
+        }
+
+        if (cleaned.length > 180) {
+          return fallbackMessage;
+        }
+
+        if (/^if\s*\(/i.test(cleaned) || /function\s*\(/i.test(cleaned) || /=>/.test(cleaned) || /[{;}]/.test(cleaned)) {
+          return fallbackMessage;
+        }
+
+        return cleaned;
       }
 
       function hideShippingOptions() {
@@ -992,7 +1023,10 @@
             return;
           }
           resetShippingRateState('error');
-          setShippingRateRetryMessage(error && error.message ? error.message : 'Unable to fetch shipping estimate right now.');
+          setShippingRateRetryMessage(normalizeInlineErrorMessage(
+            error && error.message,
+            'Unable to fetch shipping estimate right now.'
+          ));
           hideShippingOptions();
           resetTaxState('idle');
           taxEstimateMessage.textContent = 'Tax estimate unavailable until shipping quote is available.';
@@ -1254,7 +1288,11 @@
             });
             var invoiceResponseBody = await invoiceResponse.json().catch(function () { return {}; });
             if (!invoiceResponse.ok || !invoiceResponseBody.success) {
-              throw new Error(invoiceResponseBody.error || 'Unable to submit order details right now.');
+              var invoiceErrorMessage = [
+                invoiceResponseBody && invoiceResponseBody.error,
+                shippingDebugModeEnabled && invoiceResponseBody && invoiceResponseBody.details
+              ].filter(Boolean).join(' | ');
+              throw new Error(normalizeInlineErrorMessage(invoiceErrorMessage, 'Unable to submit order details right now.'));
             }
             sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
               flow: 'invoice',
