@@ -23,6 +23,38 @@ function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function toShortText(value, maxLength = 80) {
+  if (!required(value)) {
+    return '';
+  }
+
+  return value.trim().slice(0, maxLength);
+}
+
+function buildProductContext(payload) {
+  const sku = toShortText(payload.productSku || process.env.PRODUCT_SKU, 60);
+  const lot = toShortText(payload.productLot || process.env.PRODUCT_LOT, 60);
+  const useNotice = toShortText(
+    process.env.PRODUCT_USE_NOTICE || 'NON-STERILE • SINGLE USE ONLY • DO NOT REUSE',
+    140
+  );
+  const manufacturer = toShortText(process.env.PRODUCT_MANUFACTURER || 'Akoya Medical LLC', 80);
+  const assembledIn = toShortText(process.env.PRODUCT_ASSEMBLY_COUNTRY || 'Assembled in the USA', 80);
+
+  const receiptDescription = [sku ? `SKU ${sku}` : null, lot ? `LOT ${lot}` : null, useNotice, manufacturer, assembledIn]
+    .filter(Boolean)
+    .join(' • ');
+
+  return {
+    sku,
+    lot,
+    useNotice,
+    manufacturer,
+    assembledIn,
+    receiptDescription
+  };
+}
+
 function parseCents(value) {
   if (value === undefined || value === null || value === '') {
     return null;
@@ -190,6 +222,7 @@ module.exports = async function handler(req, res) {
   const units = boxCount * unitsPerBox;
   const boxPriceCents = unitsPerBox * pricePerUnitCents;
   const automaticTaxEnabled = process.env.ENABLE_STRIPE_AUTOMATIC_TAX !== 'false';
+  const productContext = buildProductContext(payload);
 
   const metadata = {
     flow: 'buy-now',
@@ -274,6 +307,19 @@ module.exports = async function handler(req, res) {
     metadata.fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
     metadata.fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
     metadata.fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
+    metadata.productSku = productContext.sku;
+    metadata.productLot = productContext.lot;
+    metadata.productUseNotice = productContext.useNotice;
+    metadata.productManufacturer = productContext.manufacturer;
+    metadata.productAssemblyCountry = productContext.assembledIn;
+    metadata.productReceiptDescription = productContext.receiptDescription;
+
+    const paymentDescriptionSegments = [
+      `Akoya Eye Shield order (${units} units)`,
+      metadata.fedexTrackingNumber ? `Tracking ${metadata.fedexTrackingNumber}` : null,
+      productContext.sku ? `SKU ${productContext.sku}` : null,
+      productContext.lot ? `LOT ${productContext.lot}` : null
+    ].filter(Boolean);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -294,10 +340,17 @@ module.exports = async function handler(req, res) {
             unit_amount: boxPriceCents,
             product_data: {
               name: 'Akoya Eye Shield (Box of 12)',
-              description: '$12.00 per unit • 12 units per box',
+              description: [
+                '$12.00 per unit • 12 units per box',
+                productContext.receiptDescription || null
+              ]
+                .filter(Boolean)
+                .join(' • '),
               metadata: {
                 unitsPerBox: String(unitsPerBox),
-                pricePerUnitCents: String(pricePerUnitCents)
+                pricePerUnitCents: String(pricePerUnitCents),
+                sku: productContext.sku,
+                lot: productContext.lot
               }
             }
           }
@@ -309,14 +362,25 @@ module.exports = async function handler(req, res) {
             unit_amount: actualShippingFeeCents,
             product_data: {
               name: metadata.shippingServiceName ? `Shipping (${metadata.shippingServiceName})` : 'Shipping',
+              description: metadata.fedexTrackingNumber ? `Tracking: ${metadata.fedexTrackingNumber}` : undefined,
               metadata: {
-                serviceType: metadata.shippingServiceType
+                serviceType: metadata.shippingServiceType,
+                trackingNumber: metadata.fedexTrackingNumber
               }
             }
           }
         }
       ],
       automatic_tax: { enabled: automaticTaxEnabled },
+      payment_intent_data: {
+        receipt_email: payload.email.trim(),
+        description: paymentDescriptionSegments.join(' • '),
+        metadata: {
+          fedexTrackingNumber: metadata.fedexTrackingNumber,
+          productSku: productContext.sku,
+          productLot: productContext.lot
+        }
+      },
       metadata,
       ui_mode: 'embedded',
       return_url: `${baseUrl}/order-confirmation.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`

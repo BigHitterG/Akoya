@@ -27,6 +27,49 @@ function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function toShortText(value, maxLength = 80) {
+  if (!required(value)) {
+    return '';
+  }
+
+  return value.trim().slice(0, maxLength);
+}
+
+function buildProductContext(payload) {
+  const sku = toShortText(payload.productSku || process.env.PRODUCT_SKU, 60);
+  const lot = toShortText(payload.productLot || process.env.PRODUCT_LOT, 60);
+  const useNotice = toShortText(
+    process.env.PRODUCT_USE_NOTICE || 'NON-STERILE • SINGLE USE ONLY • DO NOT REUSE',
+    140
+  );
+  const manufacturer = toShortText(process.env.PRODUCT_MANUFACTURER || 'Akoya Medical LLC', 80);
+  const assembledIn = toShortText(process.env.PRODUCT_ASSEMBLY_COUNTRY || 'Assembled in the USA', 80);
+
+  const detailLines = [
+    sku ? `SKU: ${sku}` : null,
+    lot ? `LOT: ${lot}` : null,
+    useNotice || null,
+    manufacturer || null,
+    assembledIn || null
+  ].filter(Boolean);
+
+  const invoiceCustomFields = [
+    sku ? { name: 'SKU', value: sku } : null,
+    lot ? { name: 'LOT', value: lot } : null
+  ].filter(Boolean);
+
+  return {
+    sku,
+    lot,
+    useNotice,
+    manufacturer,
+    assembledIn,
+    detailLines,
+    invoiceCustomFields,
+    invoiceFooter: [useNotice || null, manufacturer || null, assembledIn || null].filter(Boolean).join(' • ')
+  };
+}
+
 function isInvalidAddressErrorCode(value) {
   return typeof value === 'string' && value.trim().toLowerCase() === 'invalid_shipping_address';
 }
@@ -177,7 +220,8 @@ async function sendCustomerInvoiceEmail({
   hostedInvoiceUrl,
   invoicePdf,
   dueDateUnix,
-  labelPending
+  labelPending,
+  productDetailLines
 }) {
   const dueDateText = Number.isFinite(dueDateUnix)
     ? new Date(dueDateUnix * 1000).toISOString().slice(0, 10)
@@ -195,6 +239,7 @@ async function sendCustomerInvoiceEmail({
         ? 'Your shipping label is still being generated. We will email your tracking details as soon as they are available.'
         : null,
       shippingServiceName ? `Shipping service: ${shippingServiceName}` : null,
+      ...((Array.isArray(productDetailLines) ? productDetailLines : []).map((line) => line || null)),
       `Invoice amount due: $${(amountDue / 100).toFixed(2)}`,
       `Payment due date: ${dueDateText}`,
       hostedInvoiceUrl ? `Pay your invoice: ${hostedInvoiceUrl}` : null,
@@ -473,6 +518,7 @@ module.exports = async function handler(req, res) {
     : 0;
   const shippingServiceName = required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '';
   const shippingServiceType = required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '';
+  const productContext = buildProductContext(payload);
   const trackingNumber = required(payload.trackingNumber)
     ? payload.trackingNumber.trim()
     : (required(payload.fedexTrackingNumber) ? payload.fedexTrackingNumber.trim() : '');
@@ -533,7 +579,12 @@ module.exports = async function handler(req, res) {
     fedexShipDatestamp: shipDatestamp,
     fedexShipmentCreated: fedexShipmentCreated ? 'true' : 'false',
     fedexShipmentStatus: toMetadataValue(fedexShipmentStatus, 100),
-    fedexShipmentError: toMetadataValue(fedexShipmentError)
+    fedexShipmentError: toMetadataValue(fedexShipmentError),
+    productSku: productContext.sku,
+    productLot: productContext.lot,
+    productUseNotice: productContext.useNotice,
+    productManufacturer: productContext.manufacturer,
+    productAssemblyCountry: productContext.assembledIn
   };
 
   try {
@@ -560,6 +611,8 @@ module.exports = async function handler(req, res) {
       metadata,
       auto_advance: true,
       automatic_tax: { enabled: automaticTaxEnabled },
+      custom_fields: productContext.invoiceCustomFields.length > 0 ? productContext.invoiceCustomFields : undefined,
+      footer: productContext.invoiceFooter || undefined,
       shipping_details: structuredShippingAddress
         ? {
             name: payload.fullName.trim(),
@@ -575,7 +628,11 @@ module.exports = async function handler(req, res) {
       amount: productAmountCents,
       currency: 'usd',
       description: testMode === 'standard'
-        ? `Akoya Eye Shield - ${units} units`
+        ? [
+            `Akoya Eye Shield - ${units} units`,
+            productContext.sku ? `SKU ${productContext.sku}` : null,
+            productContext.lot ? `LOT ${productContext.lot}` : null
+          ].filter(Boolean).join(' • ')
         : 'Akoya Eye Shield (Test purchase)'
     });
 
@@ -613,7 +670,8 @@ module.exports = async function handler(req, res) {
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url || null,
       invoicePdf: finalizedInvoice.invoice_pdf || null,
       dueDateUnix: finalizedInvoice.due_date,
-      labelPending: shouldChargeShipping && !fedexShipmentCreated
+      labelPending: shouldChargeShipping && !fedexShipmentCreated,
+      productDetailLines: productContext.detailLines
     });
 
     const internalEmail = await sendInternalNotification({
