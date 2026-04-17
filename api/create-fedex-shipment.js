@@ -185,13 +185,44 @@ function pickFirstTrackingNumber(output) {
 }
 
 function pickFirstLabelUrl(output) {
+  const labelDocument = pickFirstLabelDocument(output);
+  if (!labelDocument) {
+    return null;
+  }
+
+  if (required(labelDocument.url)) {
+    return labelDocument.url;
+  }
+
+  if (required(labelDocument.encodedLabel)) {
+    return `data:application/pdf;base64,${labelDocument.encodedLabel}`;
+  }
+
+  return null;
+}
+
+function normalizeFedexDocumentList(piece) {
+  if (!piece || typeof piece !== 'object') {
+    return [];
+  }
+
+  const packageDocuments = Array.isArray(piece.packageDocuments) ? piece.packageDocuments : [];
+  const packageDocumentsFromOutput = Array.isArray(piece.packageDocumentsFromResult) ? piece.packageDocumentsFromResult : [];
+
+  return [...packageDocuments, ...packageDocumentsFromOutput].filter((item) => item && typeof item === 'object');
+}
+
+function pickFirstLabelDocument(output) {
   const packageResponses = output?.transactionShipments?.[0]?.pieceResponses || output?.pieceResponses || [];
   for (const piece of packageResponses) {
-    if (required(piece?.packageDocuments?.[0]?.url)) {
-      return piece.packageDocuments[0].url;
-    }
-    if (required(piece?.packageDocuments?.[0]?.encodedLabel)) {
-      return `data:application/pdf;base64,${piece.packageDocuments[0].encodedLabel}`;
+    const documents = normalizeFedexDocumentList(piece);
+    const labelDocument = documents.find((doc) => {
+      const typeText = typeof doc?.contentType === 'string' ? doc.contentType.trim().toUpperCase() : '';
+      return typeText.includes('LABEL') || required(doc?.url) || required(doc?.encodedLabel);
+    });
+
+    if (labelDocument) {
+      return labelDocument;
     }
   }
 
@@ -305,6 +336,7 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = (process.env.FEDEX_API_BASE_URL || 'https://apis-sandbox.fedex.com').replace(/\/+$/, '');
   const configuredDefaultServiceType = parseServiceType(process.env.FEDEX_DEFAULT_SERVICE_TYPE) || 'FEDEX_GROUND';
+  const configuredLabelResponseOption = parseServiceType(process.env.FEDEX_LABEL_RESPONSE_OPTIONS) || 'LABEL';
   const resolvedServiceType = parseServiceType(payload.serviceType) || configuredDefaultServiceType;
 
   const shipDatestamp = new Date().toISOString().slice(0, 10);
@@ -314,6 +346,7 @@ module.exports = async function handler(req, res) {
     normalized: {
       accountNumberMasked: maskAccountNumber(fedexAccountNumber),
       serviceType: resolvedServiceType,
+      labelResponseOptions: configuredLabelResponseOption,
       recipient: {
         city: recipientAddress.city,
         stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
@@ -339,7 +372,7 @@ module.exports = async function handler(req, res) {
       }
     }));
     const shipmentRequestBody = {
-      labelResponseOptions: 'URL_ONLY',
+      labelResponseOptions: configuredLabelResponseOption,
       accountNumber: {
         value: fedexAccountNumber
       },
@@ -434,6 +467,7 @@ module.exports = async function handler(req, res) {
     const output = shipmentBody?.output || {};
     const trackingNumber = pickFirstTrackingNumber(output);
     const labelUrl = pickFirstLabelUrl(output);
+    const labelDocument = pickFirstLabelDocument(output);
     const shippingFeeCents = pickShipmentChargeCents(output);
     const serviceName = pickServiceName(output, resolvedServiceType);
 
@@ -444,6 +478,9 @@ module.exports = async function handler(req, res) {
       serviceName,
       trackingNumber,
       labelUrl,
+      labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
+      labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
+      labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
       shippingFeeCents,
       currency: 'USD',
       shipDatestamp,
@@ -455,6 +492,9 @@ module.exports = async function handler(req, res) {
           serviceName,
           trackingNumber,
           labelUrl,
+          labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
+          labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
+          labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
           shippingFeeCents
         }
       }

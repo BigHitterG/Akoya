@@ -52,6 +52,8 @@ FEDEX_RATE_BOX1_HEIGHT_IN=4
 
 # Optional (defaults to sandbox if omitted)
 FEDEX_API_BASE_URL=https://apis-sandbox.fedex.com
+# Optional (defaults to LABEL so FedEx returns printable label bytes)
+FEDEX_LABEL_RESPONSE_OPTIONS=LABEL
 
 # Optional customer/internals emails via Resend
 RESEND_API_KEY=re_...
@@ -68,6 +70,15 @@ PRODUCT_ASSEMBLY_COUNTRY="Assembled in the USA"
 ```
 
 FedEx credentials are required for the shipping-address validation flow used by `request-invoice.html`.
+
+### FedEx shipping label troubleshooting
+
+- `POST /api/create-fedex-shipment` now defaults `labelResponseOptions` to `LABEL` (can be overridden with `FEDEX_LABEL_RESPONSE_OPTIONS`).
+- The shipment API response now includes:
+  - `labelUrl` (when FedEx provides a retrievable URL),
+  - `labelContentType` / `labelDocumentType`,
+  - `labelHasEncodedData` (whether FedEx returned embedded label bytes).
+- FedEx document URLs may be short-lived. For validation workflows, capture and print labels as soon as they are generated.
 
 ### FedEx rate debug mode (UI toggle)
 
