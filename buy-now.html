@@ -541,6 +541,27 @@
         }
       }
 
+      function buildFallbackExplanation(responseBody) {
+        if (!responseBody || !responseBody.fallbackUsed) {
+          return '';
+        }
+
+        var parts = [];
+        if (typeof responseBody.fallbackReason === 'string' && responseBody.fallbackReason.trim()) {
+          parts.push(responseBody.fallbackReason.trim());
+        }
+        if (typeof responseBody.details === 'string' && responseBody.details.trim()) {
+          parts.push(responseBody.details.trim());
+        }
+        if (responseBody.debug && typeof responseBody.debug.failureReason === 'string' && responseBody.debug.failureReason.trim()) {
+          parts.push('code: ' + responseBody.debug.failureReason.trim());
+        }
+
+        return parts.length
+          ? '<span style="display:block; margin-top: 4px;">Fallback reason: ' + escapeHtml(parts.join(' | ')) + '</span>'
+          : '';
+      }
+
       function hideShippingOptions() {
         shippingOptionSelector.innerHTML = '';
         shippingOptionSelector.style.display = 'none';
@@ -927,7 +948,15 @@
             selectedOptionId: ''
           };
 
-          setShippingRateMessage('<strong>Choose one FedEx shipping option, then click Buy Now.</strong>', 'is-success');
+          var fallbackExplanation = buildFallbackExplanation(responseBody);
+          if (responseBody && responseBody.fallbackUsed) {
+            setShippingRateMessage(
+              '<strong>Live FedEx quote unavailable. Using fallback shipping rate.</strong>' + fallbackExplanation,
+              'is-error'
+            );
+          } else {
+            setShippingRateMessage('<strong>Choose one FedEx shipping option, then click Buy Now.</strong>', 'is-success');
+          }
           renderShippingOptions();
           if (previousOptionId) {
             applySelectedShippingOption(previousOptionId);
@@ -1316,12 +1345,13 @@
           if (responseBody.fedexTrackingNumber) {
             confirmationUrl += '&tracking=' + encodeURIComponent(responseBody.fedexTrackingNumber);
           }
+          var taxAmountCents = Number.isFinite(taxState.amountCents) ? taxState.amountCents : 0;
           sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
             flow: 'buy-now',
             goodsCents: goodsCents,
             shippingCents: Math.round(basePayload.shippingFeeCents),
-            taxCents: Math.round(Number.isFinite(taxCents) ? taxCents : 0),
-            totalCents: Math.round(goodsCents + basePayload.shippingFeeCents + (Number.isFinite(taxCents) ? taxCents : 0))
+            taxCents: Math.round(taxAmountCents),
+            totalCents: Math.round(goodsCents + basePayload.shippingFeeCents + taxAmountCents)
           }));
 
           if (responseBody.requiresAction && responseBody.clientSecret) {
