@@ -1119,6 +1119,7 @@
 
         try {
           var shippingInput = getShippingAddressInput();
+          var goodsCents = Math.round(getGoodsAmountCents());
           var basePayload = {
             fullName: getFieldValue('fullName').trim(),
             jobTitle: getFieldValue('jobTitle').trim(),
@@ -1200,9 +1201,9 @@
             }
             sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
               flow: 'invoice',
-              goodsCents: Math.round(goodsTotal * 100),
+              goodsCents: goodsCents,
               shippingCents: Math.round(basePayload.shippingFeeCents),
-              totalCents: Math.round((goodsTotal * 100) + basePayload.shippingFeeCents)
+              totalCents: Math.round(goodsCents + basePayload.shippingFeeCents)
             }));
             window.location.href = 'order-confirmation.html';
             return;
@@ -1295,10 +1296,10 @@
           }
           sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
             flow: 'buy-now',
-            goodsCents: Math.round(goodsTotal * 100),
+            goodsCents: goodsCents,
             shippingCents: Math.round(basePayload.shippingFeeCents),
             taxCents: Math.round(Number.isFinite(taxCents) ? taxCents : 0),
-            totalCents: Math.round((goodsTotal * 100) + basePayload.shippingFeeCents + (Number.isFinite(taxCents) ? taxCents : 0))
+            totalCents: Math.round(goodsCents + basePayload.shippingFeeCents + (Number.isFinite(taxCents) ? taxCents : 0))
           }));
 
           if (responseBody.requiresAction && responseBody.clientSecret) {
