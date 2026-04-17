@@ -1044,6 +1044,12 @@
             throw new Error(responseBody.error || 'Unable to submit order details right now.');
           }
 
+          sessionStorage.setItem('akoyaOrderConfirmationDraft', JSON.stringify({
+            flow: 'invoice',
+            goodsCents: Math.round(Number.parseInt(payload.quantityRequested, 10) * unitsPerBox * pricePerUnit * 100),
+            shippingCents: Math.round(payload.shippingFeeCents),
+            totalCents: Math.round((Number.parseInt(payload.quantityRequested, 10) * unitsPerBox * pricePerUnit * 100) + payload.shippingFeeCents)
+          }));
           localStorage.removeItem(draftStorageKey);
           form.reset();
           updateQuantityPreview();
