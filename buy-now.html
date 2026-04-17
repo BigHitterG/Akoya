@@ -225,7 +225,7 @@
             </div>
 
             <div class="checkout-mode-selector" role="group" aria-label="Checkout method">
-              <button type="button" class="checkout-mode-button is-selected" id="buyNowModeButton" aria-pressed="true">
+              <button type="button" class="checkout-mode-button" id="buyNowModeButton" aria-pressed="false">
                 <span class="checkout-mode-check" aria-hidden="true">✓</span>
                 <span>Buy Now</span>
               </button>
@@ -309,7 +309,7 @@
         expiryComplete: false,
         cvcComplete: false
       };
-      var checkoutMode = 'card';
+      var checkoutMode = '';
       var minQuantity = 1;
       var maxQuantity = 10;
       var checkoutToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
@@ -376,11 +376,12 @@
 
       function setCheckoutMode(mode) {
         var invoiceSelected = mode === 'invoice';
-        checkoutMode = invoiceSelected ? 'invoice' : 'card';
+        var cardSelected = mode === 'card';
+        checkoutMode = invoiceSelected ? 'invoice' : (cardSelected ? 'card' : '');
 
         if (buyNowModeButton) {
-          buyNowModeButton.classList.toggle('is-selected', !invoiceSelected);
-          buyNowModeButton.setAttribute('aria-pressed', String(!invoiceSelected));
+          buyNowModeButton.classList.toggle('is-selected', cardSelected);
+          buyNowModeButton.setAttribute('aria-pressed', String(cardSelected));
         }
 
         if (invoiceModeButton) {
@@ -389,10 +390,10 @@
         }
 
         if (cardDetailsFieldset) {
-          cardDetailsFieldset.style.display = invoiceSelected ? 'none' : 'grid';
+          cardDetailsFieldset.style.display = cardSelected ? 'grid' : 'none';
         }
 
-        if (invoiceSelected) {
+        if (!cardSelected) {
           hideCardValidationError();
         }
       }
@@ -1101,6 +1102,12 @@
           return;
         }
 
+        if (!checkoutMode) {
+          submissionError.textContent = 'Please choose Buy Now or Order via invoice before continuing.';
+          submissionError.style.display = 'block';
+          return;
+        }
+
         if (shouldQuoteShipping() && (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents))) {
           submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
           submissionError.style.display = 'block';
@@ -1310,7 +1317,7 @@
       initializeQuantityFromUrl();
       initializeStripeCardElement();
       taxEstimateMessage.textContent = 'Tax will be estimated after a shipping option is selected.';
-      setCheckoutMode('card');
+      setCheckoutMode('');
       if (buyNowModeButton) {
         buyNowModeButton.addEventListener('click', function () {
           setCheckoutMode('card');
