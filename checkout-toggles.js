@@ -3,5 +3,10 @@ window.AKOYA_CHECKOUT_TOGGLES = {
     enabled: true,
     defaultMode: 'standard',
     priceCents: 100
+  },
+  debugPanels: {
+    shipping: {
+      enabled: false
+    }
   }
 };

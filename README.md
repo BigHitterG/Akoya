@@ -80,6 +80,13 @@ FedEx credentials are required for the shipping-address validation flow used by 
 
 This keeps troubleshooting instrumentation available without exposing temporary debug output to normal users.
 
+### FedEx shipment debug panel toggle
+
+`request-invoice.html` now reads `window.AKOYA_CHECKOUT_TOGGLES.debugPanels.shipping.enabled` from `checkout-toggles.js`.
+
+- When `enabled` is `true`, the **FedEx Shipment Debug (Developer Mode)** panel is shown when shipment debug payloads are produced.
+- When `enabled` is `false`, shipment debug payloads are still captured in code, but the panel stays hidden in the UI.
+
 
 FedEx integration needs two config groups:
 - **Address validation only** (`/api/validate-fedex-address`):
@@ -148,4 +155,4 @@ For Invoice:
 Toggle documentation and copy/paste prompt templates live in `TOGGLES.md`.
 
 - Toggle doc: `TOGGLES.md`
-- Current test-purchase toggle source: `checkout-toggles.js`
+- Current toggle source (test purchase + shipping debug panel): `checkout-toggles.js`
