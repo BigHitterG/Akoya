@@ -317,6 +317,27 @@
       var testModeEnabled = !!testCheckoutOptions.enabled;
       var testGoodsAmountCents = Number.isFinite(testCheckoutOptions.priceCents) ? testCheckoutOptions.priceCents : 100;
       var selectedTestMode = 'standard';
+      var processingDotsIntervalId = null;
+
+      function startProcessingButtonAnimation() {
+        var baseLabel = 'Processing';
+        var dotCount = 1;
+
+        stopProcessingButtonAnimation();
+        proceedToPaymentButton.textContent = baseLabel + '.';
+
+        processingDotsIntervalId = window.setInterval(function () {
+          dotCount = dotCount % 3 + 1;
+          proceedToPaymentButton.textContent = baseLabel + '.'.repeat(dotCount);
+        }, 1000);
+      }
+
+      function stopProcessingButtonAnimation() {
+        if (processingDotsIntervalId !== null) {
+          window.clearInterval(processingDotsIntervalId);
+          processingDotsIntervalId = null;
+        }
+      }
 
       function isSupportedTestMode(mode) {
         return mode === 'standard' || mode === 'test' || mode === 'test_shipping' || mode === 'test_shipping_tax';
@@ -1115,7 +1136,7 @@
         }
 
         proceedToPaymentButton.disabled = true;
-        proceedToPaymentButton.textContent = 'Processing…';
+        startProcessingButtonAnimation();
 
         try {
           var shippingInput = getShippingAddressInput();
@@ -1205,6 +1226,7 @@
               shippingCents: Math.round(basePayload.shippingFeeCents),
               totalCents: Math.round(goodsCents + basePayload.shippingFeeCents)
             }));
+            stopProcessingButtonAnimation();
             window.location.href = 'order-confirmation.html';
             return;
           }
@@ -1316,6 +1338,7 @@
             }
           }
 
+          stopProcessingButtonAnimation();
           window.location.href = confirmationUrl;
         } catch (error) {
           if (checkoutMode === 'card') {
@@ -1323,6 +1346,7 @@
           }
           submissionError.textContent = error.message || 'Unable to complete checkout right now.';
           submissionError.style.display = 'block';
+          stopProcessingButtonAnimation();
           proceedToPaymentButton.disabled = false;
           proceedToPaymentButton.textContent = 'Buy Now';
         }
