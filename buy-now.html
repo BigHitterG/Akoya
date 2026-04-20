@@ -1533,20 +1533,3 @@
   </script>
 </body>
 </html>
-        if (!shouldQuoteShipping()) {
-          shippingRateState = {
-            status: 'ready',
-            cents: 0,
-            serviceName: 'No shipping (test mode)',
-            serviceType: '',
-            quoteSignature: quoteSignature,
-            options: [],
-            selectedOptionId: '',
-            retryCount: 0
-          };
-          setShippingRateMessage('<strong>Shipping disabled for this troubleshooting mode.</strong>', 'is-success');
-          hideShippingOptions();
-          updateInvoicePreviewTotals();
-          refreshTaxEstimate();
-          return;
-        }
