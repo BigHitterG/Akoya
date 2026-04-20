@@ -1,5 +1,5 @@
 const { getShippingPackageConfig } = require('./lib/shipping-packages');
-const { normalizeStateOrProvinceCode } = require('./lib/state-province');
+const { normalizeStateOrProvinceCode } = require('../lib/state-province');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
