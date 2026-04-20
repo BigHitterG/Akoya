@@ -332,7 +332,7 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = (process.env.FEDEX_API_BASE_URL || 'https://apis-sandbox.fedex.com').replace(/\/+$/, '');
   const configuredDefaultServiceType = parseServiceType(process.env.FEDEX_DEFAULT_SERVICE_TYPE) || 'FEDEX_GROUND';
-  const configuredLabelResponseOption = parseServiceType(process.env.FEDEX_LABEL_RESPONSE_OPTIONS) || 'URL_ONLY';
+  const configuredLabelResponseOption = parseServiceType(process.env.FEDEX_LABEL_RESPONSE_OPTIONS) || 'LABEL';
   const resolvedServiceType = parseServiceType(payload.serviceType) || configuredDefaultServiceType;
 
   const shipDatestamp = new Date().toISOString().slice(0, 10);
