@@ -396,6 +396,11 @@
         selectedOptionId: '',
         retryCount: 0
       };
+      var addressValidationState = {
+        status: 'idle',
+        signature: '',
+        isValid: false
+      };
       var taxState = {
         status: 'idle',
         amountCents: null,
@@ -524,7 +529,7 @@
       }
 
       function setShippingRateMessage(html, stateClass) {
-        if (!shippingDebugModeEnabled || !html) {
+        if (!html) {
           shippingRateEstimateMessage.textContent = '';
           shippingRateEstimateMessage.className = 'shipping-validation-message';
           shippingRateEstimateMessage.style.display = 'none';
@@ -743,6 +748,17 @@
         ].join('|');
       }
 
+      function buildAddressValidationSignature() {
+        return [
+          getFieldValue('shippingStreet1').trim(),
+          getFieldValue('shippingStreet2').trim(),
+          getFieldValue('shippingCity').trim(),
+          getFieldValue('shippingState').trim().toUpperCase(),
+          getFieldValue('shippingPostalCode').trim(),
+          (getFieldValue('shippingCountryCode').trim() || 'US').toUpperCase()
+        ].join('|');
+      }
+
       function getShippingAddressInput() {
         return {
           shippingStreet1: getFieldValue('shippingStreet1').trim(),
@@ -914,6 +930,61 @@
       }
 
       var latestShippingQuoteRequestId = 0;
+      var latestAddressValidationRequestId = 0;
+
+      async function validateShippingAddress() {
+        var shippingInput = getShippingAddressInput();
+        var signature = buildAddressValidationSignature();
+
+        if (addressValidationState.status === 'ready' && addressValidationState.signature === signature && addressValidationState.isValid) {
+          return true;
+        }
+
+        var requestId = ++latestAddressValidationRequestId;
+        addressValidationState = {
+          status: 'pending',
+          signature: signature,
+          isValid: false
+        };
+        setShippingRateMessage('<strong>Validating shipping address…</strong>', '');
+
+        var response = await fetch('/api/validate-fedex-address', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+            shippingCity: shippingInput.shippingCity,
+            shippingState: shippingInput.shippingState,
+            shippingPostalCode: shippingInput.shippingPostalCode,
+            shippingCountryCode: shippingInput.shippingCountryCode
+          })
+        });
+
+        if (requestId !== latestAddressValidationRequestId) {
+          return false;
+        }
+
+        var body = await response.json().catch(function () { return {}; });
+        if (!response.ok || !body.success || !body.isValid) {
+          addressValidationState = {
+            status: 'error',
+            signature: signature,
+            isValid: false
+          };
+          var invalidMessage = body && body.error ? body.error : 'Shipping address could not be validated.';
+          var addressError = new Error(invalidMessage);
+          addressError.isInvalidAddress = true;
+          throw addressError;
+        }
+
+        addressValidationState = {
+          status: 'ready',
+          signature: signature,
+          isValid: true
+        };
+
+        return true;
+      }
 
       async function requestShippingOptions(options) {
         var requestOptions = options || {};
@@ -1009,6 +1080,7 @@
         var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
         var shippingInput = getShippingAddressInput();
         var quoteSignature = buildRateQuoteSignature();
+        var addressSignature = buildAddressValidationSignature();
 
         if (!Number.isFinite(quantity) || quantity < 1) {
           resetShippingRateState('idle');
@@ -1040,7 +1112,12 @@
 
         if (!shippingInput.shippingStreet1 || !shippingInput.shippingCity || !shippingInput.shippingState || !shippingInput.shippingPostalCode) {
           resetShippingRateState('incomplete');
-          setShippingRateMessage('', '');
+          addressValidationState = {
+            status: 'incomplete',
+            signature: addressSignature,
+            isValid: false
+          };
+          setShippingRateMessage('<strong>Enter your shipping address to load shipping options.</strong>', '');
           hideShippingOptions();
           updateInvoicePreviewTotals();
           return;
@@ -1055,13 +1132,18 @@
         var requestId = ++latestShippingQuoteRequestId;
         resetShippingRateState('pending');
         shippingRateState.retryCount = refreshOptions.retryCount || 0;
-        setShippingRateMessage('<strong>Fetching live FedEx shipping options…</strong>', '');
+        setShippingRateMessage('<strong>Validating shipping address…</strong>', '');
         hideShippingOptions();
         resetTaxState('idle');
         taxEstimateMessage.textContent = 'Tax will be estimated after a shipping option is selected.';
         updateInvoicePreviewTotals();
 
         try {
+          await validateShippingAddress();
+          if (requestId !== latestShippingQuoteRequestId) {
+            return;
+          }
+          setShippingRateMessage('<strong>Loading shipping options…</strong>', '');
           var quoteResult = await requestShippingOptions();
           var responseBody = quoteResult.responseBody;
           var shippingOptions = quoteResult.shippingOptions;
@@ -1088,7 +1170,7 @@
               'is-error'
             );
           } else {
-            setShippingRateMessage('<strong>Choose one FedEx shipping option, then click Buy Now.</strong>', 'is-success');
+            setShippingRateMessage('<strong>Select a shipping option to continue.</strong>', 'is-success');
           }
           renderShippingOptions();
           if (previousOptionId) {
@@ -1236,7 +1318,23 @@
       shippingFields.forEach(function (fieldName) {
         var field = form.elements[fieldName];
         field.addEventListener('input', function () {
-          refreshShippingRateEstimate();
+          addressValidationState = {
+            status: 'idle',
+            signature: '',
+            isValid: false
+          };
+          if (fieldName !== 'shippingStreet2') {
+            shippingRateState.selectedOptionId = '';
+            shippingRateState.cents = null;
+            shippingRateState.serviceName = '';
+            shippingRateState.serviceType = '';
+          }
+          if (window.shippingRefreshDebounceTimerId) {
+            window.clearTimeout(window.shippingRefreshDebounceTimerId);
+          }
+          window.shippingRefreshDebounceTimerId = window.setTimeout(function () {
+            refreshShippingRateEstimate();
+          }, 350);
         });
       });
 
