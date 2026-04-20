@@ -391,7 +391,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const recipientAddress = parseStructuredShippingAddress(payload);
+  let recipientAddress = parseStructuredShippingAddress(payload);
   if (!recipientAddress) {
     res.status(422).json({
       error: 'Shipping address is invalid.',
@@ -502,21 +502,32 @@ module.exports = async function handler(req, res) {
       }
 
       if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
-        res.status(422).json({
-          error: 'Shipping address is invalid.',
-          details: 'State and ZIP code do not match according to FedEx address validation.',
-          code: 'invalid_shipping_address',
-          debug: {
-            ...responseDebug,
-            failureReason: 'invalid_shipping_address',
-            normalizedRecipient: {
-              stateOrProvinceCode: resolvedAddress.stateOrProvinceCode || '',
-              postalCode: resolvedAddress.postalCode || '',
-              countryCode: resolvedAddress.countryCode || ''
-            }
+        const normalizedState = String(resolvedAddress.stateOrProvinceCode || '').trim().toUpperCase();
+        const normalizedPostalCode = String(resolvedAddress.postalCode || '').trim();
+        const normalizedCountryCode = String(resolvedAddress.countryCode || '').trim().toUpperCase();
+
+        responseDebug.addressValidationAdjustedRecipient = {
+          reason: 'state_or_postal_normalized_by_fedex',
+          submitted: {
+            stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
+            postalCode: recipientAddress.postalCode,
+            countryCode: recipientAddress.countryCode
+          },
+          normalized: {
+            stateOrProvinceCode: normalizedState,
+            postalCode: normalizedPostalCode,
+            countryCode: normalizedCountryCode
           }
-        });
-        return;
+        };
+
+        if (normalizedState && normalizedPostalCode && normalizedCountryCode === 'US') {
+          recipientAddress = {
+            ...recipientAddress,
+            stateOrProvinceCode: normalizedState,
+            postalCode: normalizedPostalCode,
+            countryCode: normalizedCountryCode
+          };
+        }
       }
     }
 
