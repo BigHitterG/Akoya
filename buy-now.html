@@ -347,6 +347,12 @@
         }
       }
 
+      function resetProceedToPaymentButton() {
+        stopProcessingButtonAnimation();
+        proceedToPaymentButton.disabled = false;
+        proceedToPaymentButton.textContent = 'Buy Now';
+      }
+
       function isSupportedTestMode(mode) {
         return mode === 'standard' || mode === 'test' || mode === 'test_shipping' || mode === 'test_shipping_tax';
       }
@@ -1391,6 +1397,8 @@
 
       form.addEventListener('submit', async function (event) {
         event.preventDefault();
+        proceedToPaymentButton.disabled = true;
+        startProcessingButtonAnimation();
         submissionError.style.display = 'none';
         submissionError.textContent = '';
         hideCardValidationError();
@@ -1405,18 +1413,21 @@
           }
           submissionError.textContent = 'Please complete all required fields before continuing.';
           submissionError.style.display = 'block';
+          resetProceedToPaymentButton();
           return;
         }
 
         if (!checkoutMode) {
           submissionError.textContent = 'Please choose Buy Now or Order via invoice before continuing.';
           submissionError.style.display = 'block';
+          resetProceedToPaymentButton();
           return;
         }
 
         if (shouldQuoteShipping() && !hasUsableSelectedShippingOption()) {
           submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
           submissionError.style.display = 'block';
+          resetProceedToPaymentButton();
           return;
         }
 
@@ -1457,6 +1468,7 @@
             } else {
               submissionError.textContent = 'Unable to refresh live FedEx shipping right now. Please retry your shipping quote before proceeding.';
               submissionError.style.display = 'block';
+              resetProceedToPaymentButton();
               return;
             }
           } else if (shippingRateState.fallbackUsed) {
@@ -1466,12 +1478,10 @@
           if (!hasUsableSelectedShippingOption()) {
             submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
             submissionError.style.display = 'block';
+            resetProceedToPaymentButton();
             return;
           }
         }
-
-        proceedToPaymentButton.disabled = true;
-        startProcessingButtonAnimation();
 
         try {
           var shippingInput = getShippingAddressInput();
@@ -1698,9 +1708,7 @@
           }
           submissionError.textContent = error.message || 'Unable to complete checkout right now.';
           submissionError.style.display = 'block';
-          stopProcessingButtonAnimation();
-          proceedToPaymentButton.disabled = false;
-          proceedToPaymentButton.textContent = 'Buy Now';
+          resetProceedToPaymentButton();
         }
       });
 
