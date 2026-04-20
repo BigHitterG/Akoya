@@ -628,6 +628,13 @@
         ].join('__');
       }
 
+      function hasUsableSelectedShippingOption() {
+        return shippingRateState.status === 'ready' &&
+          Array.isArray(shippingRateState.options) &&
+          shippingRateState.options.length > 0 &&
+          Number.isFinite(shippingRateState.cents);
+      }
+
       function escapeHtml(value) {
         return String(value || '')
           .replace(/&/g, '&amp;')
@@ -1218,20 +1225,51 @@
           return;
         }
 
-        if (shouldQuoteShipping() && (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents))) {
+        if (shouldQuoteShipping() && !hasUsableSelectedShippingOption()) {
           submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
           submissionError.style.display = 'block';
           return;
         }
 
         if (shouldQuoteShipping()) {
+          var preRefreshShippingState = {
+            status: shippingRateState.status,
+            cents: shippingRateState.cents,
+            serviceName: shippingRateState.serviceName,
+            serviceType: shippingRateState.serviceType,
+            fallbackUsed: shippingRateState.fallbackUsed,
+            quoteSignature: shippingRateState.quoteSignature,
+            options: Array.isArray(shippingRateState.options) ? shippingRateState.options.slice() : [],
+            selectedOptionId: shippingRateState.selectedOptionId,
+            retryCount: shippingRateState.retryCount
+          };
+          var canProceedWithSelectedFallback = preRefreshShippingState.status === 'ready' &&
+            preRefreshShippingState.fallbackUsed &&
+            preRefreshShippingState.options.length > 0 &&
+            Number.isFinite(preRefreshShippingState.cents);
+
           await refreshShippingRateEstimate({
             force: true,
             skipAutoRetry: true
           });
 
-          if (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents)) {
-            submissionError.textContent = 'Unable to refresh live FedEx shipping right now. Please retry your shipping quote before proceeding.';
+          if (!hasUsableSelectedShippingOption()) {
+            if (canProceedWithSelectedFallback) {
+              shippingRateState = preRefreshShippingState;
+              renderShippingOptions();
+              applySelectedShippingOption(preRefreshShippingState.selectedOptionId);
+              setShippingRateMessage('<strong>Live FedEx refresh failed at submit. Continuing with selected fallback shipping rate.</strong>', 'is-error');
+            } else {
+              submissionError.textContent = 'Unable to refresh live FedEx shipping right now. Please retry your shipping quote before proceeding.';
+              submissionError.style.display = 'block';
+              return;
+            }
+          } else if (shippingRateState.fallbackUsed) {
+            setShippingRateMessage('<strong>FedEx live refresh is currently unavailable. Continuing with selected fallback shipping rate.</strong>', 'is-error');
+          }
+
+          if (!hasUsableSelectedShippingOption()) {
+            submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
             submissionError.style.display = 'block';
             return;
           }
