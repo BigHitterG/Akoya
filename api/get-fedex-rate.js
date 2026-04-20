@@ -507,6 +507,11 @@ module.exports = async function handler(req, res) {
       }
     }
   };
+  const addressValidationSignal = {
+    source: 'fedex_address_resolve',
+    status: 'unknown',
+    details: null
+  };
 
   try {
     const accessToken = await getFedexAccessToken(baseUrl, clientId, clientSecret);
@@ -520,78 +525,49 @@ module.exports = async function handler(req, res) {
 
     if (!addressValidationResult.ok) {
       if (isLikelyInvalidAddressError(addressValidationResult.body)) {
-        res.status(422).json({
-          error: 'Shipping address is invalid.',
-          details: summarizeFedexErrors(addressValidationResult.body) || 'Please check street, city, state, and ZIP code.',
-          code: 'invalid_shipping_address',
-          debug: {
-            ...responseDebug,
-            failureReason: 'invalid_shipping_address'
-          }
-        });
-        return;
+        addressValidationSignal.status = 'negative';
+        addressValidationSignal.details = summarizeFedexErrors(addressValidationResult.body)
+          || 'FedEx address resolution reported an invalid address.';
+      } else {
+        addressValidationSignal.status = 'inconclusive';
+        addressValidationSignal.details = summarizeFedexErrors(addressValidationResult.body)
+          || `HTTP ${addressValidationResult.status}`;
       }
-
-      respondWithFallback({
-        res,
-        quantityRequested: shippingPackageConfig.quantity,
-        shippingPackageConfig,
-        error: 'FedEx address validation failed.',
-        details: summarizeFedexErrors(addressValidationResult.body) || `HTTP ${addressValidationResult.status}`,
-        debug: {
-          ...responseDebug,
-          failureReason: 'address_validation_http_error'
-        }
-      });
-      return;
     }
 
     const resolvedAddress = addressValidationResult.body?.output?.resolvedAddresses?.[0] || null;
     if (!resolvedAddress) {
-      res.status(422).json({
-        error: 'Shipping address is invalid.',
-        details: 'FedEx could not validate this shipping address.',
-        code: 'invalid_shipping_address',
-        debug: {
-          ...responseDebug,
-          failureReason: 'invalid_shipping_address'
+      if (addressValidationSignal.status === 'unknown') {
+        addressValidationSignal.status = 'inconclusive';
+        addressValidationSignal.details = 'FedEx did not return a normalized address.';
+      }
+    } else if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
+      addressValidationSignal.status = 'negative';
+      addressValidationSignal.details = 'The submitted state and ZIP do not match what FedEx resolved.';
+      responseDebug.addressValidationMismatch = {
+        submitted: {
+          stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
+          postalCode: recipientAddress.postalCode,
+          countryCode: recipientAddress.countryCode
+        },
+        normalized: {
+          stateOrProvinceCode: String(resolvedAddress.stateOrProvinceCode || '').trim().toUpperCase(),
+          postalCode: String(resolvedAddress.postalCode || '').trim(),
+          countryCode: String(resolvedAddress.countryCode || '').trim().toUpperCase()
         }
-      });
-      return;
+      };
+    } else {
+      recipientAddress = coerceFedexResolvedAddress(resolvedAddress, recipientAddress);
+      responseDebug.normalized.recipient = {
+        city: recipientAddress.city,
+        stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
+        postalCode: recipientAddress.postalCode,
+        countryCode: recipientAddress.countryCode
+      };
+      addressValidationSignal.status = 'verified';
+      addressValidationSignal.details = null;
     }
-
-    if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
-      res.status(422).json({
-        error: 'Shipping address is invalid.',
-        details: 'The submitted state and ZIP do not match what FedEx resolved. Please confirm the shipping address.',
-        code: 'invalid_shipping_address',
-        debug: {
-          ...responseDebug,
-          failureReason: 'invalid_shipping_address',
-          addressValidationMismatch: {
-            submitted: {
-              stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
-              postalCode: recipientAddress.postalCode,
-              countryCode: recipientAddress.countryCode
-            },
-            normalized: {
-              stateOrProvinceCode: String(resolvedAddress.stateOrProvinceCode || '').trim().toUpperCase(),
-              postalCode: String(resolvedAddress.postalCode || '').trim(),
-              countryCode: String(resolvedAddress.countryCode || '').trim().toUpperCase()
-            }
-          }
-        }
-      });
-      return;
-    }
-
-    recipientAddress = coerceFedexResolvedAddress(resolvedAddress, recipientAddress);
-    responseDebug.normalized.recipient = {
-      city: recipientAddress.city,
-      stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
-      postalCode: recipientAddress.postalCode,
-      countryCode: recipientAddress.countryCode
-    };
+    responseDebug.addressValidationSignal = addressValidationSignal;
 
     const requestedPackageLineItems = shippingPackageConfig.packages.map((pkg) => ({
       groupPackageCount: 1,
@@ -659,10 +635,10 @@ module.exports = async function handler(req, res) {
 
     if (!quoteResponse.ok) {
       const fedexMessage = summarizeFedexErrors(quoteBody);
-      if (isLikelyInvalidAddressError(quoteBody)) {
+      if (isLikelyInvalidAddressError(quoteBody) || addressValidationSignal.status === 'negative') {
         res.status(422).json({
           error: 'Shipping address is invalid.',
-          details: fedexMessage || 'Please check street, city, state, and ZIP code.',
+          details: fedexMessage || addressValidationSignal.details || 'Please check street, city, state, and ZIP code.',
           code: 'invalid_shipping_address',
           debug: {
             ...responseDebug,
@@ -694,10 +670,10 @@ module.exports = async function handler(req, res) {
     }).length;
 
     if (!selectedQuote) {
-      if (isLikelyInvalidAddressError(quoteBody)) {
+      if (isLikelyInvalidAddressError(quoteBody) || addressValidationSignal.status === 'negative') {
         res.status(422).json({
           error: 'Shipping address is invalid.',
-          details: summarizeFedexErrors(quoteBody) || 'Please check street, city, state, and ZIP code.',
+          details: summarizeFedexErrors(quoteBody) || addressValidationSignal.details || 'Please check street, city, state, and ZIP code.',
           code: 'invalid_shipping_address',
           debug: {
             ...responseDebug,
@@ -735,6 +711,7 @@ module.exports = async function handler(req, res) {
       transitTime: selectedQuote.transitTime,
       shippingOptions: parsedQuotes,
       fallbackUsed: false,
+      addressValidation: addressValidationSignal,
       packageProfile: {
         quantity: shippingPackageConfig.quantity,
         packageCount: shippingPackageConfig.packageCount,
