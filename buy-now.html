@@ -556,6 +556,13 @@
           return '';
         }
 
+        var friendlyFailureReasons = {
+          missing_fedex_core_config: 'FedEx API credentials/account are missing in server config',
+          missing_fedex_shipper_config: 'FedEx ship-from/origin address is missing in server config',
+          invalid_shipping_address: 'FedEx rejected the shipping address',
+          fedex_http_error: 'FedEx API returned an error response',
+          no_usable_quote: 'FedEx responded but no usable rates were returned'
+        };
         var parts = [];
         var debug = responseBody.debug || {};
         var packageProfile = responseBody.packageProfile || {};
@@ -568,14 +575,15 @@
         if (Number.isFinite(packageProfile.quantity) && Number.isFinite(packageProfile.packageCount)) {
           parts.push('Quoted quantity ' + String(packageProfile.quantity) + ' using ' + String(packageProfile.packageCount) + ' package(s)');
         }
-        if (shippingDebugModeEnabled && Number.isFinite(debug.fedexHttpStatus)) {
+        if (Number.isFinite(debug.fedexHttpStatus)) {
           parts.push('FedEx HTTP status: ' + String(debug.fedexHttpStatus));
+        }
+        if (typeof debug.failureReason === 'string' && debug.failureReason.trim()) {
+          var normalizedFailureReason = debug.failureReason.trim();
+          parts.push(friendlyFailureReasons[normalizedFailureReason] || ('code: ' + normalizedFailureReason));
         }
         if (shippingDebugModeEnabled && typeof debug.fedexErrorSummary === 'string' && debug.fedexErrorSummary.trim()) {
           parts.push(debug.fedexErrorSummary.trim());
-        }
-        if (shippingDebugModeEnabled && typeof debug.failureReason === 'string' && debug.failureReason.trim()) {
-          parts.push('code: ' + debug.failureReason.trim());
         }
 
         return parts.length
