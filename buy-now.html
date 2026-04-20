@@ -1444,7 +1444,6 @@
             retryCount: shippingRateState.retryCount
           };
           var canProceedWithSelectedFallback = preRefreshShippingState.status === 'ready' &&
-            preRefreshShippingState.fallbackUsed &&
             preRefreshShippingState.options.length > 0 &&
             Number.isFinite(preRefreshShippingState.cents);
 
@@ -1464,7 +1463,7 @@
               shippingRateState = preRefreshShippingState;
               renderShippingOptions();
               applySelectedShippingOption(preRefreshShippingState.selectedOptionId);
-              setShippingRateMessage('<strong>Live FedEx refresh failed at submit. Continuing with selected fallback shipping rate.</strong>', 'is-error');
+              setShippingRateMessage('<strong>Live FedEx refresh failed at submit. Continuing with the previously selected shipping rate.</strong>', 'is-error');
             } else {
               submissionError.textContent = 'Unable to refresh live FedEx shipping right now. Please retry your shipping quote before proceeding.';
               submissionError.style.display = 'block';
