@@ -334,6 +334,8 @@
       var lastFedexRateAttemptDebug = null;
       var lastFedexShipmentAttemptDebug = null;
       var checkoutToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
+      var shipmentCreationToggle = checkoutToggles.shipmentCreation || {};
+      var isShipmentCreationEnabled = shipmentCreationToggle.enabled !== false;
       var debugPanels = checkoutToggles.debugPanels || {};
       var shippingDebugPanelToggle = debugPanels.shipping || {};
       var isShippingDebugUiEnabled = !!shippingDebugPanelToggle.enabled;
@@ -997,24 +999,35 @@
           var fedexShipmentError = '';
           var fedexShipmentErrorCode = '';
 
-          try {
-            var shipmentResult = await createFedexShipment({ flow: 'request-invoice-submit' });
-            var shipmentResponse = shipmentResult.responseBody;
-            if (!Number.isFinite(shipmentResponse.shippingFeeCents)) {
-              throw new Error('FedEx shipment did not return a shipping charge.');
-            }
+          if (!isShipmentCreationEnabled) {
+            payload.shippingFeeCents = shippingRateState.cents;
+            payload.shippingServiceName = shippingRateState.serviceName || payload.shippingServiceName || 'FedEx Estimated Shipping (quoted)';
+            payload.shippingServiceType = shippingRateState.serviceType || payload.shippingServiceType || '';
+            payload.trackingNumber = '';
+            payload.shippingLabelUrl = '';
+            payload.shipDatestamp = '';
+            fedexShipmentStatus = 'label_creation_disabled_quoted_rate';
+            fedexShipmentError = 'FedEx shipment creation disabled by checkout toggle.';
+            fedexShipmentErrorCode = 'shipment_creation_disabled';
+          } else {
+            try {
+              var shipmentResult = await createFedexShipment({ flow: 'request-invoice-submit' });
+              var shipmentResponse = shipmentResult.responseBody;
+              if (!Number.isFinite(shipmentResponse.shippingFeeCents)) {
+                throw new Error('FedEx shipment did not return a shipping charge.');
+              }
 
-            payload.shippingFeeCents = shipmentResponse.shippingFeeCents;
-            payload.shippingServiceName = shipmentResponse.serviceName || 'FedEx Shipment (paid label)';
-            payload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
-            payload.trackingNumber = shipmentResponse.trackingNumber || '';
-            payload.shippingLabelUrl = shipmentResponse.labelUrl || '';
-            payload.shipDatestamp = shipmentResponse.shipDatestamp || '';
+              payload.shippingFeeCents = shipmentResponse.shippingFeeCents;
+              payload.shippingServiceName = shipmentResponse.serviceName || 'FedEx Shipment (paid label)';
+              payload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
+              payload.trackingNumber = shipmentResponse.trackingNumber || '';
+              payload.shippingLabelUrl = shipmentResponse.labelUrl || '';
+              payload.shipDatestamp = shipmentResponse.shipDatestamp || '';
 
-            fedexShipmentCreated = true;
-            fedexShipmentStatus = 'label_created';
-            fedexShipmentErrorCode = '';
-          } catch (shipmentError) {
+              fedexShipmentCreated = true;
+              fedexShipmentStatus = 'label_created';
+              fedexShipmentErrorCode = '';
+            } catch (shipmentError) {
             if (shipmentError && shipmentError.isInvalidAddress) {
               throw new Error(shipmentError.message || 'Shipping address is invalid. Please correct it before submitting.');
             }
@@ -1026,7 +1039,8 @@
             payload.shippingLabelUrl = '';
             payload.shipDatestamp = '';
             fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : 'Unable to create FedEx shipment right now.').slice(0, 300);
-            fedexShipmentErrorCode = '';
+              fedexShipmentErrorCode = '';
+            }
           }
 
           payload.fedexShipmentCreated = fedexShipmentCreated ? 'true' : 'false';

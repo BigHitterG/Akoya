@@ -113,6 +113,19 @@ FedEx integration needs two config groups:
 
 If you only set `FEDEX_CLIENT_ID` + `FEDEX_CLIENT_SECRET`, rate quotes will fail because `FEDEX_ACCOUNT_NUMBER` and shipper-origin fields are still missing.
 
+
+### Temporarily disable live label creation
+
+If FedEx label generation must stay off temporarily (for certification/verification), set either control below:
+
+- Front-end toggle: `window.AKOYA_CHECKOUT_TOGGLES.shipmentCreation.enabled = false` in `checkout-toggles.js`
+- Server-side enforcement (Buy Now payment intent): `FEDEX_SHIPMENT_CREATION_ENABLED=false`
+
+Behavior with label creation disabled:
+1. Skip `/api/create-fedex-shipment`.
+2. Use live quote (`/api/get-fedex-rate`) when available.
+3. Fall back to `api/lib/shipping-packages.js` final flat-rate table if quote is unavailable.
+
 ### Final shipping fallback rates (editable in repo)
 
 Final fallback flat-rate shipping values are stored in:
@@ -166,4 +179,4 @@ For Invoice:
 Toggle documentation and copy/paste prompt templates live in `TOGGLES.md`.
 
 - Toggle doc: `TOGGLES.md`
-- Current toggle source (test purchase + shipping debug panel): `checkout-toggles.js`
+- Current toggle source (test purchase + shipment creation + shipping debug panel): `checkout-toggles.js`

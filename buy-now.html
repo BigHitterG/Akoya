@@ -314,6 +314,8 @@
       var maxQuantity = 10;
       var checkoutToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
       var testCheckoutOptions = checkoutToggles.testCheckoutOptions || {};
+      var shipmentCreationToggle = checkoutToggles.shipmentCreation || {};
+      var isShipmentCreationEnabled = shipmentCreationToggle.enabled !== false;
       var debugPanels = checkoutToggles.debugPanels || {};
       var shippingDebugPanelToggle = debugPanels.shipping || {};
       var testModeEnabled = !!testCheckoutOptions.enabled;
@@ -1239,7 +1241,7 @@
               shippingAddress: buildShippingAddressMultiline()
             });
 
-            if (shouldQuoteShipping()) {
+            if (shouldQuoteShipping() && isShipmentCreationEnabled) {
               try {
                 var shipmentResponse = await createFedexShipment();
                 invoicePayload.shippingFeeCents = shipmentResponse.shippingFeeCents;
@@ -1268,6 +1270,17 @@
                 invoicePayload.fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : '').slice(0, 300);
                 invoicePayload.fedexShipmentErrorCode = '';
               }
+            } else if (shouldQuoteShipping()) {
+              invoicePayload.shippingFeeCents = shippingRateState.cents;
+              invoicePayload.shippingServiceName = shippingRateState.serviceName || 'FedEx Estimated Shipping (quoted)';
+              invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
+              invoicePayload.trackingNumber = '';
+              invoicePayload.shippingLabelUrl = '';
+              invoicePayload.shipDatestamp = '';
+              invoicePayload.fedexShipmentCreated = 'false';
+              invoicePayload.fedexShipmentStatus = 'label_creation_disabled_quoted_rate';
+              invoicePayload.fedexShipmentError = 'FedEx shipment creation disabled by checkout toggle.';
+              invoicePayload.fedexShipmentErrorCode = 'shipment_creation_disabled';
             } else {
               invoicePayload.shippingFeeCents = 0;
               invoicePayload.shippingServiceName = 'No shipping (test mode)';
@@ -1360,7 +1373,8 @@
             billingAddress: basePayload.billingAddress,
             poNumber: basePayload.poNumber,
             notes: basePayload.notes,
-            paymentMethodId: paymentMethodResult.paymentMethod.id
+            paymentMethodId: paymentMethodResult.paymentMethod.id,
+            disableFedexShipmentCreation: !isShipmentCreationEnabled
           };
 
           var response = await fetch('/api/create-buy-now-payment-intent', {
