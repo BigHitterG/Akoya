@@ -48,7 +48,7 @@ function parseStructuredShippingAddress(payload) {
     return null;
   }
 
-  if (!/^\d{5}(?:-\d{4})?$/.test(postalCode)) {
+  if (countryCode === 'US' && !/^\d{5}(?:-\d{4})?$/.test(postalCode)) {
     return null;
   }
 
