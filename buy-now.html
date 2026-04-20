@@ -979,14 +979,11 @@
 
         if (!body.isValid) {
           addressValidationState = {
-            status: 'error',
+            status: 'warning',
             signature: signature,
             isValid: false
           };
-          var invalidMessage = body && body.error ? body.error : 'Shipping address could not be validated.';
-          var addressError = new Error(invalidMessage);
-          addressError.isInvalidAddress = true;
-          throw addressError;
+          return false;
         }
 
         addressValidationState = {
@@ -1152,15 +1149,16 @@
 
         try {
           try {
-            await validateShippingAddress();
+            var validated = await validateShippingAddress();
             if (requestId !== latestShippingQuoteRequestId) {
               return;
             }
-            setShippingRateMessage('<strong>Loading shipping options…</strong>', '');
-          } catch (validationError) {
-            if (validationError && validationError.isInvalidAddress) {
-              throw validationError;
+            if (validated) {
+              setShippingRateMessage('<strong>Loading shipping options…</strong>', '');
+            } else {
+              setShippingRateMessage('<strong>Address validation was inconclusive.</strong> Attempting live FedEx shipping options directly…', 'is-error');
             }
+          } catch (validationError) {
             if (requestId !== latestShippingQuoteRequestId) {
               return;
             }

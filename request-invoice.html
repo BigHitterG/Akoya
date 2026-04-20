@@ -863,15 +863,16 @@
           }
 
           if (!responseBody.isValid || !responseBody.normalizedAddress) {
-            shippingValidationState.status = 'invalid';
+            shippingValidationState.status = 'warning';
             shippingValidationState.lastValidatedSignature = '';
-            shippingRateState.status = 'invalid_address';
-            shippingRateState.cents = null;
-            shippingRateState.serviceName = '';
-            shippingRateState.serviceType = '';
-            shippingRateState.quoteSignature = '';
-            clearShippingRateMessage();
-            setShippingAddressMessage('<strong>FedEx could not validate this address.</strong> Please review and update your shipping details.', 'is-error');
+            setShippingAddressMessage('<strong>Address validation was inconclusive.</strong> Attempting a live FedEx quote using the address entered.', 'is-error');
+            await fetchShippingRateQuote();
+
+            if (shippingRateState.status === 'ready' && Number.isFinite(shippingRateState.cents)) {
+              setShippingAddressMessage('<strong>Address validation was inconclusive.</strong> FedEx still returned a live shipping quote for this address.', 'is-success');
+              return true;
+            }
+
             if (shouldFocusOnError) {
               shippingAddressField.focus();
             }
