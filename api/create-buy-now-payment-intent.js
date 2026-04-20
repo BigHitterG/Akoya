@@ -77,6 +77,13 @@ function toMetadataValue(value, maxLength = 500) {
   return stringValue.slice(0, maxLength);
 }
 
+function isFedexShipmentCreationEnabled(payload) {
+  const envValue = (process.env.FEDEX_SHIPMENT_CREATION_ENABLED || 'true').trim().toLowerCase();
+  const envEnabled = !['0', 'false', 'off', 'no'].includes(envValue);
+  const payloadDisabled = payload && (payload.disableFedexShipmentCreation === true || String(payload.disableFedexShipmentCreation).trim().toLowerCase() === 'true');
+  return envEnabled && !payloadDisabled;
+}
+
 async function createFedexShipment(payload) {
   const shipmentPayload = {
     quantityRequested: Number.parseInt(payload.quantityRequested, 10),
@@ -534,7 +541,9 @@ module.exports = async function handler(req, res) {
     let fedexShipmentError = '';
     let fedexShipmentStatus = 'label_not_created_quoted_fallback';
 
-    if (shouldChargeShipping) {
+    const shipmentCreationEnabled = isFedexShipmentCreationEnabled(payload);
+
+    if (shouldChargeShipping && shipmentCreationEnabled) {
       const shipmentResult = await createFedexShipment(payload);
       if (shipmentResult.success) {
         const parsedFedexShippingFeeCents = parseCents(shipmentResult.shipment.shippingFeeCents);
@@ -589,6 +598,35 @@ module.exports = async function handler(req, res) {
             shippingServiceType = 'FEDEX_GROUND';
             fedexShipmentStatus = 'label_not_created_final_flat_rate_fallback';
           }
+        }
+      }
+    } else if (shouldChargeShipping) {
+      const quoteResult = await createFedexRateQuote(payload);
+      fedexShipmentError = 'FedEx shipment creation disabled by configuration.';
+
+      if (quoteResult.success) {
+        const parsedQuoteShippingFeeCents = parseCents(quoteResult.quote.shippingFeeCents);
+        if (Number.isFinite(parsedQuoteShippingFeeCents)) {
+          actualShippingFeeCents = parsedQuoteShippingFeeCents;
+          shippingServiceName = quoteResult.quote.serviceName || shippingServiceName || 'FedEx Ground (Fallback Flat Rate)';
+          shippingServiceType = quoteResult.quote.serviceType || shippingServiceType || 'FEDEX_GROUND';
+          fedexShipmentStatus = quoteResult.quote.fallbackUsed
+            ? 'label_creation_disabled_final_flat_rate_fallback'
+            : 'label_creation_disabled_live_quote';
+        }
+      } else if (quoteResult.isInvalidAddress) {
+        res.status(400).json({
+          error: 'Shipping address is invalid.',
+          details: quoteResult.body?.details || 'Please verify the shipping street, city, state, and ZIP code.'
+        });
+        return;
+      } else {
+        const fallbackShippingFeeCents = getFinalFallbackShippingFeeCents(fallbackShippingQuantity);
+        if (Number.isFinite(fallbackShippingFeeCents)) {
+          actualShippingFeeCents = fallbackShippingFeeCents;
+          shippingServiceName = 'FedEx Ground (Fallback Flat Rate)';
+          shippingServiceType = 'FEDEX_GROUND';
+          fedexShipmentStatus = 'label_creation_disabled_final_flat_rate_fallback';
         }
       }
     } else {

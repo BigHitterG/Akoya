@@ -16,9 +16,12 @@ This file documents manual feature toggles and the exact prompt format to ask Co
 ```js
 window.AKOYA_CHECKOUT_TOGGLES = {
   testCheckoutOptions: {
-    enabled: true,
+    enabled: false,
     defaultMode: 'standard',
     priceCents: 100
+  },
+  shipmentCreation: {
+    enabled: true
   },
   debugPanels: {
     shipping: {
@@ -27,6 +30,16 @@ window.AKOYA_CHECKOUT_TOGGLES = {
   }
 };
 ```
+
+
+## FedEx shipment creation toggle (Invoice + Buy Now)
+
+- **File:** `checkout-toggles.js`
+- **Object path:** `window.AKOYA_CHECKOUT_TOGGLES.shipmentCreation`
+- **Primary switch:** `enabled` (`true` = create live shipment labels during checkout submit, `false` = skip label creation and use quote/fallback rates only)
+- **Notes:**
+  - `request-invoice.html` and `buy-now.html` both honor this toggle before calling `/api/create-fedex-shipment`.
+  - `api/create-buy-now-payment-intent.js` also honors the backend env var `FEDEX_SHIPMENT_CREATION_ENABLED` for server-side enforcement.
 
 ## Shipping debug panel toggle (Request Invoice checkout)
 
@@ -49,6 +62,12 @@ Use one of these exact prompts:
 
 - **Only change default troubleshooting mode**
   - `Update checkout-toggles.js and set window.AKOYA_CHECKOUT_TOGGLES.testCheckoutOptions.defaultMode to 'test_shipping_tax'. Commit and open a PR.`
+
+- **Turn OFF FedEx shipment creation toggle**
+  - `Set checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.shipmentCreation.enabled is false. Commit the change and open a PR.`
+
+- **Turn ON FedEx shipment creation toggle**
+  - `Set checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.shipmentCreation.enabled is true. Commit the change and open a PR.`
 
 - **Turn OFF shipping debug panel toggle**
   - `Set the shipping debug panel toggle OFF by changing checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.debugPanels.shipping.enabled is false. Commit the change and open a PR.`
