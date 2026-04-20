@@ -915,6 +915,95 @@
 
       var latestShippingQuoteRequestId = 0;
 
+      async function requestShippingOptions(options) {
+        var requestOptions = options || {};
+        var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
+        var shippingInput = getShippingAddressInput();
+        var response = await fetch('/api/get-fedex-rate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quantityRequested: quantity,
+            shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
+            shippingCity: shippingInput.shippingCity,
+            shippingState: shippingInput.shippingState,
+            shippingPostalCode: shippingInput.shippingPostalCode,
+            shippingCountryCode: shippingInput.shippingCountryCode,
+            flow: 'buy-now',
+            testMode: selectedTestMode
+          })
+        });
+
+        var responseBody = await response.json().catch(function () { return {}; });
+        var shippingOptions = normalizeShippingOptions(responseBody);
+        if (!response.ok || !shippingOptions.length) {
+          var details = [responseBody && responseBody.error, responseBody && responseBody.hint, responseBody && responseBody.details].filter(Boolean).join(' ');
+          var shippingError = new Error(details || requestOptions.errorMessage || 'Unable to fetch live shipping quote.');
+          shippingError.isInvalidAddress = !!(responseBody && responseBody.code === 'invalid_shipping_address');
+          throw shippingError;
+        }
+
+        return {
+          responseBody: responseBody,
+          shippingOptions: shippingOptions
+        };
+      }
+
+      async function refreshSelectedShippingRateAtSubmit(options) {
+        var submitRefreshOptions = options || {};
+        var previousOptionId = shippingRateState.selectedOptionId;
+        var previousServiceType = (shippingRateState.serviceType || '').toUpperCase();
+        var previousServiceName = (shippingRateState.serviceName || '').toUpperCase();
+        var quoteSignature = buildRateQuoteSignature();
+
+        var quoteResult = await requestShippingOptions({ errorMessage: submitRefreshOptions.errorMessage });
+        var shippingOptions = quoteResult.shippingOptions;
+        var responseBody = quoteResult.responseBody || {};
+        var selectedOption = null;
+
+        if (previousOptionId) {
+          selectedOption = shippingOptions.find(function (option) {
+            return optionIdFor(option) === previousOptionId;
+          }) || null;
+        }
+        if (!selectedOption && previousServiceType) {
+          selectedOption = shippingOptions.find(function (option) {
+            return String(option.serviceType || '').toUpperCase() === previousServiceType;
+          }) || null;
+        }
+        if (!selectedOption && previousServiceName) {
+          selectedOption = shippingOptions.find(function (option) {
+            return String(option.serviceName || '').toUpperCase() === previousServiceName;
+          }) || null;
+        }
+        if (!selectedOption && shippingOptions.length === 1) {
+          selectedOption = shippingOptions[0];
+        }
+
+        shippingRateState.status = 'ready';
+        shippingRateState.fallbackUsed = !!responseBody.fallbackUsed;
+        shippingRateState.quoteSignature = quoteSignature;
+        shippingRateState.options = shippingOptions;
+        shippingRateState.retryCount = 0;
+        shippingRateState.selectedOptionId = '';
+        shippingRateState.cents = null;
+        shippingRateState.serviceName = '';
+        shippingRateState.serviceType = '';
+
+        if (selectedOption) {
+          var selectedOptionId = optionIdFor(selectedOption);
+          shippingRateState.selectedOptionId = selectedOptionId;
+          shippingRateState.cents = selectedOption.shippingFeeCents;
+          shippingRateState.serviceName = selectedOption.serviceName || '';
+          shippingRateState.serviceType = selectedOption.serviceType || '';
+        }
+
+        return {
+          matchedSelection: !!selectedOption,
+          fallbackUsed: !!responseBody.fallbackUsed
+        };
+      }
+
       async function refreshShippingRateEstimate(options) {
         var refreshOptions = options || {};
         var quantity = Number.parseInt(getFieldValue('quantityRequested').trim(), 10);
@@ -973,31 +1062,11 @@
         updateInvoicePreviewTotals();
 
         try {
-          var response = await fetch('/api/get-fedex-rate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              quantityRequested: quantity,
-              shippingStreetLines: [shippingInput.shippingStreet1, shippingInput.shippingStreet2].filter(Boolean),
-              shippingCity: shippingInput.shippingCity,
-              shippingState: shippingInput.shippingState,
-              shippingPostalCode: shippingInput.shippingPostalCode,
-              shippingCountryCode: shippingInput.shippingCountryCode,
-              flow: 'buy-now',
-              testMode: selectedTestMode
-            })
-          });
-
-          var responseBody = await response.json().catch(function () { return {}; });
+          var quoteResult = await requestShippingOptions();
+          var responseBody = quoteResult.responseBody;
+          var shippingOptions = quoteResult.shippingOptions;
           if (requestId !== latestShippingQuoteRequestId) {
             return;
-          }
-          var shippingOptions = normalizeShippingOptions(responseBody);
-          if (!response.ok || !shippingOptions.length) {
-            var details = [responseBody && responseBody.error, responseBody && responseBody.hint, responseBody && responseBody.details].filter(Boolean).join(' ');
-            var shippingError = new Error(details || 'Unable to fetch live shipping quote.');
-            shippingError.isInvalidAddress = !!(responseBody && responseBody.code === 'invalid_shipping_address');
-            throw shippingError;
           }
 
           var previousOptionId = shippingRateState.selectedOptionId;
@@ -1249,10 +1318,16 @@
             preRefreshShippingState.options.length > 0 &&
             Number.isFinite(preRefreshShippingState.cents);
 
-          await refreshShippingRateEstimate({
-            force: true,
-            skipAutoRetry: true
-          });
+          try {
+            await refreshSelectedShippingRateAtSubmit({
+              errorMessage: 'Unable to refresh live FedEx shipping right now.'
+            });
+          } catch (submitRefreshError) {
+            if (submitRefreshError && submitRefreshError.isInvalidAddress) {
+              setShippingRateMessage('<strong>Shipping address could not be validated.</strong> Please correct the address to continue.', 'is-error');
+            }
+          }
+          updateInvoicePreviewTotals();
 
           if (!hasUsableSelectedShippingOption()) {
             if (canProceedWithSelectedFallback) {
