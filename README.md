@@ -139,6 +139,11 @@ This table is used for quantities `1` through `10` when:
 Both order flows (`request-invoice` and `buy-now`) use this same fallback table so pricing stays consistent.
 
 
+
+## Buy Now flow audit map
+
+Detailed step-by-step flow documentation for `buy-now.html` lives in `docs/BUY_NOW_FLOW.md`.
+
 ## Local development
 
 Install dependencies:
