@@ -486,12 +486,11 @@ module.exports = async function handler(req, res) {
     responseDebug.addressValidationStatus = addressValidationResult.status;
     responseDebug.addressValidationBody = addressValidationResult.body;
 
-    if (addressValidationResult.ok) {
-      const resolvedAddress = addressValidationResult.body?.output?.resolvedAddresses?.[0] || null;
-      if (!resolvedAddress) {
+    if (!addressValidationResult.ok) {
+      if (isLikelyInvalidAddressError(addressValidationResult.body)) {
         res.status(422).json({
           error: 'Shipping address is invalid.',
-          details: 'FedEx could not validate this shipping address.',
+          details: summarizeFedexErrors(addressValidationResult.body) || 'Please check street, city, state, and ZIP code.',
           code: 'invalid_shipping_address',
           debug: {
             ...responseDebug,
@@ -501,34 +500,57 @@ module.exports = async function handler(req, res) {
         return;
       }
 
-      if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
-        const normalizedState = String(resolvedAddress.stateOrProvinceCode || '').trim().toUpperCase();
-        const normalizedPostalCode = String(resolvedAddress.postalCode || '').trim();
-        const normalizedCountryCode = String(resolvedAddress.countryCode || '').trim().toUpperCase();
-
-        responseDebug.addressValidationAdjustedRecipient = {
-          reason: 'state_or_postal_normalized_by_fedex',
-          submitted: {
-            stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
-            postalCode: recipientAddress.postalCode,
-            countryCode: recipientAddress.countryCode
-          },
-          normalized: {
-            stateOrProvinceCode: normalizedState,
-            postalCode: normalizedPostalCode,
-            countryCode: normalizedCountryCode
-          }
-        };
-
-        if (normalizedState && normalizedPostalCode && normalizedCountryCode === 'US') {
-          recipientAddress = {
-            ...recipientAddress,
-            stateOrProvinceCode: normalizedState,
-            postalCode: normalizedPostalCode,
-            countryCode: normalizedCountryCode
-          };
+      respondWithFallback({
+        res,
+        quantityRequested: shippingPackageConfig.quantity,
+        shippingPackageConfig,
+        error: 'FedEx address validation failed.',
+        details: summarizeFedexErrors(addressValidationResult.body) || `HTTP ${addressValidationResult.status}`,
+        debug: {
+          ...responseDebug,
+          failureReason: 'address_validation_http_error'
         }
-      }
+      });
+      return;
+    }
+
+    const resolvedAddress = addressValidationResult.body?.output?.resolvedAddresses?.[0] || null;
+    if (!resolvedAddress) {
+      res.status(422).json({
+        error: 'Shipping address is invalid.',
+        details: 'FedEx could not validate this shipping address.',
+        code: 'invalid_shipping_address',
+        debug: {
+          ...responseDebug,
+          failureReason: 'invalid_shipping_address'
+        }
+      });
+      return;
+    }
+
+    if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
+      res.status(422).json({
+        error: 'Shipping address is invalid.',
+        details: 'The city, state, and ZIP code do not match. Please confirm the shipping address.',
+        code: 'invalid_shipping_address',
+        debug: {
+          ...responseDebug,
+          failureReason: 'invalid_shipping_address',
+          addressValidationMismatch: {
+            submitted: {
+              stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
+              postalCode: recipientAddress.postalCode,
+              countryCode: recipientAddress.countryCode
+            },
+            normalized: {
+              stateOrProvinceCode: String(resolvedAddress.stateOrProvinceCode || '').trim().toUpperCase(),
+              postalCode: String(resolvedAddress.postalCode || '').trim(),
+              countryCode: String(resolvedAddress.countryCode || '').trim().toUpperCase()
+            }
+          }
+        }
+      });
+      return;
     }
 
     const requestedPackageLineItems = shippingPackageConfig.packages.map((pkg) => ({
