@@ -1,3 +1,5 @@
+const { normalizeStateOrProvinceCode } = require('./lib/state-province');
+
 function parseJson(req) {
   if (typeof req.body === 'string') {
     try {
@@ -34,9 +36,9 @@ function parseStructuredShippingAddress(payload) {
 
   const streetLines = normalizeStreetLines(payload.shippingStreetLines);
   const city = typeof payload.shippingCity === 'string' ? payload.shippingCity.trim() : '';
-  const stateOrProvinceCode = typeof payload.shippingState === 'string' ? payload.shippingState.trim().toUpperCase() : '';
-  const postalCode = typeof payload.shippingPostalCode === 'string' ? payload.shippingPostalCode.trim() : '';
   const countryCode = typeof payload.shippingCountryCode === 'string' ? payload.shippingCountryCode.trim().toUpperCase() : 'US';
+  const stateOrProvinceCode = normalizeStateOrProvinceCode(payload.shippingState, countryCode);
+  const postalCode = typeof payload.shippingPostalCode === 'string' ? payload.shippingPostalCode.trim() : '';
 
   if (!streetLines.length || !required(city) || !required(stateOrProvinceCode) || !required(postalCode)) {
     return null;
