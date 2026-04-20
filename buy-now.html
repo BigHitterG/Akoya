@@ -524,8 +524,9 @@
       }
 
       function setShippingRateMessage(html, stateClass) {
-        if (!html) {
+        if (!shippingDebugModeEnabled || !html) {
           shippingRateEstimateMessage.textContent = '';
+          shippingRateEstimateMessage.className = 'shipping-validation-message';
           shippingRateEstimateMessage.style.display = 'none';
           return;
         }
