@@ -965,7 +965,19 @@
         }
 
         var body = await response.json().catch(function () { return {}; });
-        if (!response.ok || !body.success || !body.isValid) {
+        if (!response.ok || !body.success) {
+          addressValidationState = {
+            status: 'error',
+            signature: signature,
+            isValid: false
+          };
+          var unavailableMessage = [body && body.error, body && body.details].filter(Boolean).join(' ');
+          var unavailableError = new Error(unavailableMessage || 'Address validation is temporarily unavailable.');
+          unavailableError.isValidationServiceError = true;
+          throw unavailableError;
+        }
+
+        if (!body.isValid) {
           addressValidationState = {
             status: 'error',
             signature: signature,
@@ -1139,11 +1151,22 @@
         updateInvoicePreviewTotals();
 
         try {
-          await validateShippingAddress();
-          if (requestId !== latestShippingQuoteRequestId) {
-            return;
+          try {
+            await validateShippingAddress();
+            if (requestId !== latestShippingQuoteRequestId) {
+              return;
+            }
+            setShippingRateMessage('<strong>Loading shipping options…</strong>', '');
+          } catch (validationError) {
+            if (validationError && validationError.isInvalidAddress) {
+              throw validationError;
+            }
+            if (requestId !== latestShippingQuoteRequestId) {
+              return;
+            }
+            setShippingRateMessage('<strong>Address validation is currently unavailable.</strong> Attempting live FedEx shipping options directly…', 'is-error');
           }
-          setShippingRateMessage('<strong>Loading shipping options…</strong>', '');
+
           var quoteResult = await requestShippingOptions();
           var responseBody = quoteResult.responseBody;
           var shippingOptions = quoteResult.shippingOptions;
