@@ -228,6 +228,58 @@ async function getFedexAccessToken(baseUrl, clientId, clientSecret) {
   return tokenBody.access_token;
 }
 
+function normalizeUsPostalCode(postalCode) {
+  if (typeof postalCode !== 'string') {
+    return '';
+  }
+  return postalCode.trim().toUpperCase().split('-')[0];
+}
+
+function hasAddressComponentMismatch(expectedAddress, resolvedAddress) {
+  if (!expectedAddress || !resolvedAddress) {
+    return false;
+  }
+
+  const expectedState = String(expectedAddress.stateOrProvinceCode || '').trim().toUpperCase();
+  const expectedPostalCode = normalizeUsPostalCode(expectedAddress.postalCode);
+  const expectedCountry = String(expectedAddress.countryCode || 'US').trim().toUpperCase() || 'US';
+
+  const resolvedState = String(resolvedAddress.stateOrProvinceCode || '').trim().toUpperCase();
+  const resolvedPostalCode = normalizeUsPostalCode(resolvedAddress.postalCode);
+  const resolvedCountry = String(resolvedAddress.countryCode || '').trim().toUpperCase();
+
+  if (expectedCountry === 'US') {
+    return expectedState !== resolvedState || expectedPostalCode !== resolvedPostalCode || resolvedCountry !== 'US';
+  }
+
+  return false;
+}
+
+async function resolveFedexAddress({ baseUrl, accessToken, recipientAddress }) {
+  const validationResponse = await fetch(`${baseUrl}/address/v1/addresses/resolve`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      addressesToValidate: [
+        {
+          address: recipientAddress
+        }
+      ]
+    })
+  });
+
+  const validationBody = await validationResponse.json().catch(() => null);
+
+  return {
+    ok: validationResponse.ok,
+    status: validationResponse.status,
+    body: validationBody
+  };
+}
+
 function pickLowestRateQuote(rateReplyDetails) {
   const candidates = pickUsableRateQuotes(rateReplyDetails);
   return candidates[0] || null;
@@ -425,6 +477,48 @@ module.exports = async function handler(req, res) {
 
   try {
     const accessToken = await getFedexAccessToken(baseUrl, clientId, clientSecret);
+    const addressValidationResult = await resolveFedexAddress({
+      baseUrl,
+      accessToken,
+      recipientAddress
+    });
+    responseDebug.addressValidationStatus = addressValidationResult.status;
+    responseDebug.addressValidationBody = addressValidationResult.body;
+
+    if (addressValidationResult.ok) {
+      const resolvedAddress = addressValidationResult.body?.output?.resolvedAddresses?.[0] || null;
+      if (!resolvedAddress) {
+        res.status(422).json({
+          error: 'Shipping address is invalid.',
+          details: 'FedEx could not validate this shipping address.',
+          code: 'invalid_shipping_address',
+          debug: {
+            ...responseDebug,
+            failureReason: 'invalid_shipping_address'
+          }
+        });
+        return;
+      }
+
+      if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
+        res.status(422).json({
+          error: 'Shipping address is invalid.',
+          details: 'State and ZIP code do not match according to FedEx address validation.',
+          code: 'invalid_shipping_address',
+          debug: {
+            ...responseDebug,
+            failureReason: 'invalid_shipping_address',
+            normalizedRecipient: {
+              stateOrProvinceCode: resolvedAddress.stateOrProvinceCode || '',
+              postalCode: resolvedAddress.postalCode || '',
+              countryCode: resolvedAddress.countryCode || ''
+            }
+          }
+        });
+        return;
+      }
+    }
+
     const requestedPackageLineItems = shippingPackageConfig.packages.map((pkg) => ({
       groupPackageCount: 1,
       weight: {
