@@ -390,6 +390,7 @@
         cents: null,
         serviceName: '',
         serviceType: '',
+        fallbackUsed: false,
         quoteSignature: '',
         options: [],
         selectedOptionId: '',
@@ -501,6 +502,7 @@
           cents: null,
           serviceName: '',
           serviceType: '',
+          fallbackUsed: false,
           quoteSignature: '',
           options: [],
           selectedOptionId: '',
@@ -556,11 +558,15 @@
 
         var parts = [];
         var debug = responseBody.debug || {};
+        var packageProfile = responseBody.packageProfile || {};
         if (typeof responseBody.fallbackReason === 'string' && responseBody.fallbackReason.trim()) {
           parts.push(responseBody.fallbackReason.trim());
         }
-        if (shippingDebugModeEnabled && typeof responseBody.details === 'string' && responseBody.details.trim()) {
+        if (typeof responseBody.details === 'string' && responseBody.details.trim()) {
           parts.push(responseBody.details.trim());
+        }
+        if (Number.isFinite(packageProfile.quantity) && Number.isFinite(packageProfile.packageCount)) {
+          parts.push('Quoted quantity ' + String(packageProfile.quantity) + ' using ' + String(packageProfile.packageCount) + ' package(s)');
         }
         if (shippingDebugModeEnabled && Number.isFinite(debug.fedexHttpStatus)) {
           parts.push('FedEx HTTP status: ' + String(debug.fedexHttpStatus));
@@ -913,6 +919,7 @@
             cents: 0,
             serviceName: 'No shipping (test mode)',
             serviceType: '',
+            fallbackUsed: false,
             quoteSignature: quoteSignature,
             options: [],
             selectedOptionId: '',
@@ -983,6 +990,7 @@
             cents: null,
             serviceName: '',
             serviceType: '',
+            fallbackUsed: !!(responseBody && responseBody.fallbackUsed),
             quoteSignature: quoteSignature,
             options: shippingOptions,
             selectedOptionId: ''
@@ -1015,11 +1023,12 @@
             return;
           }
 
-          if ((refreshOptions.retryCount || 0) < 2) {
+          if (!refreshOptions.skipAutoRetry && (refreshOptions.retryCount || 0) < 2) {
             window.setTimeout(function () {
               refreshShippingRateEstimate({
                 force: true,
-                retryCount: (refreshOptions.retryCount || 0) + 1
+                retryCount: (refreshOptions.retryCount || 0) + 1,
+                skipAutoRetry: false
               });
             }, Math.pow(2, refreshOptions.retryCount || 0) * 600);
             return;
@@ -1205,6 +1214,19 @@
           submissionError.textContent = 'Please choose one FedEx shipping option before proceeding to payment.';
           submissionError.style.display = 'block';
           return;
+        }
+
+        if (shouldQuoteShipping()) {
+          await refreshShippingRateEstimate({
+            force: true,
+            skipAutoRetry: true
+          });
+
+          if (shippingRateState.status !== 'ready' || !shippingRateState.options.length || !Number.isFinite(shippingRateState.cents)) {
+            submissionError.textContent = 'Unable to refresh live FedEx shipping right now. Please retry your shipping quote before proceeding.';
+            submissionError.style.display = 'block';
+            return;
+          }
         }
 
         proceedToPaymentButton.disabled = true;
