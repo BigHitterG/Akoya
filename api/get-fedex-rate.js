@@ -250,10 +250,42 @@ function hasAddressComponentMismatch(expectedAddress, resolvedAddress) {
   const resolvedCountry = String(resolvedAddress.countryCode || '').trim().toUpperCase();
 
   if (expectedCountry === 'US') {
-    return expectedState !== resolvedState || expectedPostalCode !== resolvedPostalCode || resolvedCountry !== 'US';
+    if (resolvedCountry !== 'US') {
+      return true;
+    }
+
+    const stateDiffers = expectedState !== resolvedState;
+    const postalDiffers = expectedPostalCode !== resolvedPostalCode;
+    return stateDiffers && postalDiffers;
   }
 
   return false;
+}
+
+function coerceFedexResolvedAddress(resolvedAddress, fallbackAddress) {
+  const normalizedStreetLines = normalizeStreetLines(
+    resolvedAddress?.streetLinesToken || resolvedAddress?.streetLines
+  );
+  const fallbackStreetLines = Array.isArray(fallbackAddress?.streetLines) ? fallbackAddress.streetLines : [];
+  const normalizedAddress = {
+    streetLines: normalizedStreetLines.length ? normalizedStreetLines : fallbackStreetLines,
+    city: String(resolvedAddress?.city || fallbackAddress?.city || '').trim(),
+    stateOrProvinceCode: String(
+      resolvedAddress?.stateOrProvinceCode || fallbackAddress?.stateOrProvinceCode || ''
+    ).trim().toUpperCase(),
+    postalCode: String(resolvedAddress?.postalCode || fallbackAddress?.postalCode || '').trim(),
+    countryCode: String(resolvedAddress?.countryCode || fallbackAddress?.countryCode || 'US').trim().toUpperCase() || 'US'
+  };
+
+  if (!normalizedAddress.streetLines.length) {
+    return fallbackAddress;
+  }
+
+  if (!required(normalizedAddress.city) || !required(normalizedAddress.stateOrProvinceCode) || !required(normalizedAddress.postalCode)) {
+    return fallbackAddress;
+  }
+
+  return normalizedAddress;
 }
 
 async function resolveFedexAddress({ baseUrl, accessToken, recipientAddress }) {
@@ -531,7 +563,7 @@ module.exports = async function handler(req, res) {
     if (hasAddressComponentMismatch(recipientAddress, resolvedAddress)) {
       res.status(422).json({
         error: 'Shipping address is invalid.',
-        details: 'The city, state, and ZIP code do not match. Please confirm the shipping address.',
+        details: 'The submitted state and ZIP do not match what FedEx resolved. Please confirm the shipping address.',
         code: 'invalid_shipping_address',
         debug: {
           ...responseDebug,
@@ -552,6 +584,14 @@ module.exports = async function handler(req, res) {
       });
       return;
     }
+
+    recipientAddress = coerceFedexResolvedAddress(resolvedAddress, recipientAddress);
+    responseDebug.normalized.recipient = {
+      city: recipientAddress.city,
+      stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
+      postalCode: recipientAddress.postalCode,
+      countryCode: recipientAddress.countryCode
+    };
 
     const requestedPackageLineItems = shippingPackageConfig.packages.map((pkg) => ({
       groupPackageCount: 1,
