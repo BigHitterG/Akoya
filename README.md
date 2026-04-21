@@ -162,9 +162,11 @@ Then visit `http://localhost:8000`.
 
 > Note: The Stripe API route requires a serverless/runtime host that executes `api/create-stripe-invoice.js` (for example Vercel).
 
-For the Buy Now embedded checkout flow (`buy-now.html` → `POST /api/create-stripe-checkout-session`), both Stripe keys are required. If the publishable key is missing, the checkout API now returns a clear configuration error message.
+For the Buy Now card flow (`buy-now.html` → `POST /api/create-buy-now-payment-intent`), both Stripe keys are required (`STRIPE_SECRET_KEY` and one publishable key env).
 
-Buy Now checkout now creates a FedEx shipment immediately before creating the Stripe Checkout Session, then uses the actual shipment charge (`shippingFeeCents`) in Stripe line items. Stripe automatic tax is enabled by default unless `ENABLE_STRIPE_AUTOMATIC_TAX=false` is explicitly set.
+Buy Now card checkout uses a Stripe PaymentIntent flow (not Stripe Checkout Session) and attempts FedEx shipment creation before charging, then uses the resulting shipment charge (`shippingFeeCents`) when available. Stripe tax calculation is enabled by default unless `ENABLE_STRIPE_TAX_CALCULATION=false` is explicitly set.
+
+If you need to free a serverless route slot for new integrations (for example Supabase label storage), see `docs/SERVERLESS_CONSOLIDATION_REVIEW.md`.
 
 
 Customer-facing order emails (thank-you + tracking + invoice links) are sent when `RESEND_API_KEY` and `CUSTOMER_EMAIL_FROM` are configured.
