@@ -336,7 +336,7 @@ module.exports = async function handler(req, res) {
   const configuredLabelResponseOption = parseServiceType(process.env.FEDEX_LABEL_RESPONSE_OPTIONS) || 'LABEL';
   const resolvedServiceType = parseServiceType(payload.serviceType) || configuredDefaultServiceType;
 
-  const shipDatestamp = new Date().toISOString().slice(0, 10);
+  const shipDateStamp = new Date().toISOString().slice(0, 10);
   const responseDebug = {
     flow: 'request-invoice-debug-shipment',
     fedexBaseUrl: baseUrl,
@@ -374,7 +374,7 @@ module.exports = async function handler(req, res) {
         value: fedexAccountNumber
       },
       requestedShipment: {
-        shipDatestamp,
+        shipDateStamp,
         pickupType: 'DROPOFF_AT_FEDEX_LOCATION',
         serviceType: resolvedServiceType,
         packagingType: 'YOUR_PACKAGING',
@@ -480,7 +480,7 @@ module.exports = async function handler(req, res) {
       labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
       shippingFeeCents,
       currency: 'USD',
-      shipDatestamp,
+      shipDatestamp: shipDateStamp,
       debug: {
         ...responseDebug,
         failureReason: null,
