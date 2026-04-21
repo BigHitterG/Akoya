@@ -633,11 +633,16 @@ module.exports = async function handler(req, res) {
       }
     }));
 
+    const shipDateStamp = new Date().toISOString().slice(0, 10);
     const rateRequestBody = {
       accountNumber: {
         value: fedexAccountNumber
       },
+      rateRequestControlParameters: {
+        returnTransitTimes: true
+      },
       requestedShipment: {
+        shipDateStamp,
         pickupType: 'DROPOFF_AT_FEDEX_LOCATION',
         rateRequestType: ['ACCOUNT'],
         packagingType: 'YOUR_PACKAGING',
@@ -658,6 +663,7 @@ module.exports = async function handler(req, res) {
     };
     responseDebug.fedexRateRequestBody = rateRequestBody;
     responseDebug.requestSummary = {
+      shipDateStamp: rateRequestBody.requestedShipment.shipDateStamp,
       pickupType: rateRequestBody.requestedShipment.pickupType,
       rateRequestType: rateRequestBody.requestedShipment.rateRequestType,
       packagingType: rateRequestBody.requestedShipment.packagingType,
