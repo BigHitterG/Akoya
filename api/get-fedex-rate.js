@@ -155,6 +155,56 @@ function extractChargeCents(detail) {
   return null;
 }
 
+function formatTransitEnum(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function extractTransitTimeLabel(detail) {
+  const candidates = [
+    detail?.commit?.dateDetail?.dayFormat,
+    detail?.commit?.dateDetail?.dayOfWeek,
+    detail?.commit?.dateDetail?.day,
+    detail?.commit?.transitDays,
+    detail?.commit?.derivedTransitTime,
+    detail?.commit?.commitDate,
+    detail?.operationalDetail?.deliveryDate,
+    detail?.deliveryDate,
+    detail?.transitTime
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'number' && Number.isFinite(candidate) && candidate > 0) {
+      return `${candidate} business day${candidate === 1 ? '' : 's'}`;
+    }
+
+    if (typeof candidate === 'string' && candidate.trim()) {
+      const numericDays = candidate.match(/^\d+$/);
+      if (numericDays) {
+        const days = Number.parseInt(candidate, 10);
+        if (Number.isFinite(days) && days > 0) {
+          return `${days} business day${days === 1 ? '' : 's'}`;
+        }
+      }
+
+      return formatTransitEnum(candidate);
+    }
+  }
+
+  return null;
+}
+
 function summarizeFedexErrors(body) {
   const errors = Array.isArray(body?.errors) ? body.errors : [];
   const parts = errors
@@ -334,7 +384,7 @@ function pickUsableRateQuotes(rateReplyDetails) {
         shippingFeeCents: cents,
         serviceType: detail?.serviceType || null,
         serviceName: detail?.serviceName || detail?.serviceType || null,
-        transitTime: detail?.commit?.dateDetail?.dayFormat || detail?.commit?.dateDetail?.dayOfWeek || null
+        transitTime: extractTransitTimeLabel(detail)
       };
     })
     .filter(Boolean)
