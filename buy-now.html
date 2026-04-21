@@ -396,6 +396,7 @@
         cents: null,
         serviceName: '',
         serviceType: '',
+        transitTime: '',
         fallbackUsed: false,
         quoteSignature: '',
         options: [],
@@ -513,6 +514,7 @@
           cents: null,
           serviceName: '',
           serviceType: '',
+          transitTime: '',
           fallbackUsed: false,
           quoteSignature: '',
           options: [],
@@ -690,6 +692,7 @@
           shippingRateState.cents = null;
           shippingRateState.serviceName = '';
           shippingRateState.serviceType = '';
+          shippingRateState.transitTime = '';
           updateInvoicePreviewTotals();
           return;
         }
@@ -698,6 +701,7 @@
         shippingRateState.cents = selected.shippingFeeCents;
         shippingRateState.serviceName = selected.serviceName || '';
         shippingRateState.serviceType = selected.serviceType || '';
+        shippingRateState.transitTime = selected.transitTime || '';
         updateInvoicePreviewTotals();
         refreshTaxEstimate();
       }
@@ -711,15 +715,16 @@
         var optionsHtml = shippingRateState.options.map(function (option) {
           var optionId = optionIdFor(option);
           var isChecked = shippingRateState.selectedOptionId === optionId;
-          var transitTimeLabel = option.transitTime ? ' • ' + option.transitTime : '';
+          var transitTimeLabel = option.transitTime ? option.transitTime : 'Transit time unavailable';
           return '<label class="shipping-option-item">' +
             '<input type="radio" name="buyNowShippingOption" value="' + escapeHtml(optionId) + '"' + (isChecked ? ' checked' : '') + '>' +
             '<span class="shipping-option-item-copy"><strong>' + escapeHtml(option.serviceName) + '</strong>' +
-            '<span>$' + (option.shippingFeeCents / 100).toFixed(2) + escapeHtml(transitTimeLabel) + '</span></span>' +
+            '<span>Transit: ' + escapeHtml(transitTimeLabel) + '</span>' +
+            '<span>$' + (option.shippingFeeCents / 100).toFixed(2) + '</span></span>' +
             '</label>';
         }).join('');
 
-        shippingOptionSelector.innerHTML = '<p class="shipping-option-title">Choose a FedEx shipping method*</p>' + optionsHtml;
+        shippingOptionSelector.innerHTML = '<p class="shipping-option-title">Choose a FedEx shipping method and transit time*</p>' + optionsHtml;
         shippingOptionSelector.style.display = 'grid';
 
         Array.from(shippingOptionSelector.querySelectorAll('input[name="buyNowShippingOption"]')).forEach(function (input) {
@@ -843,6 +848,9 @@
         }
         if (hasShippingEstimate && shippingRateState.serviceName) {
           shippingLabel += ' (' + shippingRateState.serviceName + ')';
+        }
+        if (hasShippingEstimate && shippingRateState.transitTime) {
+          shippingLabel += ' • Transit: ' + shippingRateState.transitTime;
         }
 
         invoiceGoodsTotal.textContent = '$' + goodsTotal.toFixed(2);
@@ -1111,6 +1119,7 @@
             cents: 0,
             serviceName: 'No shipping (test mode)',
             serviceType: '',
+            transitTime: '',
             fallbackUsed: false,
             quoteSignature: quoteSignature,
             options: [],
@@ -1184,6 +1193,7 @@
             cents: null,
             serviceName: '',
             serviceType: '',
+            transitTime: '',
             fallbackUsed: !!(responseBody && responseBody.fallbackUsed),
             quoteSignature: quoteSignature,
             options: shippingOptions,
@@ -1355,6 +1365,7 @@
             shippingRateState.cents = null;
             shippingRateState.serviceName = '';
             shippingRateState.serviceType = '';
+            shippingRateState.transitTime = '';
           }
           if (window.shippingRefreshDebounceTimerId) {
             window.clearTimeout(window.shippingRefreshDebounceTimerId);
@@ -1437,6 +1448,7 @@
             cents: shippingRateState.cents,
             serviceName: shippingRateState.serviceName,
             serviceType: shippingRateState.serviceType,
+            transitTime: shippingRateState.transitTime,
             fallbackUsed: shippingRateState.fallbackUsed,
             quoteSignature: shippingRateState.quoteSignature,
             options: Array.isArray(shippingRateState.options) ? shippingRateState.options.slice() : [],
