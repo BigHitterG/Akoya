@@ -171,7 +171,56 @@ function formatTransitEnum(value) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function extractTransitTimeLabel(detail) {
+function parseIsoDateOnly(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const datePrefixMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!datePrefixMatch) {
+    return null;
+  }
+
+  const isoDateOnly = `${datePrefixMatch[1]}-${datePrefixMatch[2]}-${datePrefixMatch[3]}`;
+  const parsed = new Date(`${isoDateOnly}T00:00:00Z`);
+  if (!Number.isFinite(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function countBusinessDaysInclusive(startDate, endDate) {
+  if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
+    return null;
+  }
+
+  const startTime = startDate.getTime();
+  const endTime = endDate.getTime();
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) {
+    return null;
+  }
+
+  let cursor = new Date(startTime);
+  let businessDays = 0;
+  while (cursor.getTime() <= endTime) {
+    const day = cursor.getUTCDay();
+    if (day !== 0 && day !== 6) {
+      businessDays += 1;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return businessDays > 0 ? businessDays : null;
+}
+
+function extractTransitTimeLabel(detail, shipDateStamp) {
+  const parsedShipDate = parseIsoDateOnly(shipDateStamp);
   const candidates = [
     detail?.commit?.dateDetail?.dayFormat,
     detail?.commit?.dateDetail?.dayOfWeek,
@@ -196,6 +245,14 @@ function extractTransitTimeLabel(detail) {
         if (Number.isFinite(days) && days > 0) {
           return `${days} business day${days === 1 ? '' : 's'}`;
         }
+      }
+
+      const parsedTransitDate = parseIsoDateOnly(candidate);
+      const derivedDays = parsedShipDate && parsedTransitDate
+        ? countBusinessDaysInclusive(parsedShipDate, parsedTransitDate)
+        : null;
+      if (Number.isFinite(derivedDays) && derivedDays > 0) {
+        return `${derivedDays} business day${derivedDays === 1 ? '' : 's'}`;
       }
 
       return formatTransitEnum(candidate);
@@ -363,12 +420,12 @@ async function resolveFedexAddress({ baseUrl, accessToken, recipientAddress }) {
   };
 }
 
-function pickLowestRateQuote(rateReplyDetails) {
-  const candidates = pickUsableRateQuotes(rateReplyDetails);
+function pickLowestRateQuote(rateReplyDetails, shipDateStamp) {
+  const candidates = pickUsableRateQuotes(rateReplyDetails, shipDateStamp);
   return candidates[0] || null;
 }
 
-function pickUsableRateQuotes(rateReplyDetails) {
+function pickUsableRateQuotes(rateReplyDetails, shipDateStamp) {
   if (!Array.isArray(rateReplyDetails) || !rateReplyDetails.length) {
     return [];
   }
@@ -384,7 +441,7 @@ function pickUsableRateQuotes(rateReplyDetails) {
         shippingFeeCents: cents,
         serviceType: detail?.serviceType || null,
         serviceName: detail?.serviceName || detail?.serviceType || null,
-        transitTime: extractTransitTimeLabel(detail)
+        transitTime: extractTransitTimeLabel(detail, shipDateStamp)
       };
     })
     .filter(Boolean)
@@ -719,7 +776,7 @@ module.exports = async function handler(req, res) {
     }
 
     const rateReplyDetails = quoteBody?.output?.rateReplyDetails || [];
-    const parsedQuotes = pickUsableRateQuotes(rateReplyDetails);
+    const parsedQuotes = pickUsableRateQuotes(rateReplyDetails, shipDateStamp);
     const selectedQuote = parsedQuotes[0] || null;
     const filteredOutCount = rateReplyDetails.filter((detail) => {
       return !Number.isFinite(extractChargeCents(detail));
