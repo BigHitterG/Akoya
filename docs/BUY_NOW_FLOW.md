@@ -102,7 +102,7 @@ On success, the browser stores confirmation draft totals in session storage and 
 
 Before a card purchase can succeed:
 
-- Stripe publishable key is fetched (`/api/get-stripe-publishable-key`).
+- Stripe publishable key is fetched (`GET /api/create-buy-now-payment-intent`).
 - Stripe Elements card fields must be fully completed.
 - `stripe.createPaymentMethod(...)` must return a valid `paymentMethodId`.
 

@@ -1255,7 +1255,7 @@
         proceedToPaymentButton.textContent = 'Loading Secure Card Form…';
 
         try {
-          var keyResponse = await fetch('/api/get-stripe-publishable-key');
+          var keyResponse = await fetch('/api/create-buy-now-payment-intent');
           var keyBody = await keyResponse.json().catch(function () { return {}; });
           if (!keyResponse.ok || !keyBody.publishableKey) {
             throw new Error(keyBody && keyBody.error ? keyBody.error : 'Unable to load Stripe publishable key.');
