@@ -140,6 +140,20 @@ function isLikelyInvalidAddressError(body) {
     && invalidTerms.some((term) => combinedText.includes(term));
 }
 
+
+function buildSupabasePublicLabelUrl(storagePath) {
+  if (!required(storagePath)) {
+    return '';
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!required(supabaseUrl)) {
+    return '';
+  }
+
+  return `${supabaseUrl.trim().replace(/\/+$/, '')}/storage/v1/object/public/shipping_labels/${storagePath.trim()}`;
+}
+
 function maskAccountNumber(value) {
   const raw = typeof value === 'string' ? value.replace(/\s+/g, '') : '';
   if (!raw) {
@@ -556,7 +570,7 @@ module.exports = async function handler(req, res) {
           labelToken = token;
           labelStoragePath = storagePath;
           labelFileName = fileName;
-          labelUrl = `${resolveSiteUrl(req)}/label/${token}`;
+          labelUrl = buildSupabasePublicLabelUrl(storagePath) || `${resolveSiteUrl(req)}/label/${token}`;
 
           try {
             await createShippingLabelRecord({
