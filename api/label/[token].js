@@ -21,19 +21,33 @@ function getSupabasePublicBaseUrl() {
 
 function buildPublicLabelUrlCandidates(token) {
   const normalizedToken = token.trim();
+  const tokenWithoutExtension = normalizedToken.replace(/\.(pdf|png|zpl|epl|txt)$/i, '');
   const publicBaseUrl = getSupabasePublicBaseUrl();
   if (!required(publicBaseUrl) || !required(normalizedToken)) {
     return [];
   }
 
-  return [
+  const candidates = [
+    `${publicBaseUrl}/labels/${normalizedToken}`,
     `${publicBaseUrl}/labels/${normalizedToken}.pdf`,
     `${publicBaseUrl}/labels/${normalizedToken}.png`,
     `${publicBaseUrl}/labels/${normalizedToken}.zpl`,
     `${publicBaseUrl}/labels/${normalizedToken}.epl`,
-    `${publicBaseUrl}/labels/${normalizedToken}.txt`,
-    `${publicBaseUrl}/labels/${normalizedToken}`
+    `${publicBaseUrl}/labels/${normalizedToken}.txt`
   ];
+
+  if (required(tokenWithoutExtension) && tokenWithoutExtension !== normalizedToken) {
+    candidates.push(
+      `${publicBaseUrl}/labels/${tokenWithoutExtension}`,
+      `${publicBaseUrl}/labels/${tokenWithoutExtension}.pdf`,
+      `${publicBaseUrl}/labels/${tokenWithoutExtension}.png`,
+      `${publicBaseUrl}/labels/${tokenWithoutExtension}.zpl`,
+      `${publicBaseUrl}/labels/${tokenWithoutExtension}.epl`,
+      `${publicBaseUrl}/labels/${tokenWithoutExtension}.txt`
+    );
+  }
+
+  return [...new Set(candidates)];
 }
 
 async function findFirstReachablePublicLabelUrl(token) {
@@ -66,6 +80,34 @@ function pickInlineFilename(storagePath, token) {
   return safeName || `${token}.pdf`;
 }
 
+function buildStoragePathCandidates(token) {
+  const normalizedToken = token.trim().replace(/^\/+/, '');
+  const tokenWithoutExtension = normalizedToken.replace(/\.(pdf|png|zpl|epl|txt)$/i, '');
+  const files = new Set([normalizedToken]);
+
+  if (required(tokenWithoutExtension)) {
+    files.add(tokenWithoutExtension);
+    files.add(`${tokenWithoutExtension}.pdf`);
+    files.add(`${tokenWithoutExtension}.png`);
+    files.add(`${tokenWithoutExtension}.zpl`);
+    files.add(`${tokenWithoutExtension}.epl`);
+    files.add(`${tokenWithoutExtension}.txt`);
+  }
+
+  return Array.from(files).flatMap((name) => {
+    const cleaned = name.replace(/^\/+/, '');
+    if (!required(cleaned)) {
+      return [];
+    }
+
+    if (cleaned.startsWith('labels/')) {
+      return [cleaned];
+    }
+
+    return [`labels/${cleaned}`, cleaned];
+  });
+}
+
 function sendFileBuffer(res, file, filename) {
   res.statusCode = 200;
   res.setHeader('Content-Type', file.contentType || 'application/octet-stream');
@@ -94,17 +136,29 @@ module.exports = async function handler(req, res) {
       ? record.storage_path
       : await findShippingLabelStoragePathByToken(normalizedToken);
 
-    if (required(storagePath)) {
+    const storagePathCandidates = required(storagePath)
+      ? [storagePath, ...buildStoragePathCandidates(normalizedToken)]
+      : buildStoragePathCandidates(normalizedToken);
+
+    for (const candidateStoragePath of [...new Set(storagePathCandidates)]) {
+      if (!required(candidateStoragePath)) {
+        continue;
+      }
+
       try {
-        const file = await downloadShippingLabelObject(storagePath);
-        sendFileBuffer(res, file, pickInlineFilename(storagePath, normalizedToken));
+        const file = await downloadShippingLabelObject(candidateStoragePath);
+        sendFileBuffer(res, file, pickInlineFilename(candidateStoragePath, normalizedToken));
         return;
       } catch (error) {
-        const signedUrl = await createSignedShippingLabelUrl(storagePath, 60);
-        if (required(signedUrl)) {
-          res.writeHead(302, { Location: signedUrl });
-          res.end();
-          return;
+        try {
+          const signedUrl = await createSignedShippingLabelUrl(candidateStoragePath, 60);
+          if (required(signedUrl)) {
+            res.writeHead(302, { Location: signedUrl });
+            res.end();
+            return;
+          }
+        } catch (signedUrlError) {
+          // Continue trying other candidate paths.
         }
       }
     }
