@@ -8,6 +8,56 @@ function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function getSupabasePublicBaseUrl() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!required(supabaseUrl)) {
+    return '';
+  }
+
+  return `${supabaseUrl.trim().replace(/\/+$/, '')}/storage/v1/object/public/shipping_labels`;
+}
+
+function buildPublicLabelUrlCandidates(token) {
+  const normalizedToken = token.trim();
+  const publicBaseUrl = getSupabasePublicBaseUrl();
+  if (!required(publicBaseUrl) || !required(normalizedToken)) {
+    return [];
+  }
+
+  return [
+    `${publicBaseUrl}/labels/${normalizedToken}.pdf`,
+    `${publicBaseUrl}/labels/${normalizedToken}.png`,
+    `${publicBaseUrl}/labels/${normalizedToken}.zpl`,
+    `${publicBaseUrl}/labels/${normalizedToken}.epl`,
+    `${publicBaseUrl}/labels/${normalizedToken}.txt`,
+    `${publicBaseUrl}/labels/${normalizedToken}`
+  ];
+}
+
+async function findFirstReachablePublicLabelUrl(token) {
+  const candidates = buildPublicLabelUrlCandidates(token);
+
+  for (const candidateUrl of candidates) {
+    try {
+      const headResponse = await fetch(candidateUrl, { method: 'HEAD' });
+      if (headResponse.ok) {
+        return candidateUrl;
+      }
+
+      if (headResponse.status === 405) {
+        const getResponse = await fetch(candidateUrl, { method: 'GET' });
+        if (getResponse.ok) {
+          return candidateUrl;
+        }
+      }
+    } catch (error) {
+      // Continue trying other public URL candidates.
+    }
+  }
+
+  return '';
+}
+
 async function createFallbackSignedUrl(token) {
   const normalizedToken = token.trim();
   try {
@@ -62,14 +112,21 @@ module.exports = async function handler(req, res) {
     const signedUrl = record && required(record.storage_path)
       ? await createSignedShippingLabelUrl(record.storage_path, 60)
       : await createFallbackSignedUrl(normalizedToken);
-    if (!required(signedUrl)) {
-      console.error('[shipping-label] signed URL generation failed', { token: normalizedToken });
-      res.status(404).send('Not Found');
+    if (required(signedUrl)) {
+      res.writeHead(302, { Location: signedUrl });
+      res.end();
       return;
     }
 
-    res.writeHead(302, { Location: signedUrl });
-    res.end();
+    const publicLabelUrl = await findFirstReachablePublicLabelUrl(normalizedToken);
+    if (required(publicLabelUrl)) {
+      res.writeHead(302, { Location: publicLabelUrl });
+      res.end();
+      return;
+    }
+
+    console.error('[shipping-label] signed URL generation failed', { token: normalizedToken });
+    res.status(404).send('Not Found');
   } catch (error) {
     console.error('[shipping-label] token lookup failed', {
       token: token && token.trim ? token.trim() : '',
