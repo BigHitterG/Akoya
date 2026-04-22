@@ -7,6 +7,29 @@ function required(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+async function createFallbackSignedUrl(token) {
+  const normalizedToken = token.trim();
+  const fallbackPaths = [
+    `labels/${normalizedToken}.pdf`,
+    `labels/${normalizedToken}.png`,
+    `labels/${normalizedToken}.zpl`,
+    `labels/${normalizedToken}.epl`
+  ];
+
+  for (const storagePath of fallbackPaths) {
+    try {
+      const signedUrl = await createSignedShippingLabelUrl(storagePath, 60);
+      if (required(signedUrl)) {
+        return signedUrl;
+      }
+    } catch (error) {
+      // Continue trying alternative file extensions.
+    }
+  }
+
+  return '';
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -20,15 +43,13 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const record = await getShippingLabelRecordByToken(token.trim());
-    if (!record || !required(record.storage_path)) {
-      res.status(404).send('Not Found');
-      return;
-    }
-
-    const signedUrl = await createSignedShippingLabelUrl(record.storage_path, 60);
+    const normalizedToken = token.trim();
+    const record = await getShippingLabelRecordByToken(normalizedToken);
+    const signedUrl = record && required(record.storage_path)
+      ? await createSignedShippingLabelUrl(record.storage_path, 60)
+      : await createFallbackSignedUrl(normalizedToken);
     if (!required(signedUrl)) {
-      console.error('[shipping-label] signed URL generation failed', { token: token.trim() });
+      console.error('[shipping-label] signed URL generation failed', { token: normalizedToken });
       res.status(404).send('Not Found');
       return;
     }
