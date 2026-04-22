@@ -151,7 +151,13 @@ function buildSupabasePublicLabelUrl(storagePath) {
     return '';
   }
 
-  return `${supabaseUrl.trim().replace(/\/+$/, '')}/storage/v1/object/public/shipping_labels/${storagePath.trim()}`;
+  const bucketName = (
+    process.env.SUPABASE_SHIPPING_LABELS_BUCKET
+    || process.env.NEXT_PUBLIC_SUPABASE_SHIPPING_LABELS_BUCKET
+    || 'shipping_labels'
+  ).trim();
+
+  return `${supabaseUrl.trim().replace(/\/+$/, '')}/storage/v1/object/public/${bucketName}/${storagePath.trim()}`;
 }
 
 function maskAccountNumber(value) {
