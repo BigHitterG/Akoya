@@ -1,7 +1,7 @@
 const {
   getShippingLabelRecordByToken,
   createSignedShippingLabelUrl
-} = require('../lib/supabase-admin');
+} = require('../../lib/server/supabase-admin');
 
 function required(value) {
   return typeof value === 'string' && value.trim().length > 0;

@@ -4,8 +4,8 @@ const crypto = require('crypto');
 const {
   uploadShippingLabel,
   createShippingLabelRecord
-} = require('./lib/supabase-admin');
-const { resolveSiteUrl } = require('./lib/site-url');
+} = require('../lib/server/supabase-admin');
+const { resolveSiteUrl } = require('../lib/server/site-url');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
