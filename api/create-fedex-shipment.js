@@ -553,21 +553,29 @@ module.exports = async function handler(req, res) {
             contentType: fileInfo.contentType
           });
 
-          await createShippingLabelRecord({
-            token,
-            storage_path: storagePath,
-            tracking_number: required(trackingNumber) ? trackingNumber : null,
-            stripe_id: stripeId,
-            order_id: orderId,
-            file_name: fileName,
-            content_type: fileInfo.contentType
-          });
-          console.log('[shipping-label] db insert success', { token, storagePath });
-
           labelToken = token;
           labelStoragePath = storagePath;
           labelFileName = fileName;
           labelUrl = `${resolveSiteUrl(req)}/label/${token}`;
+
+          try {
+            await createShippingLabelRecord({
+              token,
+              storage_path: storagePath,
+              tracking_number: required(trackingNumber) ? trackingNumber : null,
+              stripe_id: stripeId,
+              order_id: orderId,
+              file_name: fileName,
+              content_type: fileInfo.contentType
+            });
+            console.log('[shipping-label] db insert success', { token, storagePath });
+          } catch (dbInsertError) {
+            console.error('[shipping-label] db insert failed (continuing with tokenized URL fallback)', {
+              token,
+              storagePath,
+              message: dbInsertError && dbInsertError.message ? dbInsertError.message : 'Unknown error.'
+            });
+          }
         } catch (storageError) {
           console.error('[shipping-label] persistence failed', {
             message: storageError && storageError.message ? storageError.message : 'Unknown error.'
