@@ -1006,6 +1006,7 @@
             payload.shippingServiceType = shippingRateState.serviceType || payload.shippingServiceType || '';
             payload.trackingNumber = '';
             payload.shippingLabelUrl = '';
+            payload.labelToken = '';
             payload.shipDatestamp = '';
             fedexShipmentStatus = 'label_creation_disabled_quoted_rate';
             fedexShipmentError = 'FedEx shipment creation disabled by checkout toggle.';
@@ -1023,6 +1024,7 @@
               payload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
               payload.trackingNumber = shipmentResponse.trackingNumber || '';
               payload.shippingLabelUrl = shipmentResponse.labelUrl || '';
+              payload.labelToken = shipmentResponse.labelToken || '';
               payload.shipDatestamp = shipmentResponse.shipDatestamp || '';
 
               fedexShipmentCreated = true;
@@ -1038,6 +1040,7 @@
             payload.shippingServiceType = shippingRateState.serviceType || payload.shippingServiceType || '';
             payload.trackingNumber = '';
             payload.shippingLabelUrl = '';
+            payload.labelToken = '';
             payload.shipDatestamp = '';
             fedexShipmentError = (shipmentError && shipmentError.message ? shipmentError.message : 'Unable to create FedEx shipment right now.').slice(0, 300);
               fedexShipmentErrorCode = '';

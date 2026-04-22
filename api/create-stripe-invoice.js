@@ -390,7 +390,8 @@ function scheduleInvoiceFedexLabelRecovery({
       attempt += 1;
       const retryPayload = {
         ...payload,
-        shippingServiceType
+        shippingServiceType,
+        stripeId: invoiceId
       };
 
       try {
@@ -415,6 +416,9 @@ function scheduleInvoiceFedexLabelRecovery({
         fedexShipmentStatus: 'label_created_delayed_retry',
         trackingNumber: recoveredShipment.trackingNumber || '',
         shippingLabelUrl: recoveredShipment.labelUrl || '',
+        label_url: recoveredShipment.labelUrl || '',
+        label_token: recoveredShipment.labelToken || '',
+        tracking_number: recoveredShipment.trackingNumber || '',
         shipDatestamp: recoveredShipment.shipDatestamp || '',
         fedexTrackingNumber: recoveredShipment.trackingNumber || '',
         fedexLabelUrl: recoveredShipment.labelUrl || '',
@@ -424,6 +428,7 @@ function scheduleInvoiceFedexLabelRecovery({
 
       try {
         await stripe.invoices.update(invoiceId, { metadata: metadataUpdate });
+        console.log('[shipping-label] stripe metadata update success', { invoiceId, delayedRetry: true });
       } catch (error) {
         console.error('Unable to update invoice metadata after delayed FedEx label recovery.', error);
       }
@@ -545,6 +550,9 @@ module.exports = async function handler(req, res) {
   const shippingLabelUrl = required(payload.shippingLabelUrl)
     ? payload.shippingLabelUrl.trim()
     : (required(payload.fedexLabelUrl) ? payload.fedexLabelUrl.trim() : '');
+  const labelToken = required(payload.labelToken)
+    ? payload.labelToken.trim()
+    : (required(payload.label_token) ? payload.label_token.trim() : '');
   const shipDatestamp = required(payload.shipDatestamp)
     ? payload.shipDatestamp.trim()
     : (required(payload.fedexShipDatestamp) ? payload.fedexShipDatestamp.trim() : '');
@@ -593,6 +601,9 @@ module.exports = async function handler(req, res) {
     shippingServiceType,
     trackingNumber,
     shippingLabelUrl: toMetadataValue(shippingLabelUrl),
+    label_url: toMetadataValue(shippingLabelUrl),
+    label_token: toMetadataValue(labelToken, 120),
+    tracking_number: trackingNumber,
     shipDatestamp,
     fedexTrackingNumber: trackingNumber,
     fedexLabelUrl: toMetadataValue(shippingLabelUrl),

@@ -359,6 +359,16 @@ async function sendShippingLabelFailureEmail({ email, fullName, paymentIntentId 
   });
 }
 
+async function mergePaymentIntentMetadata(stripe, paymentIntentId, metadataUpdate) {
+  const currentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const mergedMetadata = {
+    ...(currentIntent?.metadata || {}),
+    ...metadataUpdate
+  };
+
+  return stripe.paymentIntents.update(paymentIntentId, { metadata: mergedMetadata });
+}
+
 function scheduleFedexLabelRecovery({
   payload,
   paymentIntentId,
@@ -386,7 +396,8 @@ function scheduleFedexLabelRecovery({
       attempt += 1;
       const retryPayload = {
         ...payload,
-        shippingServiceType
+        shippingServiceType,
+        stripeId: paymentIntentId
       };
 
       try {
@@ -411,12 +422,16 @@ function scheduleFedexLabelRecovery({
         fedexShipmentStatus: 'label_created_delayed_retry',
         fedexTrackingNumber: recoveredShipment.trackingNumber || '',
         fedexLabelUrl: recoveredShipment.labelUrl || '',
+        label_url: recoveredShipment.labelUrl || '',
+        label_token: recoveredShipment.labelToken || '',
+        tracking_number: recoveredShipment.trackingNumber || '',
         fedexShipDatestamp: recoveredShipment.shipDatestamp || '',
         fedexDelayedRetryAttempts: String(attempt)
       };
 
       try {
-        await stripe.paymentIntents.update(paymentIntentId, { metadata: metadataUpdate });
+        await mergePaymentIntentMetadata(stripe, paymentIntentId, metadataUpdate);
+        console.log('[shipping-label] stripe metadata update success', { paymentIntentId, delayedRetry: true });
       } catch (error) {
         console.error('Unable to update payment intent metadata after delayed FedEx label recovery.', error);
       }
@@ -451,7 +466,7 @@ function scheduleFedexLabelRecovery({
     };
 
     try {
-      await stripe.paymentIntents.update(paymentIntentId, { metadata: failureMetadata });
+      await mergePaymentIntentMetadata(stripe, paymentIntentId, failureMetadata);
     } catch (error) {
       console.error('Unable to update payment intent metadata after FedEx label retry exhaustion.', error);
     }
@@ -561,6 +576,7 @@ module.exports = async function handler(req, res) {
     let fedexShipmentCreated = false;
     let fedexTrackingNumber = '';
     let fedexLabelUrl = '';
+    let fedexLabelToken = '';
     let fedexShipDatestamp = '';
     let fedexShipmentError = '';
     let fedexShipmentStatus = 'label_not_created_quoted_fallback';
@@ -578,6 +594,7 @@ module.exports = async function handler(req, res) {
           fedexShipmentCreated = true;
           fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
           fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
+          fedexLabelToken = shipmentResult.shipment.labelToken || '';
           fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
           fedexShipmentStatus = 'label_created';
         } else {
@@ -747,6 +764,9 @@ module.exports = async function handler(req, res) {
       fedexShipmentError: toMetadataValue(fedexShipmentError),
       fedexTrackingNumber,
       fedexLabelUrl,
+      label_url: fedexLabelUrl,
+      label_token: fedexLabelToken,
+      tracking_number: fedexTrackingNumber,
       fedexShipDatestamp,
       stripeTaxAmountCents: String(taxData.taxAmountCents),
       stripeTaxCalculationId: taxData.taxCalculationId || '',
