@@ -425,6 +425,12 @@ function pickLowestRateQuote(rateReplyDetails, shipDateStamp) {
   return candidates[0] || null;
 }
 
+const ALLOWED_SERVICE_TYPES = new Set([
+  'FEDEX_GROUND',
+  'STANDARD_OVERNIGHT',
+  'PRIORITY_OVERNIGHT'
+]);
+
 function pickUsableRateQuotes(rateReplyDetails, shipDateStamp) {
   if (!Array.isArray(rateReplyDetails) || !rateReplyDetails.length) {
     return [];
@@ -432,6 +438,11 @@ function pickUsableRateQuotes(rateReplyDetails, shipDateStamp) {
 
   return rateReplyDetails
     .map((detail) => {
+      const normalizedServiceType = String(detail?.serviceType || '').trim().toUpperCase();
+      if (!ALLOWED_SERVICE_TYPES.has(normalizedServiceType)) {
+        return null;
+      }
+
       const cents = extractChargeCents(detail);
       if (!Number.isFinite(cents)) {
         return null;
@@ -439,8 +450,8 @@ function pickUsableRateQuotes(rateReplyDetails, shipDateStamp) {
 
       return {
         shippingFeeCents: cents,
-        serviceType: detail?.serviceType || null,
-        serviceName: detail?.serviceName || detail?.serviceType || null,
+        serviceType: normalizedServiceType || null,
+        serviceName: detail?.serviceName || normalizedServiceType || null,
         transitTime: extractTransitTimeLabel(detail, shipDateStamp)
       };
     })

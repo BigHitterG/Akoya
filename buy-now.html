@@ -326,6 +326,23 @@
       var testGoodsAmountCents = Number.isFinite(testCheckoutOptions.priceCents) ? testCheckoutOptions.priceCents : 100;
       var selectedTestMode = 'standard';
       var processingDotsIntervalId = null;
+      var allowedShippingServiceTypes = {
+        FEDEX_GROUND: true,
+        STANDARD_OVERNIGHT: true,
+        PRIORITY_OVERNIGHT: true
+      };
+
+      function isAllowedShippingOption(item) {
+        var serviceType = String(item && item.serviceType ? item.serviceType : '').trim().toUpperCase();
+        if (serviceType && allowedShippingServiceTypes[serviceType]) {
+          return true;
+        }
+
+        var serviceName = String(item && item.serviceName ? item.serviceName : '').trim().toUpperCase();
+        return serviceName.indexOf('GROUND') !== -1 ||
+          serviceName.indexOf('STANDARD OVERNIGHT') !== -1 ||
+          serviceName.indexOf('PRIORITY OVERNIGHT') !== -1;
+      }
 
       function startProcessingButtonAnimation() {
         var baseLabel = 'Processing';
@@ -670,7 +687,7 @@
 
         return options
           .filter(function (item) {
-            return Number.isFinite(item && item.shippingFeeCents);
+            return Number.isFinite(item && item.shippingFeeCents) && isAllowedShippingOption(item);
           })
           .map(function (item) {
             return {
