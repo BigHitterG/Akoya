@@ -276,6 +276,24 @@ function decodeFedexLabelBuffer(encodedLabel) {
   return Buffer.from(normalized, 'base64');
 }
 
+async function downloadFedexLabelBuffer(labelUrl) {
+  if (!required(labelUrl)) {
+    return null;
+  }
+
+  const response = await fetch(labelUrl.trim(), {
+    method: 'GET'
+  });
+
+  if (!response.ok) {
+    throw new Error(`FedEx label download failed (${response.status}).`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  return buffer.length > 0 ? buffer : null;
+}
+
 function resolveLabelFileInfo(labelDocument) {
   const normalizedImageType = (labelDocument?.imageType || '').trim().toUpperCase();
   const normalizedContentType = (labelDocument?.contentType || '').trim().toUpperCase();
@@ -511,8 +529,13 @@ module.exports = async function handler(req, res) {
     let labelFileName = '';
     let labelUrl = fedexLabelUrl;
 
-    if (required(labelDocument?.encodedLabel)) {
-      const labelBuffer = decodeFedexLabelBuffer(labelDocument.encodedLabel);
+    if (required(labelDocument?.encodedLabel) || required(labelDocument?.url)) {
+      let labelBuffer = null;
+      if (required(labelDocument?.encodedLabel)) {
+        labelBuffer = decodeFedexLabelBuffer(labelDocument.encodedLabel);
+      } else if (required(labelDocument?.url)) {
+        labelBuffer = await downloadFedexLabelBuffer(labelDocument.url);
+      }
 
       if (labelBuffer && labelBuffer.length > 0) {
         const token = generateLabelToken();

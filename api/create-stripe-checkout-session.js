@@ -380,6 +380,9 @@ module.exports = async function handler(req, res) {
         description: paymentDescriptionSegments.join(' • '),
         metadata: {
           fedexTrackingNumber: metadata.fedexTrackingNumber,
+          fedexLabelUrl: metadata.fedexLabelUrl,
+          label_url: metadata.label_url,
+          label_token: metadata.label_token,
           productSku: productContext.sku,
           productLot: productContext.lot
         }
