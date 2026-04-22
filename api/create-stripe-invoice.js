@@ -2,6 +2,7 @@ const Stripe = require('stripe');
 const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
+const { resolveSiteUrl } = require('../lib/server/site-url');
 
 const unitsPerBox = 12;
 const pricePerUnitCents = 1200;
@@ -94,6 +95,18 @@ function toMetadataValue(value, maxLength = 500) {
   }
 
   return stringValue.slice(0, maxLength);
+}
+
+function resolveShippingLabelUrl({ req, shippingLabelUrl, labelToken }) {
+  if (required(shippingLabelUrl)) {
+    return shippingLabelUrl.trim();
+  }
+
+  if (required(labelToken)) {
+    return `${resolveSiteUrl(req)}/label/${labelToken.trim()}`;
+  }
+
+  return '';
 }
 
 function normalizeCountryCode(value) {
@@ -547,12 +560,17 @@ module.exports = async function handler(req, res) {
   const trackingNumber = required(payload.trackingNumber)
     ? payload.trackingNumber.trim()
     : (required(payload.fedexTrackingNumber) ? payload.fedexTrackingNumber.trim() : '');
-  const shippingLabelUrl = required(payload.shippingLabelUrl)
+  const rawShippingLabelUrl = required(payload.shippingLabelUrl)
     ? payload.shippingLabelUrl.trim()
     : (required(payload.fedexLabelUrl) ? payload.fedexLabelUrl.trim() : '');
   const labelToken = required(payload.labelToken)
     ? payload.labelToken.trim()
     : (required(payload.label_token) ? payload.label_token.trim() : '');
+  const shippingLabelUrl = resolveShippingLabelUrl({
+    req,
+    shippingLabelUrl: rawShippingLabelUrl,
+    labelToken
+  });
   const shipDatestamp = required(payload.shipDatestamp)
     ? payload.shipDatestamp.trim()
     : (required(payload.fedexShipDatestamp) ? payload.fedexShipDatestamp.trim() : '');

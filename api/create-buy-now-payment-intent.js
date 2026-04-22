@@ -3,6 +3,7 @@ const createFedexShipmentHandler = require('./create-fedex-shipment');
 const getFedexRateHandler = require('./get-fedex-rate');
 const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
+const { resolveSiteUrl } = require('../lib/server/site-url');
 
 const unitsPerBox = 12;
 const pricePerUnitCents = 1200;
@@ -85,6 +86,18 @@ function toMetadataValue(value, maxLength = 500) {
   }
 
   return stringValue.slice(0, maxLength);
+}
+
+function resolveShippingLabelUrl({ req, shippingLabelUrl, labelToken }) {
+  if (required(shippingLabelUrl)) {
+    return shippingLabelUrl.trim();
+  }
+
+  if (required(labelToken)) {
+    return `${resolveSiteUrl(req)}/label/${labelToken.trim()}`;
+  }
+
+  return '';
 }
 
 function isFedexShipmentCreationEnabled(payload) {
@@ -370,6 +383,7 @@ async function mergePaymentIntentMetadata(stripe, paymentIntentId, metadataUpdat
 }
 
 function scheduleFedexLabelRecovery({
+  req,
   payload,
   paymentIntentId,
   customerId,
@@ -417,12 +431,19 @@ function scheduleFedexLabelRecovery({
     }
 
     if (recoveredShipment) {
+      const resolvedLabelUrl = resolveShippingLabelUrl({
+        req,
+        shippingLabelUrl: recoveredShipment.labelUrl || '',
+        labelToken: recoveredShipment.labelToken || ''
+      });
+
       const metadataUpdate = {
         fedexShipmentCreated: 'true',
         fedexShipmentStatus: 'label_created_delayed_retry',
         fedexTrackingNumber: recoveredShipment.trackingNumber || '',
-        fedexLabelUrl: recoveredShipment.labelUrl || '',
-        label_url: recoveredShipment.labelUrl || '',
+        fedexLabelUrl: resolvedLabelUrl,
+        shippingLabelUrl: resolvedLabelUrl,
+        label_url: resolvedLabelUrl,
         label_token: recoveredShipment.labelToken || '',
         tracking_number: recoveredShipment.trackingNumber || '',
         fedexShipDatestamp: recoveredShipment.shipDatestamp || '',
@@ -735,6 +756,12 @@ module.exports = async function handler(req, res) {
     }
 
     const totalAmountCents = goodsAmountCents + actualShippingFeeCents + taxData.taxAmountCents;
+    const resolvedFedexLabelUrl = resolveShippingLabelUrl({
+      req,
+      shippingLabelUrl: fedexLabelUrl,
+      labelToken: fedexLabelToken
+    });
+
     const metadata = {
       flow: 'buy-now-payment-intent',
       testMode,
@@ -763,8 +790,9 @@ module.exports = async function handler(req, res) {
       fedexShipmentStatus,
       fedexShipmentError: toMetadataValue(fedexShipmentError),
       fedexTrackingNumber,
-      fedexLabelUrl,
-      label_url: fedexLabelUrl,
+      fedexLabelUrl: resolvedFedexLabelUrl,
+      shippingLabelUrl: resolvedFedexLabelUrl,
+      label_url: resolvedFedexLabelUrl,
       label_token: fedexLabelToken,
       tracking_number: fedexTrackingNumber,
       fedexShipDatestamp,
@@ -856,6 +884,7 @@ module.exports = async function handler(req, res) {
 
       if (shouldChargeShipping && !fedexShipmentCreated) {
         scheduleFedexLabelRecovery({
+          req,
           payload,
           paymentIntentId: paymentIntent.id,
           customerId: customer.id,
