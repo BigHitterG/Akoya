@@ -2,6 +2,7 @@ const { getShippingPackageConfig } = require('./lib/shipping-packages');
 const { normalizeStateOrProvinceCode } = require('../lib/state-province');
 const crypto = require('crypto');
 const {
+  getShippingLabelsPrefix,
   uploadShippingLabel,
   createShippingLabelRecord
 } = require('../lib/server/supabase-admin');
@@ -541,7 +542,7 @@ module.exports = async function handler(req, res) {
       if (labelBuffer && labelBuffer.length > 0) {
         const token = generateLabelToken();
         const fileInfo = resolveLabelFileInfo(labelDocument);
-        const storagePath = `labels/${token}.${fileInfo.extension}`;
+        const storagePath = `${getShippingLabelsPrefix()}${token}.${fileInfo.extension}`;
         const fileName = `${token}.${fileInfo.extension}`;
         const stripeId = required(payload.stripeId) ? payload.stripeId.trim() : null;
         const orderId = required(payload.orderId) ? payload.orderId.trim() : null;
