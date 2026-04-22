@@ -4,7 +4,8 @@ const crypto = require('crypto');
 const {
   getShippingLabelsPrefix,
   uploadShippingLabel,
-  createShippingLabelRecord
+  createShippingLabelRecord,
+  createSignedShippingLabelUrl
 } = require('../lib/server/supabase-admin');
 const { resolveSiteUrl } = require('../lib/server/site-url');
 
@@ -264,6 +265,19 @@ function pickServiceName(output, fallbackServiceType) {
 
 function generateLabelToken() {
   return crypto.randomBytes(24).toString('hex');
+}
+
+function parseSignedLabelTtlSeconds(value) {
+  if (value === undefined || value === null || value === '') {
+    return 30 * 24 * 60 * 60;
+  }
+
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 30 * 24 * 60 * 60;
+  }
+
+  return parsed;
 }
 
 function decodeFedexLabelBuffer(encodedLabel) {
@@ -559,6 +573,20 @@ module.exports = async function handler(req, res) {
           labelStoragePath = storagePath;
           labelFileName = fileName;
           labelUrl = `${resolveSiteUrl(req)}/label/${token}`;
+
+          try {
+            const signedLabelTtlSeconds = parseSignedLabelTtlSeconds(process.env.SUPABASE_SHIPPING_LABEL_SIGNED_URL_TTL_SECONDS);
+            const signedUrl = await createSignedShippingLabelUrl(storagePath, signedLabelTtlSeconds);
+            if (required(signedUrl)) {
+              labelUrl = signedUrl;
+            }
+          } catch (signedUrlError) {
+            console.error('[shipping-label] signed url generation failed (continuing with tokenized URL)', {
+              token,
+              storagePath,
+              message: signedUrlError && signedUrlError.message ? signedUrlError.message : 'Unknown error.'
+            });
+          }
 
           try {
             await createShippingLabelRecord({
