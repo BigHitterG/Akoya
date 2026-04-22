@@ -1,6 +1,7 @@
 const {
   getShippingLabelRecordByToken,
-  createSignedShippingLabelUrl
+  createSignedShippingLabelUrl,
+  findShippingLabelStoragePathByToken
 } = require('../../lib/server/supabase-admin');
 
 function required(value) {
@@ -9,11 +10,24 @@ function required(value) {
 
 async function createFallbackSignedUrl(token) {
   const normalizedToken = token.trim();
+  try {
+    const discoveredPath = await findShippingLabelStoragePathByToken(normalizedToken);
+    if (required(discoveredPath)) {
+      const discoveredSignedUrl = await createSignedShippingLabelUrl(discoveredPath, 60);
+      if (required(discoveredSignedUrl)) {
+        return discoveredSignedUrl;
+      }
+    }
+  } catch (error) {
+    // Continue trying deterministic paths below.
+  }
+
   const fallbackPaths = [
     `labels/${normalizedToken}.pdf`,
     `labels/${normalizedToken}.png`,
     `labels/${normalizedToken}.zpl`,
-    `labels/${normalizedToken}.epl`
+    `labels/${normalizedToken}.epl`,
+    `labels/${normalizedToken}.txt`
   ];
 
   for (const storagePath of fallbackPaths) {
