@@ -1,5 +1,11 @@
 const { getShippingPackageConfig } = require('./lib/shipping-packages');
 const { normalizeStateOrProvinceCode } = require('../lib/state-province');
+const crypto = require('crypto');
+const {
+  uploadShippingLabel,
+  createShippingLabelRecord
+} = require('./lib/supabase-admin');
+const { resolveSiteUrl } = require('./lib/site-url');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -254,6 +260,39 @@ function pickServiceName(output, fallbackServiceType) {
     .join(' ');
 }
 
+function generateLabelToken() {
+  return crypto.randomBytes(24).toString('hex');
+}
+
+function decodeFedexLabelBuffer(encodedLabel) {
+  if (!required(encodedLabel)) {
+    return null;
+  }
+
+  const normalized = encodedLabel.includes(',')
+    ? encodedLabel.slice(encodedLabel.indexOf(',') + 1)
+    : encodedLabel;
+
+  return Buffer.from(normalized, 'base64');
+}
+
+function resolveLabelFileInfo(labelDocument) {
+  const normalizedImageType = (labelDocument?.imageType || '').trim().toUpperCase();
+  const normalizedContentType = (labelDocument?.contentType || '').trim().toUpperCase();
+  const normalizedDocType = (labelDocument?.docType || '').trim().toUpperCase();
+  const haystack = `${normalizedImageType} ${normalizedContentType} ${normalizedDocType}`;
+
+  if (haystack.includes('PNG')) {
+    return { extension: 'png', contentType: 'image/png' };
+  }
+
+  if (haystack.includes('ZPL')) {
+    return { extension: 'zpl', contentType: 'application/zpl' };
+  }
+
+  return { extension: 'pdf', contentType: 'application/pdf' };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
@@ -463,10 +502,56 @@ module.exports = async function handler(req, res) {
 
     const output = shipmentBody?.output || {};
     const trackingNumber = pickFirstTrackingNumber(output);
-    const labelUrl = pickFirstLabelUrl(output);
+    const fedexLabelUrl = pickFirstLabelUrl(output);
     const labelDocument = pickFirstLabelDocument(output);
     const shippingFeeCents = pickShipmentChargeCents(output);
     const serviceName = pickServiceName(output, resolvedServiceType);
+    let labelToken = '';
+    let labelStoragePath = '';
+    let labelFileName = '';
+    let labelUrl = fedexLabelUrl;
+
+    if (required(labelDocument?.encodedLabel)) {
+      const labelBuffer = decodeFedexLabelBuffer(labelDocument.encodedLabel);
+
+      if (labelBuffer && labelBuffer.length > 0) {
+        const token = generateLabelToken();
+        const fileInfo = resolveLabelFileInfo(labelDocument);
+        const storagePath = `labels/${token}.${fileInfo.extension}`;
+        const fileName = `${token}.${fileInfo.extension}`;
+        const stripeId = required(payload.stripeId) ? payload.stripeId.trim() : null;
+        const orderId = required(payload.orderId) ? payload.orderId.trim() : null;
+
+        try {
+          await uploadShippingLabel(labelBuffer, storagePath, fileInfo.contentType);
+          console.log('[shipping-label] upload success', {
+            token,
+            storagePath,
+            contentType: fileInfo.contentType
+          });
+
+          await createShippingLabelRecord({
+            token,
+            storage_path: storagePath,
+            tracking_number: required(trackingNumber) ? trackingNumber : null,
+            stripe_id: stripeId,
+            order_id: orderId,
+            file_name: fileName,
+            content_type: fileInfo.contentType
+          });
+          console.log('[shipping-label] db insert success', { token, storagePath });
+
+          labelToken = token;
+          labelStoragePath = storagePath;
+          labelFileName = fileName;
+          labelUrl = `${resolveSiteUrl(req)}/label/${token}`;
+        } catch (storageError) {
+          console.error('[shipping-label] persistence failed', {
+            message: storageError && storageError.message ? storageError.message : 'Unknown error.'
+          });
+        }
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -475,6 +560,10 @@ module.exports = async function handler(req, res) {
       serviceName,
       trackingNumber,
       labelUrl,
+      labelToken,
+      labelStoragePath,
+      labelFileName,
+      fedexLabelUrl,
       labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
       labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
       labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
@@ -489,6 +578,10 @@ module.exports = async function handler(req, res) {
           serviceName,
           trackingNumber,
           labelUrl,
+          labelToken,
+          labelStoragePath,
+          labelFileName,
+          fedexLabelUrl,
           labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
           labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
           labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),

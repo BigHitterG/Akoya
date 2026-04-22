@@ -1533,6 +1533,7 @@
                 invoicePayload.shippingServiceType = shipmentResponse.serviceType || shippingRateState.serviceType || '';
                 invoicePayload.trackingNumber = shipmentResponse.trackingNumber || '';
                 invoicePayload.shippingLabelUrl = shipmentResponse.labelUrl || '';
+                invoicePayload.labelToken = shipmentResponse.labelToken || '';
                 invoicePayload.shipDatestamp = shipmentResponse.shipDatestamp || '';
                 invoicePayload.fedexShipmentCreated = 'true';
                 invoicePayload.fedexShipmentStatus = 'label_created';
@@ -1548,6 +1549,7 @@
                 invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
                 invoicePayload.trackingNumber = '';
                 invoicePayload.shippingLabelUrl = '';
+                invoicePayload.labelToken = '';
                 invoicePayload.shipDatestamp = '';
                 invoicePayload.fedexShipmentCreated = 'false';
                 invoicePayload.fedexShipmentStatus = 'label_not_created_quoted_fallback';
@@ -1560,6 +1562,7 @@
               invoicePayload.shippingServiceType = shippingRateState.serviceType || '';
               invoicePayload.trackingNumber = '';
               invoicePayload.shippingLabelUrl = '';
+              invoicePayload.labelToken = '';
               invoicePayload.shipDatestamp = '';
               invoicePayload.fedexShipmentCreated = 'false';
               invoicePayload.fedexShipmentStatus = 'label_creation_disabled_quoted_rate';
@@ -1571,6 +1574,7 @@
               invoicePayload.shippingServiceType = '';
               invoicePayload.trackingNumber = '';
               invoicePayload.shippingLabelUrl = '';
+              invoicePayload.labelToken = '';
               invoicePayload.shipDatestamp = '';
               invoicePayload.fedexShipmentCreated = 'false';
               invoicePayload.fedexShipmentStatus = 'not_requested_test_mode';
