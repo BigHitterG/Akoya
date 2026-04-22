@@ -1,5 +1,6 @@
 const {
   getShippingLabelsBucket,
+  getShippingLabelsPrefix,
   getShippingLabelRecordByToken,
   createSignedShippingLabelUrl,
   findShippingLabelStoragePathByToken,
@@ -23,27 +24,28 @@ function buildPublicLabelUrlCandidates(token) {
   const normalizedToken = token.trim();
   const tokenWithoutExtension = normalizedToken.replace(/\.(pdf|png|zpl|epl|txt)$/i, '');
   const publicBaseUrl = getSupabasePublicBaseUrl();
+  const labelPrefix = getShippingLabelsPrefix();
   if (!required(publicBaseUrl) || !required(normalizedToken)) {
     return [];
   }
 
   const candidates = [
-    `${publicBaseUrl}/labels/${normalizedToken}`,
-    `${publicBaseUrl}/labels/${normalizedToken}.pdf`,
-    `${publicBaseUrl}/labels/${normalizedToken}.png`,
-    `${publicBaseUrl}/labels/${normalizedToken}.zpl`,
-    `${publicBaseUrl}/labels/${normalizedToken}.epl`,
-    `${publicBaseUrl}/labels/${normalizedToken}.txt`
+    `${publicBaseUrl}/${labelPrefix}${normalizedToken}`,
+    `${publicBaseUrl}/${labelPrefix}${normalizedToken}.pdf`,
+    `${publicBaseUrl}/${labelPrefix}${normalizedToken}.png`,
+    `${publicBaseUrl}/${labelPrefix}${normalizedToken}.zpl`,
+    `${publicBaseUrl}/${labelPrefix}${normalizedToken}.epl`,
+    `${publicBaseUrl}/${labelPrefix}${normalizedToken}.txt`
   ];
 
   if (required(tokenWithoutExtension) && tokenWithoutExtension !== normalizedToken) {
     candidates.push(
-      `${publicBaseUrl}/labels/${tokenWithoutExtension}`,
-      `${publicBaseUrl}/labels/${tokenWithoutExtension}.pdf`,
-      `${publicBaseUrl}/labels/${tokenWithoutExtension}.png`,
-      `${publicBaseUrl}/labels/${tokenWithoutExtension}.zpl`,
-      `${publicBaseUrl}/labels/${tokenWithoutExtension}.epl`,
-      `${publicBaseUrl}/labels/${tokenWithoutExtension}.txt`
+      `${publicBaseUrl}/${labelPrefix}${tokenWithoutExtension}`,
+      `${publicBaseUrl}/${labelPrefix}${tokenWithoutExtension}.pdf`,
+      `${publicBaseUrl}/${labelPrefix}${tokenWithoutExtension}.png`,
+      `${publicBaseUrl}/${labelPrefix}${tokenWithoutExtension}.zpl`,
+      `${publicBaseUrl}/${labelPrefix}${tokenWithoutExtension}.epl`,
+      `${publicBaseUrl}/${labelPrefix}${tokenWithoutExtension}.txt`
     );
   }
 
@@ -83,6 +85,8 @@ function pickInlineFilename(storagePath, token) {
 function buildStoragePathCandidates(token) {
   const normalizedToken = token.trim().replace(/^\/+/, '');
   const tokenWithoutExtension = normalizedToken.replace(/\.(pdf|png|zpl|epl|txt)$/i, '');
+  const labelPrefix = getShippingLabelsPrefix();
+  const nestedLabelPrefix = `${labelPrefix}labels/`;
   const files = new Set([normalizedToken]);
 
   if (required(tokenWithoutExtension)) {
@@ -100,11 +104,11 @@ function buildStoragePathCandidates(token) {
       return [];
     }
 
-    if (cleaned.startsWith('labels/')) {
+    if (cleaned.startsWith(labelPrefix)) {
       return [cleaned];
     }
 
-    return [`labels/${cleaned}`, cleaned];
+    return [`${labelPrefix}${cleaned}`, `${nestedLabelPrefix}${cleaned}`, cleaned];
   });
 }
 
