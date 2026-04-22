@@ -55,6 +55,9 @@ FEDEX_API_BASE_URL=https://apis-sandbox.fedex.com
 # Optional (defaults to LABEL so FedEx returns printable label bytes)
 FEDEX_LABEL_RESPONSE_OPTIONS=LABEL
 
+# Optional shipping label link TTL when persisted in Supabase (defaults to 30 days)
+SUPABASE_SHIPPING_LABEL_SIGNED_URL_TTL_SECONDS=2592000
+
 # Optional customer/internals emails via Resend
 RESEND_API_KEY=re_...
 CUSTOMER_EMAIL_FROM=orders@yourdomain.com
