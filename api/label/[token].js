@@ -1,7 +1,8 @@
 const {
   getShippingLabelRecordByToken,
   createSignedShippingLabelUrl,
-  findShippingLabelStoragePathByToken
+  findShippingLabelStoragePathByToken,
+  downloadShippingLabelObject
 } = require('../../lib/server/supabase-admin');
 
 function required(value) {
@@ -58,40 +59,19 @@ async function findFirstReachablePublicLabelUrl(token) {
   return '';
 }
 
-async function createFallbackSignedUrl(token) {
-  const normalizedToken = token.trim();
-  try {
-    const discoveredPath = await findShippingLabelStoragePathByToken(normalizedToken);
-    if (required(discoveredPath)) {
-      const discoveredSignedUrl = await createSignedShippingLabelUrl(discoveredPath, 60);
-      if (required(discoveredSignedUrl)) {
-        return discoveredSignedUrl;
-      }
-    }
-  } catch (error) {
-    // Continue trying deterministic paths below.
-  }
+function pickInlineFilename(storagePath, token) {
+  const rawName = typeof storagePath === 'string' ? storagePath.split('/').pop() : '';
+  const safeName = required(rawName) ? rawName.trim().replace(/[^a-zA-Z0-9._-]/g, '_') : `${token}.pdf`;
+  return safeName || `${token}.pdf`;
+}
 
-  const fallbackPaths = [
-    `labels/${normalizedToken}.pdf`,
-    `labels/${normalizedToken}.png`,
-    `labels/${normalizedToken}.zpl`,
-    `labels/${normalizedToken}.epl`,
-    `labels/${normalizedToken}.txt`
-  ];
-
-  for (const storagePath of fallbackPaths) {
-    try {
-      const signedUrl = await createSignedShippingLabelUrl(storagePath, 60);
-      if (required(signedUrl)) {
-        return signedUrl;
-      }
-    } catch (error) {
-      // Continue trying alternative file extensions.
-    }
-  }
-
-  return '';
+function sendFileBuffer(res, file, filename) {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', file.contentType || 'application/octet-stream');
+  res.setHeader('Content-Length', String(file.buffer.length));
+  res.setHeader('Cache-Control', 'private, max-age=0, no-cache');
+  res.setHeader('Content-Disposition', `inline; filename=\"${filename}\"`);
+  res.end(file.buffer);
 }
 
 module.exports = async function handler(req, res) {
@@ -109,13 +89,23 @@ module.exports = async function handler(req, res) {
   try {
     const normalizedToken = token.trim();
     const record = await getShippingLabelRecordByToken(normalizedToken);
-    const signedUrl = record && required(record.storage_path)
-      ? await createSignedShippingLabelUrl(record.storage_path, 60)
-      : await createFallbackSignedUrl(normalizedToken);
-    if (required(signedUrl)) {
-      res.writeHead(302, { Location: signedUrl });
-      res.end();
-      return;
+    const storagePath = record && required(record.storage_path)
+      ? record.storage_path
+      : await findShippingLabelStoragePathByToken(normalizedToken);
+
+    if (required(storagePath)) {
+      try {
+        const file = await downloadShippingLabelObject(storagePath);
+        sendFileBuffer(res, file, pickInlineFilename(storagePath, normalizedToken));
+        return;
+      } catch (error) {
+        const signedUrl = await createSignedShippingLabelUrl(storagePath, 60);
+        if (required(signedUrl)) {
+          res.writeHead(302, { Location: signedUrl });
+          res.end();
+          return;
+        }
+      }
     }
 
     const publicLabelUrl = await findFirstReachablePublicLabelUrl(normalizedToken);
