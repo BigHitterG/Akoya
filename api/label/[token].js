@@ -1,4 +1,5 @@
 const {
+  getShippingLabelsBucket,
   getShippingLabelRecordByToken,
   createSignedShippingLabelUrl,
   findShippingLabelStoragePathByToken,
@@ -15,7 +16,7 @@ function getSupabasePublicBaseUrl() {
     return '';
   }
 
-  return `${supabaseUrl.trim().replace(/\/+$/, '')}/storage/v1/object/public/shipping_labels`;
+  return `${supabaseUrl.trim().replace(/\/+$/, '')}/storage/v1/object/public/${getShippingLabelsBucket()}`;
 }
 
 function buildPublicLabelUrlCandidates(token) {
