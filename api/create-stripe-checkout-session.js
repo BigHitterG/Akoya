@@ -83,6 +83,18 @@ function getBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
+function resolveShippingLabelUrl({ baseUrl, shippingLabelUrl, labelToken }) {
+  if (required(shippingLabelUrl)) {
+    return shippingLabelUrl.trim();
+  }
+
+  if (required(labelToken) && required(baseUrl)) {
+    return `${baseUrl.replace(/\/+$/, '')}/label/${labelToken.trim()}`;
+  }
+
+  return '';
+}
+
 function getStripeCustomerDisplayName(payload) {
   if (required(payload.institutionName)) {
     return payload.institutionName.trim();
@@ -307,12 +319,20 @@ module.exports = async function handler(req, res) {
     metadata.shippingServiceName = shipmentResult.shipment.serviceName || metadata.shippingServiceName;
     metadata.shippingServiceType = shipmentResult.shipment.serviceType || metadata.shippingServiceType;
     metadata.fedexShipmentCreated = 'true';
+    const labelToken = shipmentResult.shipment.labelToken || '';
+    const resolvedLabelUrl = resolveShippingLabelUrl({
+      baseUrl,
+      shippingLabelUrl: shipmentResult.shipment.labelUrl || '',
+      labelToken
+    });
+
     metadata.fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
-    metadata.fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
-    metadata.label_url = shipmentResult.shipment.labelUrl || '';
-    metadata.label_token = shipmentResult.shipment.labelToken || '';
+    metadata.shippingLabelUrl = resolvedLabelUrl;
+    metadata.fedexLabelUrl = resolvedLabelUrl;
+    metadata.label_url = resolvedLabelUrl;
+    metadata.label_token = labelToken;
     metadata.tracking_number = shipmentResult.shipment.trackingNumber || '';
-    metadata.fedex_label_url = shipmentResult.shipment.labelUrl || '';
+    metadata.fedex_label_url = resolvedLabelUrl;
     metadata.fedex_label_path = shipmentResult.shipment.labelStoragePath || '';
     metadata.fedex_tracking_number = shipmentResult.shipment.trackingNumber || '';
     metadata.fedex_service = 'FEDEX_GROUND';

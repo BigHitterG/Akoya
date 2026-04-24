@@ -23,6 +23,18 @@ function getBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
+function resolveShippingLabelUrl({ baseUrl, shippingLabelUrl, labelToken }) {
+  if (required(shippingLabelUrl)) {
+    return shippingLabelUrl.trim();
+  }
+
+  if (required(labelToken) && required(baseUrl)) {
+    return `${baseUrl.replace(/\/+$/, '')}/label/${labelToken.trim()}`;
+  }
+
+  return '';
+}
+
 function parseRawBody(req) {
   if (typeof req.body === 'string') {
     return req.body;
@@ -140,6 +152,7 @@ async function createFedexShipmentForSession(req, session) {
       trackingNumber: responseBody.trackingNumber || null,
       shippingFeeCents: responseBody.shippingFeeCents,
       labelUrl: responseBody.labelUrl || null,
+      labelToken: responseBody.labelToken || null,
       labelStoragePath: responseBody.labelStoragePath || null,
       shipDatestamp: responseBody.shipDatestamp || null
     }
@@ -252,12 +265,20 @@ module.exports = async function handler(req, res) {
     const shipmentResult = await createFedexShipmentForSession(req, session);
 
     if (shipmentResult && shipmentResult.attempted && shipmentResult.success) {
+      const resolvedLabelUrl = resolveShippingLabelUrl({
+        baseUrl: getBaseUrl(req),
+        shippingLabelUrl: shipmentResult.shipment.labelUrl || '',
+        labelToken: shipmentResult.shipment.labelToken || ''
+      });
       const updatedMetadata = {
         ...(session.metadata || {}),
         fedexShipmentCreated: 'true',
         fedexTrackingNumber: shipmentResult.shipment.trackingNumber || '',
-        fedexLabelUrl: shipmentResult.shipment.labelUrl || '',
-        fedex_label_url: shipmentResult.shipment.labelUrl || '',
+        shippingLabelUrl: resolvedLabelUrl,
+        fedexLabelUrl: resolvedLabelUrl,
+        label_url: resolvedLabelUrl,
+        label_token: shipmentResult.shipment.labelToken || '',
+        fedex_label_url: resolvedLabelUrl,
         fedex_label_path: shipmentResult.shipment.labelStoragePath || '',
         fedex_tracking_number: shipmentResult.shipment.trackingNumber || '',
         fedex_service: 'FEDEX_GROUND',
