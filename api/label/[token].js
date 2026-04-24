@@ -112,13 +112,31 @@ function buildStoragePathCandidates(token) {
   });
 }
 
+
+async function downloadFromSignedUrl(url) {
+  const response = await fetch(url, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error(`Signed URL download failed (${response.status}).`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  if (!buffer.length) {
+    throw new Error('Signed URL download returned an empty file.');
+  }
+
+  return {
+    buffer,
+    contentType: response.headers.get('content-type') || 'application/octet-stream'
+  };
+}
+
 function sendFileBuffer(res, file, filename) {
   res.statusCode = 200;
   res.setHeader('Content-Type', file.contentType || 'application/octet-stream');
   res.setHeader('Content-Length', String(file.buffer.length));
   res.setHeader('Cache-Control', 'private, max-age=0, no-cache');
-  const shouldForceDownload = /\.zpl$/i.test(filename) || String(file.contentType || '').toLowerCase().includes('text/plain');
-  res.setHeader('Content-Disposition', `${shouldForceDownload ? 'attachment' : 'inline'}; filename=\"${filename}\"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.end(file.buffer);
 }
 
@@ -158,8 +176,8 @@ module.exports = async function handler(req, res) {
         try {
           const signedUrl = await createSignedShippingLabelUrl(candidateStoragePath, 60);
           if (required(signedUrl)) {
-            res.writeHead(302, { Location: signedUrl });
-            res.end();
+            const signedFile = await downloadFromSignedUrl(signedUrl);
+            sendFileBuffer(res, signedFile, pickInlineFilename(candidateStoragePath, normalizedToken));
             return;
           }
         } catch (signedUrlError) {
@@ -170,8 +188,8 @@ module.exports = async function handler(req, res) {
 
     const publicLabelUrl = await findFirstReachablePublicLabelUrl(normalizedToken);
     if (required(publicLabelUrl)) {
-      res.writeHead(302, { Location: publicLabelUrl });
-      res.end();
+      const publicFile = await downloadFromSignedUrl(publicLabelUrl);
+      sendFileBuffer(res, publicFile, pickInlineFilename(storagePath || normalizedToken, normalizedToken));
       return;
     }
 
