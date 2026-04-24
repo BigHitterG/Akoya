@@ -346,9 +346,11 @@ function decodeFedexLabelText(encodedLabel) {
     return directText;
   }
 
-  const normalized = encodedLabel.includes(',')
+  const normalized = (encodedLabel.includes(',')
     ? encodedLabel.slice(encodedLabel.indexOf(',') + 1)
-    : encodedLabel;
+    : encodedLabel)
+    .replace(/\s+/g, '')
+    .trim();
 
   try {
     const decoded = Buffer.from(normalized, 'base64').toString('utf8');
@@ -359,15 +361,18 @@ function decodeFedexLabelText(encodedLabel) {
     // Continue with fallbacks.
   }
 
-  return '';
-}
-
-function sanitizeOrderId(value) {
-  if (!required(value)) {
-    return 'unknown-order';
+  try {
+    const normalizedBase64Url = normalized.replace(/-/g, '+').replace(/_/g, '/');
+    const paddedBase64Url = normalizedBase64Url + '='.repeat((4 - (normalizedBase64Url.length % 4)) % 4);
+    const decoded = Buffer.from(paddedBase64Url, 'base64').toString('utf8');
+    if (required(decoded) && decoded.includes('^XA') && decoded.includes('^XZ')) {
+      return decoded;
+    }
+  } catch (error) {
+    // Continue with fallbacks.
   }
 
-  return value.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  return '';
 }
 
 module.exports = async function handler(req, res) {
@@ -599,9 +604,8 @@ module.exports = async function handler(req, res) {
     if (required(encodedLabelDocument?.encodedLabel)) {
       const token = generateLabelToken();
       const orderId = required(payload.orderId) ? payload.orderId.trim() : token;
-      const sanitizedOrderId = sanitizeOrderId(orderId);
-      const storagePath = `${getShippingLabelsPrefix()}${sanitizedOrderId}/fedex-ground.zpl`;
-      const fileName = 'fedex-ground.zpl';
+      const fileName = `${token}.zpl`;
+      const storagePath = `${getShippingLabelsPrefix()}${fileName}`;
       const stripeId = required(payload.stripeId) ? payload.stripeId.trim() : null;
       const zplString = decodeFedexLabelText(encodedLabelDocument.encodedLabel);
       zplStringLength = zplString.length;
