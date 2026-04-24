@@ -118,7 +118,9 @@ async function createFedexShipment(payload) {
     recipientName: payload.fullName.trim(),
     recipientPhone: payload.phone.trim(),
     serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '',
-    testMode: payload.testMode
+    testMode: payload.testMode,
+    orderId: required(payload.orderId) ? payload.orderId.trim() : '',
+    stripeId: required(payload.stripeId) ? payload.stripeId.trim() : ''
   };
 
   let responseStatus = 500;
@@ -411,7 +413,8 @@ function scheduleFedexLabelRecovery({
       const retryPayload = {
         ...payload,
         shippingServiceType,
-        stripeId: paymentIntentId
+        stripeId: paymentIntentId,
+        orderId: paymentIntentId
       };
 
       try {
@@ -446,6 +449,10 @@ function scheduleFedexLabelRecovery({
         label_url: resolvedLabelUrl,
         label_token: recoveredShipment.labelToken || '',
         tracking_number: recoveredShipment.trackingNumber || '',
+        fedex_label_url: resolvedLabelUrl,
+        fedex_label_path: recoveredShipment.labelStoragePath || '',
+        fedex_tracking_number: recoveredShipment.trackingNumber || '',
+        fedex_service: 'FEDEX_GROUND',
         fedexShipDatestamp: recoveredShipment.shipDatestamp || '',
         fedexDelayedRetryAttempts: String(attempt)
       };
@@ -598,6 +605,7 @@ module.exports = async function handler(req, res) {
     let fedexTrackingNumber = '';
     let fedexLabelUrl = '';
     let fedexLabelToken = '';
+    let fedexLabelPath = '';
     let fedexShipDatestamp = '';
     let fedexShipmentError = '';
     let fedexShipmentStatus = 'label_not_created_quoted_fallback';
@@ -616,6 +624,7 @@ module.exports = async function handler(req, res) {
           fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
           fedexLabelUrl = shipmentResult.shipment.labelUrl || '';
           fedexLabelToken = shipmentResult.shipment.labelToken || '';
+          fedexLabelPath = shipmentResult.shipment.labelStoragePath || '';
           fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
           fedexShipmentStatus = 'label_created';
         } else {
@@ -795,6 +804,10 @@ module.exports = async function handler(req, res) {
       label_url: resolvedFedexLabelUrl,
       label_token: fedexLabelToken,
       tracking_number: fedexTrackingNumber,
+      fedex_label_url: resolvedFedexLabelUrl,
+      fedex_label_path: toMetadataValue(fedexLabelPath),
+      fedex_tracking_number: fedexTrackingNumber,
+      fedex_service: 'FEDEX_GROUND',
       fedexShipDatestamp,
       stripeTaxAmountCents: String(taxData.taxAmountCents),
       stripeTaxCalculationId: taxData.taxCalculationId || '',

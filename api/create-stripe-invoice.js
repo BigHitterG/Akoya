@@ -315,7 +315,9 @@ async function createFedexShipment(payload) {
     recipientName: payload.fullName.trim(),
     recipientPhone: payload.phone.trim(),
     serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '',
-    testMode: payload.testMode
+    testMode: payload.testMode,
+    orderId: required(payload.orderId) ? payload.orderId.trim() : '',
+    stripeId: required(payload.stripeId) ? payload.stripeId.trim() : ''
   };
 
   let responseStatus = 500;
@@ -404,7 +406,8 @@ function scheduleInvoiceFedexLabelRecovery({
       const retryPayload = {
         ...payload,
         shippingServiceType,
-        stripeId: invoiceId
+        stripeId: invoiceId,
+        orderId: invoiceId
       };
 
       try {
@@ -435,6 +438,10 @@ function scheduleInvoiceFedexLabelRecovery({
         shipDatestamp: recoveredShipment.shipDatestamp || '',
         fedexTrackingNumber: recoveredShipment.trackingNumber || '',
         fedexLabelUrl: recoveredShipment.labelUrl || '',
+        fedex_label_url: recoveredShipment.labelUrl || '',
+        fedex_label_path: recoveredShipment.labelStoragePath || '',
+        fedex_tracking_number: recoveredShipment.trackingNumber || '',
+        fedex_service: 'FEDEX_GROUND',
         fedexShipDatestamp: recoveredShipment.shipDatestamp || '',
         fedexDelayedRetryAttempts: String(attempt)
       };
@@ -625,6 +632,10 @@ module.exports = async function handler(req, res) {
     shipDatestamp,
     fedexTrackingNumber: trackingNumber,
     fedexLabelUrl: toMetadataValue(shippingLabelUrl),
+    fedex_label_url: toMetadataValue(shippingLabelUrl),
+    fedex_label_path: toMetadataValue(payload.fedexLabelPath || ''),
+    fedex_tracking_number: trackingNumber,
+    fedex_service: 'FEDEX_GROUND',
     fedexShipDatestamp: shipDatestamp,
     fedexShipmentCreated: fedexShipmentCreated ? 'true' : 'false',
     fedexShipmentStatus: toMetadataValue(fedexShipmentStatus, 100),

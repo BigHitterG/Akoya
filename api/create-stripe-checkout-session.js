@@ -126,7 +126,9 @@ async function createFedexShipmentBeforeCheckout(req, baseUrl, payload) {
     shippingCountryCode: (payload.shippingCountryCode || 'US').trim().toUpperCase(),
     recipientName: payload.fullName.trim(),
     recipientPhone: payload.phone.trim(),
-    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
+    serviceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '',
+    orderId: required(payload.orderId) ? payload.orderId.trim() : '',
+    stripeId: required(payload.stripeId) ? payload.stripeId.trim() : ''
   };
 
   const response = await fetch(`${baseUrl}/api/create-fedex-shipment`, {
@@ -239,7 +241,8 @@ module.exports = async function handler(req, res) {
     shippingCountryCode: countryCode,
     shippingFeeCents: String(quotedShippingFeeCents),
     shippingServiceName: required(payload.shippingServiceName) ? payload.shippingServiceName.trim() : '',
-    shippingServiceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : ''
+    shippingServiceType: required(payload.shippingServiceType) ? payload.shippingServiceType.trim().toUpperCase() : '',
+    order_id: required(payload.orderId) ? payload.orderId.trim() : ''
   };
 
   const baseUrl = getBaseUrl(req);
@@ -309,6 +312,10 @@ module.exports = async function handler(req, res) {
     metadata.label_url = shipmentResult.shipment.labelUrl || '';
     metadata.label_token = shipmentResult.shipment.labelToken || '';
     metadata.tracking_number = shipmentResult.shipment.trackingNumber || '';
+    metadata.fedex_label_url = shipmentResult.shipment.labelUrl || '';
+    metadata.fedex_label_path = shipmentResult.shipment.labelStoragePath || '';
+    metadata.fedex_tracking_number = shipmentResult.shipment.trackingNumber || '';
+    metadata.fedex_service = 'FEDEX_GROUND';
     metadata.fedexShipDatestamp = shipmentResult.shipment.shipDatestamp || '';
     metadata.productSku = productContext.sku;
     metadata.productLot = productContext.lot;
@@ -383,6 +390,10 @@ module.exports = async function handler(req, res) {
           fedexLabelUrl: metadata.fedexLabelUrl,
           label_url: metadata.label_url,
           label_token: metadata.label_token,
+          fedex_label_url: metadata.fedex_label_url,
+          fedex_label_path: metadata.fedex_label_path,
+          fedex_tracking_number: metadata.fedex_tracking_number,
+          fedex_service: metadata.fedex_service,
           productSku: productContext.sku,
           productLot: productContext.lot
         }
