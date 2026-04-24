@@ -246,6 +246,51 @@ function pickFirstLabelDocument(output) {
   return null;
 }
 
+function collectLabelDocuments(output) {
+  const documents = [];
+  const shipmentDocuments = Array.isArray(output?.shipmentDocuments) ? output.shipmentDocuments : [];
+  for (const document of shipmentDocuments) {
+    if (document && typeof document === 'object') {
+      documents.push(document);
+    }
+  }
+
+  const packageResponses = output?.transactionShipments?.[0]?.pieceResponses || output?.pieceResponses || [];
+  for (const piece of packageResponses) {
+    const packageDocuments = normalizeFedexDocumentList(piece);
+    for (const document of packageDocuments) {
+      if (document && typeof document === 'object') {
+        documents.push(document);
+      }
+    }
+  }
+
+  return documents;
+}
+
+function pickBestEncodedLabelDocument(output) {
+  const documents = collectLabelDocuments(output);
+  if (!documents.length) {
+    return null;
+  }
+
+  const thermalDocument = documents.find((document) => {
+    if (!required(document?.encodedLabel)) {
+      return false;
+    }
+
+    const imageType = typeof document?.imageType === 'string' ? document.imageType.trim().toUpperCase() : '';
+    const contentType = typeof document?.contentType === 'string' ? document.contentType.trim().toUpperCase() : '';
+    return imageType.includes('ZPL') || contentType.includes('ZPL');
+  });
+
+  if (thermalDocument) {
+    return thermalDocument;
+  }
+
+  return documents.find((document) => required(document?.encodedLabel)) || null;
+}
+
 function pickShipmentChargeCents(output) {
   return firstFiniteCents([
     output?.transactionShipments?.[0]?.shipmentRating?.shipmentRateDetails?.[0]?.totalNetCharge,
@@ -542,22 +587,23 @@ module.exports = async function handler(req, res) {
     const trackingNumber = pickFirstTrackingNumber(output);
     const fedexLabelUrl = pickFirstLabelUrl(output);
     const labelDocument = pickFirstLabelDocument(output);
+    const encodedLabelDocument = pickBestEncodedLabelDocument(output);
     const shippingFeeCents = pickShipmentChargeCents(output);
     const serviceName = pickServiceName(output, resolvedServiceType);
     let labelToken = '';
     let labelStoragePath = '';
     let labelFileName = '';
-    let labelUrl = fedexLabelUrl;
+    let labelUrl = '';
     let zplStringLength = 0;
 
-    if (required(labelDocument?.encodedLabel)) {
+    if (required(encodedLabelDocument?.encodedLabel)) {
       const token = generateLabelToken();
       const orderId = required(payload.orderId) ? payload.orderId.trim() : token;
       const sanitizedOrderId = sanitizeOrderId(orderId);
       const storagePath = `${getShippingLabelsPrefix()}${sanitizedOrderId}/fedex-ground.zpl`;
       const fileName = 'fedex-ground.zpl';
       const stripeId = required(payload.stripeId) ? payload.stripeId.trim() : null;
-      const zplString = decodeFedexLabelText(labelDocument.encodedLabel);
+      const zplString = decodeFedexLabelText(encodedLabelDocument.encodedLabel);
       zplStringLength = zplString.length;
 
       console.log('[shipping-label] fedex thermal label format', {
@@ -579,6 +625,7 @@ module.exports = async function handler(req, res) {
           labelToken = token;
           labelStoragePath = storagePath;
           labelFileName = fileName;
+          labelUrl = `/label/${token}`;
 
           try {
             const signedLabelTtlSeconds = parseSignedLabelTtlSeconds(process.env.SUPABASE_SHIPPING_LABEL_SIGNED_URL_TTL_SECONDS);
@@ -641,7 +688,7 @@ module.exports = async function handler(req, res) {
       fedexLabelUrl,
       labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
       labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
-      labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
+      labelHasEncodedData: Boolean(required(encodedLabelDocument?.encodedLabel)),
       zplStringLength,
       shippingFeeCents,
       currency: 'USD',
@@ -660,7 +707,7 @@ module.exports = async function handler(req, res) {
           fedexLabelUrl,
           labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
           labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
-          labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
+          labelHasEncodedData: Boolean(required(encodedLabelDocument?.encodedLabel)),
           zplStringLength,
           shippingFeeCents
         }
