@@ -436,7 +436,7 @@ function pickUsableRateQuotes(rateReplyDetails, shipDateStamp) {
     return [];
   }
 
-  return rateReplyDetails
+  const parsedQuotes = rateReplyDetails
     .map((detail) => {
       const normalizedServiceType = String(detail?.serviceType || '').trim().toUpperCase();
       if (!ALLOWED_SERVICE_TYPES.has(normalizedServiceType)) {
@@ -455,8 +455,22 @@ function pickUsableRateQuotes(rateReplyDetails, shipDateStamp) {
         transitTime: extractTransitTimeLabel(detail, shipDateStamp)
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => a.shippingFeeCents - b.shippingFeeCents);
+    .filter(Boolean);
+
+  const lowestRateByServiceType = new Map();
+  parsedQuotes.forEach((quote) => {
+    const key = quote.serviceType || quote.serviceName || '';
+    if (!key) {
+      return;
+    }
+
+    const existingQuote = lowestRateByServiceType.get(key);
+    if (!existingQuote || quote.shippingFeeCents < existingQuote.shippingFeeCents) {
+      lowestRateByServiceType.set(key, quote);
+    }
+  });
+
+  return Array.from(lowestRateByServiceType.values()).sort((a, b) => a.shippingFeeCents - b.shippingFeeCents);
 }
 
 function createFallbackQuote(quantityRequested) {
