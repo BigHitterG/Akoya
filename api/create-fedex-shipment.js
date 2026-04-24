@@ -218,6 +218,18 @@ function normalizeFedexDocumentList(piece) {
 }
 
 function pickFirstLabelDocument(output) {
+  const shipmentDocuments = Array.isArray(output?.shipmentDocuments) ? output.shipmentDocuments : [];
+  for (const document of shipmentDocuments) {
+    if (!document || typeof document !== 'object') {
+      continue;
+    }
+
+    const typeText = typeof document?.contentType === 'string' ? document.contentType.trim().toUpperCase() : '';
+    if (typeText.includes('LABEL') || required(document?.url) || required(document?.encodedLabel)) {
+      return document;
+    }
+  }
+
   const packageResponses = output?.transactionShipments?.[0]?.pieceResponses || output?.pieceResponses || [];
   for (const piece of packageResponses) {
     const documents = normalizeFedexDocumentList(piece);
@@ -284,12 +296,25 @@ function decodeFedexLabelText(encodedLabel) {
     return '';
   }
 
+  const directText = encodedLabel.trim();
+  if (directText.includes('^XA') && directText.includes('^XZ')) {
+    return directText;
+  }
+
   const normalized = encodedLabel.includes(',')
     ? encodedLabel.slice(encodedLabel.indexOf(',') + 1)
     : encodedLabel;
 
-  const decoded = Buffer.from(normalized, 'base64').toString('utf8');
-  return required(decoded) ? decoded : '';
+  try {
+    const decoded = Buffer.from(normalized, 'base64').toString('utf8');
+    if (required(decoded) && decoded.includes('^XA') && decoded.includes('^XZ')) {
+      return decoded;
+    }
+  } catch (error) {
+    // Continue with fallbacks.
+  }
+
+  return '';
 }
 
 function sanitizeOrderId(value) {
@@ -379,7 +404,10 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = (process.env.FEDEX_API_BASE_URL || 'https://apis-sandbox.fedex.com').replace(/\/+$/, '');
   const configuredDefaultServiceType = parseServiceType(process.env.FEDEX_DEFAULT_SERVICE_TYPE) || 'FEDEX_GROUND';
-  const configuredLabelResponseOption = parseServiceType(process.env.FEDEX_LABEL_RESPONSE_OPTIONS) || 'LABEL';
+  const requestedLabelResponseOption = parseServiceType(process.env.FEDEX_LABEL_RESPONSE_OPTIONS) || 'LABEL';
+  const configuredLabelResponseOption = requestedLabelResponseOption.includes('LABEL')
+    ? requestedLabelResponseOption
+    : 'LABEL';
   const resolvedServiceType = parseServiceType(payload.serviceType) || configuredDefaultServiceType;
 
   const shipDateStamp = new Date().toISOString().slice(0, 10);
@@ -535,6 +563,7 @@ module.exports = async function handler(req, res) {
       console.log('[shipping-label] fedex thermal label format', {
         imageType: shipmentRequestBody.requestedShipment?.labelSpecification?.imageType,
         labelStockType: shipmentRequestBody.requestedShipment?.labelSpecification?.labelStockType,
+        labelResponseOptions: shipmentRequestBody?.labelResponseOptions,
         zplStringLength
       });
 
