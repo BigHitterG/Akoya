@@ -427,18 +427,24 @@ function scheduleInvoiceFedexLabelRecovery({
     }
 
     if (recoveredShipment) {
+      const recoveredLabelUrl = resolveShippingLabelUrl({
+        req,
+        shippingLabelUrl: recoveredShipment.labelUrl || '',
+        labelToken: recoveredShipment.labelToken || ''
+      });
       const metadataUpdate = {
         fedexShipmentCreated: 'true',
         fedexShipmentStatus: 'label_created_delayed_retry',
         trackingNumber: recoveredShipment.trackingNumber || '',
-        shippingLabelUrl: recoveredShipment.labelUrl || '',
-        label_url: recoveredShipment.labelUrl || '',
+        shippingLabelUrl: recoveredLabelUrl,
+        shipping_label_url: recoveredLabelUrl,
+        label_url: recoveredLabelUrl,
         label_token: recoveredShipment.labelToken || '',
         tracking_number: recoveredShipment.trackingNumber || '',
         shipDatestamp: recoveredShipment.shipDatestamp || '',
         fedexTrackingNumber: recoveredShipment.trackingNumber || '',
-        fedexLabelUrl: recoveredShipment.labelUrl || '',
-        fedex_label_url: recoveredShipment.labelUrl || '',
+        fedexLabelUrl: recoveredLabelUrl,
+        fedex_label_url: recoveredLabelUrl,
         fedex_label_path: recoveredShipment.labelStoragePath || '',
         fedex_tracking_number: recoveredShipment.trackingNumber || '',
         fedex_service: 'FEDEX_GROUND',
@@ -626,6 +632,7 @@ module.exports = async function handler(req, res) {
     shippingServiceType,
     trackingNumber,
     shippingLabelUrl: toMetadataValue(shippingLabelUrl),
+    shipping_label_url: toMetadataValue(shippingLabelUrl),
     label_url: toMetadataValue(shippingLabelUrl),
     label_token: toMetadataValue(labelToken, 120),
     tracking_number: trackingNumber,

@@ -328,6 +328,7 @@ module.exports = async function handler(req, res) {
 
     metadata.fedexTrackingNumber = shipmentResult.shipment.trackingNumber || '';
     metadata.shippingLabelUrl = resolvedLabelUrl;
+    metadata.shipping_label_url = resolvedLabelUrl;
     metadata.fedexLabelUrl = resolvedLabelUrl;
     metadata.label_url = resolvedLabelUrl;
     metadata.label_token = labelToken;
@@ -408,6 +409,7 @@ module.exports = async function handler(req, res) {
         metadata: {
           fedexTrackingNumber: metadata.fedexTrackingNumber,
           fedexLabelUrl: metadata.fedexLabelUrl,
+          shipping_label_url: metadata.shipping_label_url,
           label_url: metadata.label_url,
           label_token: metadata.label_token,
           fedex_label_url: metadata.fedex_label_url,
