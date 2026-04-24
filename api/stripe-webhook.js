@@ -24,12 +24,12 @@ function getBaseUrl(req) {
 }
 
 function resolveShippingLabelUrl({ baseUrl, shippingLabelUrl, labelToken }) {
-  if (required(labelToken) && required(baseUrl)) {
-    return `${baseUrl.replace(/\/+$/, '')}/label/${labelToken.trim()}`;
-  }
-
   if (required(shippingLabelUrl)) {
     return shippingLabelUrl.trim();
+  }
+
+  if (required(labelToken) && required(baseUrl)) {
+    return `${baseUrl.replace(/\/+$/, '')}/label/${labelToken.trim()}`;
   }
 
   return '';
