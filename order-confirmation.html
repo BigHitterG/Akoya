@@ -66,6 +66,13 @@
           </div>
 
           <p class="confirmation-helper-copy">Tracking details are sent by email shortly after fulfillment.</p>
+          <div id="thermalLabelSection" class="confirmation-receipt" style="display: none; margin-top: 16px;">
+            <p class="invoice-preview-title">Internal Shipping Label Access</p>
+            <p class="body-copy" style="margin-bottom: 12px;"><strong>THERMAL LABEL – SEND DIRECTLY TO PRINTER</strong></p>
+            <p class="body-copy" id="thermalLabelWarning" style="margin-bottom: 12px;">This is a thermal label (ZPL). Do NOT open or print via PDF viewer. Send directly to thermal printer.</p>
+            <a id="thermalLabelDownload" class="btn btn-secondary" href="#" download>Download .zpl Label</a>
+          </div>
+
 
           <div class="cta-row" style="margin-top: 24px;">
             <a href="index.html" class="btn btn-primary">Return Home</a>
@@ -92,6 +99,8 @@
       var receiptTaxTotal = document.getElementById('receiptTaxTotal');
       var receiptTotal = document.getElementById('receiptTotal');
       var params = new URLSearchParams(window.location.search);
+      var thermalLabelSection = document.getElementById('thermalLabelSection');
+      var thermalLabelDownload = document.getElementById('thermalLabelDownload');
 
       var draft = {};
       try {
@@ -138,6 +147,16 @@
         receiptTotal.textContent = formatCents(draft.goodsCents + draft.shippingCents);
       } else {
         receiptTotal.textContent = 'Pending';
+      }
+
+
+      var thermalLabelUrl = (params.get('fedex_label_url') || params.get('label_url') || '').trim();
+      var internalAccess = (params.get('internal') || '').trim() === '1';
+
+      if (internalAccess && thermalLabelUrl && thermalLabelSection && thermalLabelDownload) {
+        thermalLabelDownload.href = thermalLabelUrl;
+        thermalLabelDownload.setAttribute('download', 'fedex-ground.zpl');
+        thermalLabelSection.style.display = '';
       }
 
       sessionStorage.removeItem('akoyaOrderConfirmationDraft');

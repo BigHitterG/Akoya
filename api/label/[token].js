@@ -78,8 +78,8 @@ async function findFirstReachablePublicLabelUrl(token) {
 
 function pickInlineFilename(storagePath, token) {
   const rawName = typeof storagePath === 'string' ? storagePath.split('/').pop() : '';
-  const safeName = required(rawName) ? rawName.trim().replace(/[^a-zA-Z0-9._-]/g, '_') : `${token}.pdf`;
-  return safeName || `${token}.pdf`;
+  const safeName = required(rawName) ? rawName.trim().replace(/[^a-zA-Z0-9._-]/g, '_') : `${token}.zpl`;
+  return safeName || `${token}.zpl`;
 }
 
 function buildStoragePathCandidates(token) {
@@ -117,7 +117,8 @@ function sendFileBuffer(res, file, filename) {
   res.setHeader('Content-Type', file.contentType || 'application/octet-stream');
   res.setHeader('Content-Length', String(file.buffer.length));
   res.setHeader('Cache-Control', 'private, max-age=0, no-cache');
-  res.setHeader('Content-Disposition', `inline; filename=\"${filename}\"`);
+  const shouldForceDownload = /\.zpl$/i.test(filename) || String(file.contentType || '').toLowerCase().includes('text/plain');
+  res.setHeader('Content-Disposition', `${shouldForceDownload ? 'attachment' : 'inline'}; filename=\"${filename}\"`);
   res.end(file.buffer);
 }
 

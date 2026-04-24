@@ -104,7 +104,9 @@ async function createFedexShipmentForSession(req, session) {
     shippingCountryCode,
     recipientName: (metadata.fullName || session.customer_details?.name || 'Order Recipient').trim(),
     recipientPhone: (metadata.phone || session.customer_details?.phone || '').trim(),
-    serviceType: (metadata.shippingServiceType || '').trim().toUpperCase()
+    serviceType: (metadata.shippingServiceType || '').trim().toUpperCase(),
+    orderId: session.id,
+    stripeId: session.id
   };
 
   const baseUrl = getBaseUrl(req);
@@ -138,6 +140,7 @@ async function createFedexShipmentForSession(req, session) {
       trackingNumber: responseBody.trackingNumber || null,
       shippingFeeCents: responseBody.shippingFeeCents,
       labelUrl: responseBody.labelUrl || null,
+      labelStoragePath: responseBody.labelStoragePath || null,
       shipDatestamp: responseBody.shipDatestamp || null
     }
   };
@@ -254,6 +257,10 @@ module.exports = async function handler(req, res) {
         fedexShipmentCreated: 'true',
         fedexTrackingNumber: shipmentResult.shipment.trackingNumber || '',
         fedexLabelUrl: shipmentResult.shipment.labelUrl || '',
+        fedex_label_url: shipmentResult.shipment.labelUrl || '',
+        fedex_label_path: shipmentResult.shipment.labelStoragePath || '',
+        fedex_tracking_number: shipmentResult.shipment.trackingNumber || '',
+        fedex_service: 'FEDEX_GROUND',
         fedexShipDatestamp: shipmentResult.shipment.shipDatestamp || ''
       };
 

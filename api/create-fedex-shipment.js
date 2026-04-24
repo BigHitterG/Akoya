@@ -7,7 +7,6 @@ const {
   createShippingLabelRecord,
   createSignedShippingLabelUrl
 } = require('../lib/server/supabase-admin');
-const { resolveSiteUrl } = require('../lib/server/site-url');
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -280,51 +279,25 @@ function parseSignedLabelTtlSeconds(value) {
   return parsed;
 }
 
-function decodeFedexLabelBuffer(encodedLabel) {
+function decodeFedexLabelText(encodedLabel) {
   if (!required(encodedLabel)) {
-    return null;
+    return '';
   }
 
   const normalized = encodedLabel.includes(',')
     ? encodedLabel.slice(encodedLabel.indexOf(',') + 1)
     : encodedLabel;
 
-  return Buffer.from(normalized, 'base64');
+  const decoded = Buffer.from(normalized, 'base64').toString('utf8');
+  return required(decoded) ? decoded : '';
 }
 
-async function downloadFedexLabelBuffer(labelUrl) {
-  if (!required(labelUrl)) {
-    return null;
+function sanitizeOrderId(value) {
+  if (!required(value)) {
+    return 'unknown-order';
   }
 
-  const response = await fetch(labelUrl.trim(), {
-    method: 'GET'
-  });
-
-  if (!response.ok) {
-    throw new Error(`FedEx label download failed (${response.status}).`);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  return buffer.length > 0 ? buffer : null;
-}
-
-function resolveLabelFileInfo(labelDocument) {
-  const normalizedImageType = (labelDocument?.imageType || '').trim().toUpperCase();
-  const normalizedContentType = (labelDocument?.contentType || '').trim().toUpperCase();
-  const normalizedDocType = (labelDocument?.docType || '').trim().toUpperCase();
-  const haystack = `${normalizedImageType} ${normalizedContentType} ${normalizedDocType}`;
-
-  if (haystack.includes('PNG')) {
-    return { extension: 'png', contentType: 'image/png' };
-  }
-
-  if (haystack.includes('ZPL')) {
-    return { extension: 'zpl', contentType: 'application/zpl' };
-  }
-
-  return { extension: 'pdf', contentType: 'application/pdf' };
+  return value.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
 module.exports = async function handler(req, res) {
@@ -417,6 +390,8 @@ module.exports = async function handler(req, res) {
       accountNumberMasked: maskAccountNumber(fedexAccountNumber),
       serviceType: resolvedServiceType,
       labelResponseOptions: configuredLabelResponseOption,
+      labelImageType: 'ZPLII',
+      labelStockType: 'STOCK_4X6',
       recipient: {
         city: recipientAddress.city,
         stateOrProvinceCode: recipientAddress.stateOrProvinceCode,
@@ -462,8 +437,9 @@ module.exports = async function handler(req, res) {
           }
         },
         labelSpecification: {
-          imageType: 'PDF',
-          labelStockType: 'PAPER_85X11_TOP_HALF_LABEL'
+          labelFormatType: 'COMMON2D',
+          imageType: 'ZPLII',
+          labelStockType: 'STOCK_4X6'
         },
         shipper: {
           contact: {
@@ -544,35 +520,36 @@ module.exports = async function handler(req, res) {
     let labelStoragePath = '';
     let labelFileName = '';
     let labelUrl = fedexLabelUrl;
+    let zplStringLength = 0;
 
-    if (required(labelDocument?.encodedLabel) || required(labelDocument?.url)) {
-      let labelBuffer = null;
-      if (required(labelDocument?.encodedLabel)) {
-        labelBuffer = decodeFedexLabelBuffer(labelDocument.encodedLabel);
-      } else if (required(labelDocument?.url)) {
-        labelBuffer = await downloadFedexLabelBuffer(labelDocument.url);
-      }
+    if (required(labelDocument?.encodedLabel)) {
+      const token = generateLabelToken();
+      const orderId = required(payload.orderId) ? payload.orderId.trim() : token;
+      const sanitizedOrderId = sanitizeOrderId(orderId);
+      const storagePath = `${getShippingLabelsPrefix()}${sanitizedOrderId}/fedex-ground.zpl`;
+      const fileName = 'fedex-ground.zpl';
+      const stripeId = required(payload.stripeId) ? payload.stripeId.trim() : null;
+      const zplString = decodeFedexLabelText(labelDocument.encodedLabel);
+      zplStringLength = zplString.length;
 
-      if (labelBuffer && labelBuffer.length > 0) {
-        const token = generateLabelToken();
-        const fileInfo = resolveLabelFileInfo(labelDocument);
-        const storagePath = `${getShippingLabelsPrefix()}${token}.${fileInfo.extension}`;
-        const fileName = `${token}.${fileInfo.extension}`;
-        const stripeId = required(payload.stripeId) ? payload.stripeId.trim() : null;
-        const orderId = required(payload.orderId) ? payload.orderId.trim() : null;
+      console.log('[shipping-label] fedex thermal label format', {
+        imageType: shipmentRequestBody.requestedShipment?.labelSpecification?.imageType,
+        labelStockType: shipmentRequestBody.requestedShipment?.labelSpecification?.labelStockType,
+        zplStringLength
+      });
 
+      if (required(zplString) && zplString.includes('^XA') && zplString.includes('^XZ')) {
         try {
-          await uploadShippingLabel(labelBuffer, storagePath, fileInfo.contentType);
-          console.log('[shipping-label] upload success', {
+          await uploadShippingLabel(Buffer.from(zplString, 'utf8'), storagePath, 'text/plain');
+          console.log('[shipping-label] supabase upload success', {
             token,
             storagePath,
-            contentType: fileInfo.contentType
+            contentType: 'text/plain'
           });
 
           labelToken = token;
           labelStoragePath = storagePath;
           labelFileName = fileName;
-          labelUrl = `${resolveSiteUrl(req)}/label/${token}`;
 
           try {
             const signedLabelTtlSeconds = parseSignedLabelTtlSeconds(process.env.SUPABASE_SHIPPING_LABEL_SIGNED_URL_TTL_SECONDS);
@@ -581,7 +558,7 @@ module.exports = async function handler(req, res) {
               labelUrl = signedUrl;
             }
           } catch (signedUrlError) {
-            console.error('[shipping-label] signed url generation failed (continuing with tokenized URL)', {
+            console.error('[shipping-label] signed url generation failed', {
               token,
               storagePath,
               message: signedUrlError && signedUrlError.message ? signedUrlError.message : 'Unknown error.'
@@ -596,23 +573,31 @@ module.exports = async function handler(req, res) {
               stripe_id: stripeId,
               order_id: orderId,
               file_name: fileName,
-              content_type: fileInfo.contentType
+              content_type: 'text/plain'
             });
             console.log('[shipping-label] db insert success', { token, storagePath });
           } catch (dbInsertError) {
-            console.error('[shipping-label] db insert failed (continuing with tokenized URL fallback)', {
+            console.error('[shipping-label] db insert failed', {
               token,
               storagePath,
               message: dbInsertError && dbInsertError.message ? dbInsertError.message : 'Unknown error.'
             });
           }
         } catch (storageError) {
-          console.error('[shipping-label] persistence failed', {
+          console.error('[shipping-label] supabase upload failed', {
+            storagePath,
             message: storageError && storageError.message ? storageError.message : 'Unknown error.'
           });
         }
+      } else {
+        console.error('[shipping-label] invalid or empty zpl payload from fedex', {
+          hasStartCommand: zplString.includes('^XA'),
+          hasEndCommand: zplString.includes('^XZ'),
+          zplStringLength
+        });
       }
     }
+
 
     res.status(200).json({
       success: true,
@@ -628,6 +613,7 @@ module.exports = async function handler(req, res) {
       labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
       labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
       labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
+      zplStringLength,
       shippingFeeCents,
       currency: 'USD',
       shipDatestamp: shipDateStamp,
@@ -646,6 +632,7 @@ module.exports = async function handler(req, res) {
           labelContentType: required(labelDocument?.contentType) ? labelDocument.contentType.trim() : '',
           labelDocumentType: required(labelDocument?.docType) ? labelDocument.docType.trim() : '',
           labelHasEncodedData: Boolean(required(labelDocument?.encodedLabel)),
+          zplStringLength,
           shippingFeeCents
         }
       }
