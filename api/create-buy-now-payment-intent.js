@@ -89,12 +89,12 @@ function toMetadataValue(value, maxLength = 500) {
 }
 
 function resolveShippingLabelUrl({ req, shippingLabelUrl, labelToken }) {
-  if (required(labelToken)) {
-    return `${resolveSiteUrl(req)}/label/${labelToken.trim()}`;
-  }
-
   if (required(shippingLabelUrl)) {
     return shippingLabelUrl.trim();
+  }
+
+  if (required(labelToken)) {
+    return `${resolveSiteUrl(req)}/label/${labelToken.trim()}`;
   }
 
   return '';
