@@ -4,7 +4,8 @@ const {
   getShippingLabelRecordByToken,
   createSignedShippingLabelUrl,
   findShippingLabelStoragePathByToken,
-  downloadShippingLabelObject
+  downloadShippingLabelObject,
+  listShippingLabels
 } = require('../../lib/server/supabase-admin');
 
 function required(value) {
@@ -76,6 +77,22 @@ async function findFirstReachablePublicLabelUrl(token) {
   return '';
 }
 
+
+
+function isHeartbeatRequest(req) {
+  const value = req.query?.heartbeat;
+  return value === '1' || value === 'true';
+}
+
+function isHeartbeatAuthorized(req) {
+  const expectedSecret = process.env.SUPABASE_HEARTBEAT_SECRET;
+  if (!required(expectedSecret)) {
+    return true;
+  }
+
+  const providedSecret = req.headers['x-heartbeat-secret'];
+  return required(providedSecret) && providedSecret.trim() === expectedSecret.trim();
+}
 function pickInlineFilename(storagePath, token) {
   const rawName = typeof storagePath === 'string' ? storagePath.split('/').pop() : '';
   const safeName = required(rawName) ? rawName.trim().replace(/[^a-zA-Z0-9._-]/g, '_') : `${token}.pdf`;
@@ -125,6 +142,22 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed.' });
     return;
+  }
+
+  if (isHeartbeatRequest(req)) {
+    if (!isHeartbeatAuthorized(req)) {
+      res.status(401).json({ error: 'Unauthorized.' });
+      return;
+    }
+
+    try {
+      const labels = await listShippingLabels({ limit: 1 });
+      res.status(200).json({ ok: true, labelRowsRead: Array.isArray(labels) ? labels.length : 0 });
+      return;
+    } catch (error) {
+      res.status(500).json({ ok: false, error: 'Supabase heartbeat failed.' });
+      return;
+    }
   }
 
   const token = req.query?.token;

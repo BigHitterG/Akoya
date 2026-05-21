@@ -1,0 +1,26 @@
+name: Supabase Heartbeat
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase heartbeat endpoint
+        env:
+          HEARTBEAT_URL: ${{ secrets.SUPABASE_LABEL_HEARTBEAT_URL }}
+          HEARTBEAT_SECRET: ${{ secrets.SUPABASE_HEARTBEAT_SECRET }}
+        run: |
+          if [ -z "$HEARTBEAT_URL" ]; then
+            echo "SUPABASE_LABEL_HEARTBEAT_URL secret is not set" >&2
+            exit 1
+          fi
+
+          if [ -n "$HEARTBEAT_SECRET" ]; then
+            curl -fsS -H "x-heartbeat-secret: $HEARTBEAT_SECRET" "$HEARTBEAT_URL"
+          else
+            curl -fsS "$HEARTBEAT_URL"
+          fi

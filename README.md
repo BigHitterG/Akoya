@@ -58,6 +58,9 @@ FEDEX_LABEL_RESPONSE_OPTIONS=LABEL
 # Optional shipping label link TTL when persisted in Supabase (defaults to 30 days)
 SUPABASE_SHIPPING_LABEL_SIGNED_URL_TTL_SECONDS=2592000
 
+# Optional secret used by heartbeat mode on GET /api/label/[token]?heartbeat=1
+SUPABASE_HEARTBEAT_SECRET=choose-a-long-random-secret
+
 # Optional customer/internals emails via Resend
 RESEND_API_KEY=re_...
 CUSTOMER_EMAIL_FROM=orders@yourdomain.com
@@ -190,3 +193,48 @@ Toggle documentation and copy/paste prompt templates live in `TOGGLES.md`.
 
 - Toggle doc: `TOGGLES.md`
 - Current toggle source (test purchase + shipment creation + shipping debug panel): `checkout-toggles.js`
+
+
+### Prevent Supabase project pause (shipping-label reliability)
+
+
+Quick answer: yes — this is a tiny scheduled request (“heartbeat”) to your existing `/api/label/[token]` endpoint in heartbeat mode (`?heartbeat=1`) so Supabase sees activity and does not classify the project as idle.
+
+- Current workflow cadence in this repo: **every 6 hours** (`0 */6 * * *`).
+- Why 6 hours: free-tier auto-pause is after 7 days inactivity, so 6 hours gives wide safety margin.
+- Minimum practical cadence: at least once per 24 hours is typically enough; 6–12 hours is a good default.
+
+Supabase free-tier projects can auto-pause after **7 days of inactivity**. If that happens, label lookup can be delayed or fail until the project wakes up.
+
+#### What to do right now
+
+1. In Supabase dashboard, unpause the project.
+2. Set `SUPABASE_HEARTBEAT_SECRET` in your deploy env.
+3. Set these GitHub repository secrets:
+   - `SUPABASE_LABEL_HEARTBEAT_URL` = `https://<your-domain>/api/label/heartbeat?heartbeat=1`
+   - `SUPABASE_HEARTBEAT_SECRET` = same value as deploy env (optional but recommended)
+4. Enable `.github/workflows/supabase-heartbeat.yml` (runs every 6 hours).
+
+This keeps activity flowing so free-tier pause is much less likely.
+
+
+#### Is heartbeat normal / allowed?
+
+Yes — this is a common and acceptable pattern for free-tier services that auto-suspend inactive projects.
+
+- The heartbeat is just a normal HTTPS request to your own API route.
+- It uses tiny read-only work (`limit: 1`) to minimize load.
+- It is not bypassing security controls; it is regular application traffic.
+
+That said, for business-critical shipping labels, the cleaner long-term option is still a paid Supabase tier that does not auto-pause.
+Use heartbeat as reliability monitoring and as a backup guardrail.
+
+#### If you need guaranteed no pause
+
+Upgrade Supabase to a plan that does not auto-pause projects. Use heartbeat anyway for monitoring.
+
+#### Should you store labels elsewhere?
+
+- Keep current design: Supabase remains source of truth for token + metadata + label object path.
+- Optional backup: replicate label files to S3/R2 for disaster recovery, but keep `shipping_labels` token mapping so `/api/label/[token]` continues to work.
+
