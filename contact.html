@@ -40,6 +40,7 @@
         <div class="card-pad">
           <div class="kicker">Contact Us</div>
           <h2>Let’s talk.</h2>
+          <p class="form-followup contact-backup">If the contact link is not working, please contact Dzon at <a href="mailto:dzaun@akoyamedical.com">dzaun@akoyamedical.com</a>.</p>
           <form id="contactForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
               <label>Full Name*
@@ -77,7 +78,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('contactForm');
       const feedback = document.getElementById('contactFeedback');
-      const recipients = 'tgoetz@akoyamedical.com;tgoetz.sr@akoyamedical.com;dzaun@akoyamedical.com';
+      const recipient = 'dzaun@akoyamedical.com';
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -110,7 +111,7 @@
 
         const subject = encodeURIComponent('Akoya Contact Form Submission');
         const encodedBody = encodeURIComponent(body);
-        window.location.href = `mailto:${recipients}?subject=${subject}&body=${encodedBody}`;
+        window.location.href = `mailto:${recipient}?subject=${subject}&body=${encodedBody}`;
       });
     });
   </script>
