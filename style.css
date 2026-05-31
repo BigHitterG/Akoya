@@ -1329,6 +1329,40 @@
       font-weight: 600;
     }
 
+    .contact-phone-panel {
+      margin-top: 18px;
+      border: 1px solid #d7e4ee;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #f8fbfd 0%, #eef6fb 100%);
+      padding: 22px;
+      display: grid;
+      gap: 8px;
+      box-shadow: 0 14px 30px rgba(29, 66, 88, 0.08);
+    }
+
+    .contact-phone-panel .form-followup {
+      margin: 0;
+      color: #365369;
+      font-weight: 600;
+    }
+
+    .contact-phone-link {
+      color: #18384e;
+      font-size: clamp(1.7rem, 4vw, 2.45rem);
+      font-weight: 800;
+      line-height: 1.1;
+      text-decoration: none;
+      letter-spacing: -0.03em;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .contact-phone-link:hover,
+    .contact-phone-link:focus-visible {
+      color: #0e668c;
+      text-decoration: underline;
+    }
+
     .lightbox {
       position: fixed;
       inset: 0;

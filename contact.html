@@ -40,7 +40,13 @@
         <div class="card-pad">
           <div class="kicker">Contact Us</div>
           <h2>Let’s talk.</h2>
-          <p class="form-followup contact-backup">If the contact link is not working, please contact us at <a href="tel:+15155875863">+1 (515) 587-5863</a>.</p>
+          <div class="contact-phone-panel" aria-label="Contact Akoya Medical by phone">
+            <p class="form-followup contact-backup">To contact Akoya Medical, please call us at</p>
+            <a class="contact-phone-link" href="tel:+15155875863">+1 (515) 587-5863</a>
+          </div>
+          <!--
+            Contact form preserved for future reactivation. Current contact flow is phone-only,
+            so there is intentionally no active form submission on this page.
           <form id="contactForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
               <label>Full Name*
@@ -64,6 +70,7 @@
               <button type="submit" class="btn btn-primary">Send Message</button>
             </div>
           </form>
+          -->
         </div>
       </div>
     </div>
@@ -74,6 +81,9 @@
   </footer>
 
   <script src="main.js" defer></script>
+  <!--
+    Contact form mailto handler preserved for future reactivation. It is commented out
+    while contact.html uses the phone-only contact flow.
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('contactForm');
@@ -115,5 +125,6 @@
       });
     });
   </script>
+  -->
 </body>
 </html>
