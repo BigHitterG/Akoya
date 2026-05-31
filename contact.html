@@ -40,12 +40,20 @@
         <div class="card-pad">
           <div class="kicker">Contact Us</div>
           <h2>Let’s talk.</h2>
-          <div class="contact-phone-panel" aria-label="Contact Akoya Medical by phone">
-            <p class="form-followup contact-backup">To contact Akoya Medical, please call us at</p>
-            <a class="contact-phone-link" href="tel:+15155875863">+1 (515) 587-5863</a>
+          <p class="contact-intro">Choose the best way to reach Akoya Medical. Email is preferred, and you can also call us directly.</p>
+          <div class="contact-methods" aria-label="Contact Akoya Medical">
+            <div class="contact-method contact-method-primary">
+              <p class="contact-method-label">Email us</p>
+              <a class="contact-method-link" href="mailto:info@akoyamedical.com">info@akoyamedical.com</a>
+              <p class="form-followup contact-backup">Best for questions, orders, and follow-up details.</p>
+            </div>
+            <div class="contact-method">
+              <p class="contact-method-label">Call us</p>
+              <a class="contact-method-link" href="tel:+15155875863">+1 (515) 587-5863</a>
+            </div>
           </div>
           <!--
-            Contact form preserved for future reactivation. Current contact flow is phone-only,
+            Contact form preserved for future reactivation. Current contact flow offers email and phone,
             so there is intentionally no active form submission on this page.
           <form id="contactForm" class="invoice-form" novalidate>
             <div class="invoice-grid">
@@ -83,12 +91,12 @@
   <script src="main.js" defer></script>
   <!--
     Contact form mailto handler preserved for future reactivation. It is commented out
-    while contact.html uses the phone-only contact flow.
+    while contact.html uses the email-and-phone contact flow.
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('contactForm');
       const feedback = document.getElementById('contactFeedback');
-      const recipient = 'dzaun@akoyamedical.com';
+      const recipient = 'info@akoyamedical.com';
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();

@@ -1329,8 +1329,20 @@
       font-weight: 600;
     }
 
-    .contact-phone-panel {
-      margin-top: 18px;
+    .contact-intro {
+      margin: 0 0 18px;
+      color: #5f6f7d;
+      font-size: 1rem;
+      line-height: 1.55;
+      max-width: 680px;
+    }
+
+    .contact-methods {
+      display: grid;
+      gap: 16px;
+    }
+
+    .contact-method {
       border: 1px solid #d7e4ee;
       border-radius: 18px;
       background: linear-gradient(135deg, #f8fbfd 0%, #eef6fb 100%);
@@ -1340,15 +1352,30 @@
       box-shadow: 0 14px 30px rgba(29, 66, 88, 0.08);
     }
 
-    .contact-phone-panel .form-followup {
+    .contact-method-primary {
+      border-color: #b8d9e9;
+      background: linear-gradient(135deg, #f5fbff 0%, #e6f4fb 100%);
+      box-shadow: 0 18px 36px rgba(14, 102, 140, 0.12);
+    }
+
+    .contact-method-label {
+      margin: 0;
+      color: #365369;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .contact-method .form-followup {
       margin: 0;
       color: #365369;
       font-weight: 600;
     }
 
-    .contact-phone-link {
+    .contact-method-link {
       color: #18384e;
-      font-size: clamp(1.7rem, 4vw, 2.45rem);
+      font-size: clamp(1.55rem, 4vw, 2.45rem);
       font-weight: 800;
       line-height: 1.1;
       text-decoration: none;
@@ -1357,8 +1384,8 @@
       word-break: break-word;
     }
 
-    .contact-phone-link:hover,
-    .contact-phone-link:focus-visible {
+    .contact-method-link:hover,
+    .contact-method-link:focus-visible {
       color: #0e668c;
       text-decoration: underline;
     }
