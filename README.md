@@ -187,6 +187,10 @@ For Invoice:
 - Stripe invoice custom fields/footer now include SKU/LOT and product-use/manufacturer notes when configured.
 - Backend now also sends a custom thank-you email with tracking number, product context, hosted invoice payment link, and invoice PDF URL.
 
+## Contact page notes
+
+The `contact.html` page currently uses a phone-only contact flow and highlights the existing Akoya Medical phone number. The previous contact form markup and mailto submission handler are intentionally preserved in HTML comments in that file so they can be restored later if the site needs form submissions again.
+
 ## Feature toggle operations
 
 Toggle documentation and copy/paste prompt templates live in `TOGGLES.md`.
