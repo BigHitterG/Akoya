@@ -348,9 +348,10 @@
     }
 
     .market-tile-text-only {
-      min-height: 116px;
+      min-height: auto;
       grid-template-rows: auto;
       align-content: start;
+      gap: 0;
     }
 
     .market-tile:hover,
@@ -916,6 +917,7 @@
       .market-grid { grid-template-columns: 1fr; }
       .market-tile,
       .market-tile-featured { grid-column: auto; min-height: 245px; }
+      .market-tile-text-only { min-height: auto; }
       .market-visual { min-height: 160px; }
       .procedure-carousel { margin: 14px 14px 16px; min-height: 420px; }
       .slide-overlay { padding: 14px 16px 26px; }
