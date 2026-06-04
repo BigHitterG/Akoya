@@ -1147,6 +1147,23 @@
       max-width: none;
     }
 
+    .feedback-research-intro-card {
+      background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+      margin-bottom: 28px;
+    }
+
+    .feedback-research-intro-copy {
+      line-height: 1.7;
+      max-width: none;
+    }
+
+    .feedback-research-intro-copy a {
+      color: #17324a;
+      font-weight: 800;
+      text-decoration-color: rgba(23,50,74,0.35);
+      text-underline-offset: 3px;
+    }
+
     .survey-table-wrap {
       padding: 0 28px 28px;
     }
@@ -1203,6 +1220,76 @@
 
     .testimonial-quote {
       text-align: center;
+    }
+
+    .research-card {
+      margin-top: 28px;
+    }
+
+    .research-card-pad {
+      display: grid;
+      gap: 24px;
+    }
+
+    .research-intro-copy {
+      max-width: none;
+    }
+
+    .research-section {
+      border-top: 1px solid #e4ebf0;
+      padding-top: 24px;
+      color: #415462;
+    }
+
+    .research-section h3,
+    .research-notice h3 {
+      color: #1a2b39;
+      font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
+    }
+
+    .research-section h4 {
+      color: #1a2b39;
+      font-size: 0.86rem;
+      letter-spacing: 0.08em;
+      margin: 18px 0 8px;
+      text-transform: uppercase;
+    }
+
+    .research-section p,
+    .research-notice p {
+      color: #556471;
+      line-height: 1.7;
+    }
+
+    .research-section a {
+      color: #17324a;
+      display: inline-block;
+      font-weight: 700;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+      text-decoration-color: rgba(23,50,74,0.35);
+      text-underline-offset: 3px;
+    }
+
+    .design-philosophy blockquote {
+      background: #f7fafc;
+      border-left: 4px solid #f4d7e4;
+      border-radius: 14px;
+      color: #253a4b;
+      font-size: 1.08rem;
+      font-style: italic;
+      line-height: 1.7;
+      margin: 14px 0;
+      padding: 18px 20px;
+    }
+
+    .research-notice {
+      background: linear-gradient(180deg, #fff8fb 0%, #ffffff 100%);
+      border: 1px solid #f0d9e3;
+      border-radius: 20px;
+      padding: 22px;
     }
 
     .story-content {
