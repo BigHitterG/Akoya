@@ -3,6 +3,15 @@
  * Keep lightweight behavior here as the landing page evolves.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  const siteToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
+  const marketSegmentsSection = document.querySelector('[data-feature-toggle="marketSegments"]');
+  const marketSegmentsEnabled = siteToggles.homepage?.marketSegments?.enabled !== false;
+
+  if (marketSegmentsSection && !marketSegmentsEnabled) {
+    marketSegmentsSection.hidden = true;
+    marketSegmentsSection.setAttribute('aria-hidden', 'true');
+  }
+
   const menuToggle = document.getElementById('menuToggle');
   const mobileMenu = document.getElementById('mobileMenu');
   const mobileMenuLinks = Array.from(document.querySelectorAll('.mobile-menu a'));

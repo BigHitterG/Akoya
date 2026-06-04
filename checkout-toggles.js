@@ -11,5 +11,10 @@ window.AKOYA_CHECKOUT_TOGGLES = {
     shipping: {
       enabled: false
     }
+  },
+  homepage: {
+    marketSegments: {
+      enabled: true
+    }
   }
 };

@@ -27,10 +27,24 @@ window.AKOYA_CHECKOUT_TOGGLES = {
     shipping: {
       enabled: false
     }
+  },
+  homepage: {
+    marketSegments: {
+      enabled: true
+    }
   }
 };
 ```
 
+## Homepage market segments toggle
+
+- **File:** `checkout-toggles.js`
+- **Object path:** `window.AKOYA_CHECKOUT_TOGGLES.homepage.marketSegments`
+- **Primary switch:** `enabled` (`true` = visible, `false` = hidden)
+- **Notes:**
+  - This controls the homepage **Clinical market segments** card between the hero section and the product carousel.
+  - The homepage section remains in `index.html`, but `main.js` hides it when this toggle is set to `false`.
+  - Leave this toggle on while reviewing or developing the new market sector UI; turn it off if the section should not appear on the live homepage yet.
 
 ## FedEx shipment creation toggle (Invoice + Buy Now)
 
@@ -62,6 +76,12 @@ Use one of these exact prompts:
 
 - **Only change default troubleshooting mode**
   - `Update checkout-toggles.js and set window.AKOYA_CHECKOUT_TOGGLES.testCheckoutOptions.defaultMode to 'test_shipping_tax'. Commit and open a PR.`
+
+- **Turn OFF homepage market segments toggle**
+  - `Set the homepage market segments toggle OFF by changing checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.homepage.marketSegments.enabled is false. Commit the change and open a PR.`
+
+- **Turn ON homepage market segments toggle**
+  - `Set the homepage market segments toggle ON by changing checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.homepage.marketSegments.enabled is true. Commit the change and open a PR.`
 
 - **Turn OFF FedEx shipment creation toggle**
   - `Set checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.shipmentCreation.enabled is false. Commit the change and open a PR.`
