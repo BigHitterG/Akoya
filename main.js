@@ -12,6 +12,27 @@ document.addEventListener('DOMContentLoaded', () => {
     marketSegmentsSection.setAttribute('aria-hidden', 'true');
   }
 
+  document.querySelectorAll('.market-visual img').forEach((image) => {
+    const collapseMissingMarketImage = () => {
+      const visual = image.closest('.market-visual');
+      const tile = image.closest('.market-tile');
+
+      if (!visual || !tile) {
+        return;
+      }
+
+      visual.remove();
+      tile.classList.add('market-tile-text-only');
+    };
+
+    if (image.complete && image.naturalWidth === 0) {
+      collapseMissingMarketImage();
+      return;
+    }
+
+    image.addEventListener('error', collapseMissingMarketImage, { once: true });
+  });
+
   const menuToggle = document.getElementById('menuToggle');
   const mobileMenu = document.getElementById('mobileMenu');
   const mobileMenuLinks = Array.from(document.querySelectorAll('.mobile-menu a'));
