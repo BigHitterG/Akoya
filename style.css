@@ -30,11 +30,14 @@
     header {
       position: sticky;
       top: 0;
-      z-index: 20;
+      z-index: 1000;
       background: rgba(0,0,0,0.88);
+      -webkit-backdrop-filter: blur(10px);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid rgba(255,255,255,0.08);
       overflow: hidden;
+      isolation: isolate;
+      transform: translateZ(0);
     }
     .nav {
       height: 78px;
@@ -45,21 +48,31 @@
       align-items: center;
     }
     .hamburger {
-      width: 34px;
-      height: 24px;
-      display: flex;
+      position: relative;
+      z-index: 2;
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      display: inline-flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 6px;
       cursor: pointer;
       border: none;
       background: transparent;
-      padding: 0;
+      padding: 10px 5px;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .hamburger span {
+      width: 34px;
       height: 3px;
       border-radius: 999px;
       background: white;
       display: block;
+      flex: 0 0 auto;
     }
     .brand {
       justify-self: center;
@@ -78,6 +91,8 @@
     }
 
     .mobile-menu {
+      position: relative;
+      z-index: 1;
       display: none;
       width: min(1240px, calc(100% - 28px));
       margin: 0 auto 12px;
