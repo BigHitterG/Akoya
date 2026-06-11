@@ -1,3 +1,5 @@
+const { createSiteVisitRecord } = require('../lib/server/supabase-admin');
+
 function mapUsStateNameToCode(name) {
   const normalized = (name || '').trim().toLowerCase();
   const map = {
@@ -52,7 +54,73 @@ function parseSuggestion(item, countryCode) {
   };
 }
 
+function required(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function parseJson(req) {
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  if (req.body && typeof req.body === 'object') {
+    return req.body;
+  }
+
+  return null;
+}
+
+function getClientIp(req) {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const firstForwardedIp = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+
+  if (required(firstForwardedIp)) {
+    return firstForwardedIp.split(',')[0].trim();
+  }
+
+  return req.socket?.remoteAddress || '';
+}
+
+function truncate(value, maxLength) {
+  if (!required(value)) {
+    return null;
+  }
+
+  return value.trim().slice(0, maxLength);
+}
+
+function buildVisitRecord(req, payload) {
+  return {
+    page_path: truncate(payload?.path, 500),
+    page_url: truncate(payload?.url, 1000),
+    referrer: truncate(payload?.referrer, 1000),
+    user_agent: truncate(req.headers['user-agent'], 1000),
+    ip_address: truncate(getClientIp(req), 128)
+  };
+}
+
+async function recordSiteVisit(req, res) {
+  const payload = parseJson(req) || {};
+
+  try {
+    await createSiteVisitRecord(buildVisitRecord(req, payload));
+    res.status(204).end();
+  } catch (error) {
+    console.error('Site visit logging failed:', error);
+    res.status(500).json({ error: 'Site visit logging unavailable.' });
+  }
+}
+
 module.exports = async function handler(req, res) {
+  if (req.method === 'POST') {
+    await recordSiteVisit(req, res);
+    return;
+  }
+
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed.' });
     return;
