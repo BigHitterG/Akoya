@@ -3,6 +3,35 @@
  * Keep lightweight behavior here as the landing page evolves.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  const recordSiteVisit = () => {
+    const payload = JSON.stringify({
+      path: window.location.pathname,
+      url: window.location.href,
+      referrer: document.referrer || ''
+    });
+    const endpoint = '/api/address-autocomplete';
+
+    if (navigator.sendBeacon) {
+      const sent = navigator.sendBeacon(endpoint, new Blob([payload], { type: 'application/json' }));
+      if (sent) {
+        return;
+      }
+    }
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: payload,
+      keepalive: true
+    }).catch(() => {
+      // Visit logging should never interrupt the visitor experience.
+    });
+  };
+
+  recordSiteVisit();
+
   const siteToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
   const marketSegmentsSection = document.querySelector('[data-feature-toggle="marketSegments"]');
   const marketSegmentsEnabled = siteToggles.homepage?.marketSegments?.enabled !== false;
