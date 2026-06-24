@@ -277,6 +277,7 @@
   </footer>
 
   <script src="https://js.stripe.com/v3"></script>
+  <script src="pricing-config.js"></script>
   <script src="main.js" defer></script>
   <script src="checkout-toggles.js"></script>
   <script>
@@ -304,8 +305,9 @@
       var invoiceModeButton = document.getElementById('invoiceModeButton');
       var cardDetailsFieldset = document.getElementById('cardDetailsFieldset');
       var cardValidationError = document.getElementById('cardValidationError');
-      var unitsPerBox = 12;
-      var pricePerUnit = 12;
+      var pricing = window.AKOYA_PRICING || { unitsPerBox: 12, pricePerUnitDollars: 12 };
+      var unitsPerBox = pricing.unitsPerBox;
+      var pricePerUnit = pricing.pricePerUnitDollars;
       var stripe = null;
       var cardNumberElement = null;
       var cardExpiryElement = null;

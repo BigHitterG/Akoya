@@ -1,11 +1,12 @@
 const Stripe = require('stripe');
+const pricing = require('../pricing-config');
 const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
 const { resolveSiteUrl } = require('../lib/server/site-url');
 
-const unitsPerBox = 12;
-const pricePerUnitCents = 1200;
+const unitsPerBox = pricing.unitsPerBox;
+const pricePerUnitCents = pricing.pricePerUnitCents;
 const testGoodsAmountCents = 100;
 
 function parseJson(req) {
