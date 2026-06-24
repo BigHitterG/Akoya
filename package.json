@@ -4,7 +4,8 @@
   "private": true,
   "description": "Akoya marketing and order request flow",
   "scripts": {
-    "start": "python -m http.server 8000"
+    "start": "python -m http.server 8000",
+    "test:pricing": "node scripts/verify-pricing.js"
   },
   "dependencies": {
     "stripe": "^18.2.0"
