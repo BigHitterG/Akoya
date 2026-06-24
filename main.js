@@ -205,17 +205,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const buyPageSelectedPrice = document.getElementById('buyPageSelectedPrice');
 
   if (buyPageQuantitySelect && buyPageQuantityPreview && buyPageCheckoutLink) {
-    const unitsPerBox = 12;
-    const pricePerBox = 180;
+    const pricing = window.AKOYA_PRICING || { unitsPerBox: 12, pricePerUnitCents: 1200, formatCents: (cents) => '$' + (cents / 100).toFixed(2), getGoodsAmountCents: (boxCount) => boxCount * 12 * 1200 };
+    const unitsPerBox = pricing.unitsPerBox;
 
     const renderBuyPageQuantityPreview = () => {
       const quantity = Number.parseInt(buyPageQuantitySelect.value, 10);
       const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
       const unitCount = safeQuantity * unitsPerBox;
-      const totalPrice = safeQuantity * pricePerBox;
-      buyPageQuantityPreview.textContent = `${unitCount} units · $${totalPrice.toFixed(2)}`;
+      const totalPriceCents = pricing.getGoodsAmountCents(safeQuantity);
+      buyPageQuantityPreview.textContent = `${unitCount} units · ${pricing.formatCents(totalPriceCents)}`;
       if (buyPageSelectedPrice) {
-        buyPageSelectedPrice.textContent = '$12.00';
+        buyPageSelectedPrice.textContent = pricing.formatCents(pricing.pricePerUnitCents);
       }
       buyPageCheckoutLink.href = `buy-now.html?quantity=${safeQuantity}`;
     };

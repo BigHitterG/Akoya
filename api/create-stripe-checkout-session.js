@@ -1,7 +1,8 @@
 const Stripe = require('stripe');
+const pricing = require('../pricing-config');
 
-const unitsPerBox = 12;
-const pricePerUnitCents = 1200;
+const unitsPerBox = pricing.unitsPerBox;
+const pricePerUnitCents = pricing.pricePerUnitCents;
 
 function parseJson(req) {
   if (typeof req.body === 'string') {
@@ -344,7 +345,7 @@ module.exports = async function handler(req, res) {
             product_data: {
               name: 'Akoya Eye Shield (Box of 12)',
               description: [
-                '$12.00 per unit • 12 units per box',
+                `${pricing.formatCents(pricePerUnitCents)} per unit • ${unitsPerBox} units per box`,
                 productContext.receiptDescription || null
               ]
                 .filter(Boolean)
