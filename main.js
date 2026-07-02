@@ -3,6 +3,23 @@
  * Keep lightweight behavior here as the landing page evolves.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  const syncViewportHeight = () => {
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+
+    if (!viewportHeight) {
+      return;
+    }
+
+    document.documentElement.style.setProperty('--app-viewport-height', `${viewportHeight}px`);
+  };
+
+  syncViewportHeight();
+  requestAnimationFrame(syncViewportHeight);
+  window.addEventListener('load', syncViewportHeight, { once: true });
+  window.addEventListener('pageshow', syncViewportHeight);
+  window.addEventListener('resize', syncViewportHeight);
+  window.visualViewport?.addEventListener('resize', syncViewportHeight);
+
   const recordSiteVisit = () => {
     const payload = JSON.stringify({
       path: window.location.pathname,
