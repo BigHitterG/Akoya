@@ -13,12 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.style.setProperty('--app-viewport-height', `${viewportHeight}px`);
   };
 
-  syncViewportHeight();
-  requestAnimationFrame(syncViewportHeight);
-  window.addEventListener('load', syncViewportHeight, { once: true });
-  window.addEventListener('pageshow', syncViewportHeight);
-  window.addEventListener('resize', syncViewportHeight);
-  window.visualViewport?.addEventListener('resize', syncViewportHeight);
+  const scheduleViewportHeightSync = () => {
+    syncViewportHeight();
+    requestAnimationFrame(syncViewportHeight);
+  };
+
+  const settleViewportHeight = () => {
+    scheduleViewportHeightSync();
+    [50, 150, 300, 600, 1000].forEach((delay) => {
+      window.setTimeout(scheduleViewportHeightSync, delay);
+    });
+  };
+
+  settleViewportHeight();
+  window.addEventListener('load', settleViewportHeight, { once: true });
+  window.addEventListener('pageshow', settleViewportHeight);
+  window.addEventListener('resize', scheduleViewportHeightSync);
+  window.addEventListener('orientationchange', settleViewportHeight);
+  window.visualViewport?.addEventListener('resize', scheduleViewportHeightSync);
+  window.visualViewport?.addEventListener('scroll', scheduleViewportHeightSync);
 
   const recordSiteVisit = () => {
     const payload = JSON.stringify({
