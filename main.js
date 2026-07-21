@@ -254,6 +254,38 @@ document.addEventListener('DOMContentLoaded', () => {
     renderBuyPageQuantityPreview();
   }
 
+  const clinicalCarousel = document.getElementById('clinicalCarousel');
+
+  if (clinicalCarousel) {
+    const clinicalSlides = Array.from(clinicalCarousel.querySelectorAll('.clinical-carousel-slide'));
+    const clinicalDots = Array.from(clinicalCarousel.querySelectorAll('.clinical-carousel-dot'));
+    const previousButton = clinicalCarousel.querySelector('[data-clinical-previous]');
+    const nextButton = clinicalCarousel.querySelector('[data-clinical-next]');
+    let clinicalIndex = 0;
+
+    const showClinicalSlide = (nextIndex) => {
+      clinicalIndex = (nextIndex + clinicalSlides.length) % clinicalSlides.length;
+
+      clinicalSlides.forEach((slide, index) => {
+        const isActive = index === clinicalIndex;
+        slide.classList.toggle('is-active', isActive);
+        slide.setAttribute('aria-hidden', String(!isActive));
+      });
+
+      clinicalDots.forEach((dot, index) => {
+        const isActive = index === clinicalIndex;
+        dot.classList.toggle('is-active', isActive);
+        dot.setAttribute('aria-selected', String(isActive));
+      });
+    };
+
+    previousButton?.addEventListener('click', () => showClinicalSlide(clinicalIndex - 1));
+    nextButton?.addEventListener('click', () => showClinicalSlide(clinicalIndex + 1));
+    clinicalDots.forEach((dot, index) => {
+      dot.addEventListener('click', () => showClinicalSlide(index));
+    });
+  }
+
   const slides = Array.from(document.querySelectorAll('.carousel-slide'));
   const dots = Array.from(document.querySelectorAll('.carousel-dot'));
   const playPauseButton = document.getElementById('carouselPlayPause');

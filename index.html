@@ -92,62 +92,57 @@
           </p>
         </div>
 
-        <div class="market-grid" aria-label="Akoya clinical market segments">
-          <article class="market-tile market-tile-featured">
-            <div class="market-label">Breast biopsy &amp; women's imaging</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-breast-biopsy-womens-imaging.webp" alt="Patient wearing Akoya eyewear in a women's imaging setting" loading="lazy">
-            </div>
-          </article>
+        <div class="clinical-carousel" id="clinicalCarousel" aria-label="Akoya in clinical care">
+          <div class="clinical-carousel-viewport">
+            <figure class="clinical-carousel-slide is-active" aria-hidden="false">
+              <img src="assets/images/clinical-breast-biopsy-womens-imaging.webp" alt="Close view of a patient wearing Akoya eyewear in a women's imaging setting">
+              <figcaption>
+                <span>See the design</span>
+                <strong>A clear view forward with the lower field blocked.</strong>
+              </figcaption>
+            </figure>
+            <figure class="clinical-carousel-slide" aria-hidden="true">
+              <img src="assets/images/clinical-oncology-infusion.webp" alt="Patient wearing Akoya eyewear with a nurse nearby in an infusion clinic" loading="lazy">
+              <figcaption>
+                <span>Supported care</span>
+                <strong>Designed to fit naturally into the clinical workflow.</strong>
+              </figcaption>
+            </figure>
+            <figure class="clinical-carousel-slide" aria-hidden="true">
+              <img src="assets/images/clinical-dialysis.webp" alt="Wider view of a patient wearing Akoya eyewear in a treatment environment" loading="lazy">
+              <figcaption>
+                <span>In context</span>
+                <strong>A calmer visual experience in the treatment environment.</strong>
+              </figcaption>
+            </figure>
+          </div>
 
-          <article class="market-tile">
-            <div class="market-label">Oncology infusion</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-oncology-infusion.webp" alt="Patient wearing Akoya eyewear during an oncology infusion" loading="lazy">
+          <div class="clinical-carousel-controls" aria-label="Clinical image controls">
+            <button class="clinical-carousel-arrow" type="button" data-clinical-previous aria-label="Show previous clinical image">←</button>
+            <div class="clinical-carousel-dots" role="tablist" aria-label="Select a clinical image">
+              <button class="clinical-carousel-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show close product view"></button>
+              <button class="clinical-carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show patient and clinician view"></button>
+              <button class="clinical-carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show wider treatment view"></button>
             </div>
-          </article>
+            <button class="clinical-carousel-arrow" type="button" data-clinical-next aria-label="Show next clinical image">→</button>
+          </div>
+        </div>
 
-          <article class="market-tile">
-            <div class="market-label">Rheumatology &amp; biologic infusion</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-rheumatology-biologic-infusion.webp" alt="Patient wearing Akoya eyewear in a rheumatology infusion clinic" loading="lazy">
-            </div>
-          </article>
-
-          <article class="market-tile">
-            <div class="market-label">Hospital outpatient infusion</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-hospital-outpatient-infusion.webp" alt="Patient wearing Akoya eyewear in a hospital outpatient infusion setting" loading="lazy">
-            </div>
-          </article>
-
-          <article class="market-tile">
-            <div class="market-label">General medical infusion</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-general-medical-infusion.webp" alt="Patient wearing Akoya eyewear in a general medical infusion clinic" loading="lazy">
-            </div>
-          </article>
-
-          <article class="market-tile">
-            <div class="market-label">Dialysis</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-dialysis.webp" alt="Patient wearing Akoya eyewear during dialysis" loading="lazy">
-            </div>
-          </article>
-
-          <article class="market-tile">
-            <div class="market-label">Interventional radiology</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-interventional-radiology.webp" alt="Patient wearing Akoya eyewear in interventional radiology preparation" loading="lazy">
-            </div>
-          </article>
-
-          <article class="market-tile">
-            <div class="market-label">Blood draw &amp; vascular access</div>
-            <div class="market-visual">
-              <img src="assets/images/clinical-blood-draw-vascular-access.webp" alt="Patient wearing Akoya eyewear for blood draw and vascular access care" loading="lazy">
-            </div>
-          </article>
+        <div class="application-section" aria-labelledby="applicationHeading">
+          <div>
+            <div class="kicker">Potential applications</div>
+            <h3 id="applicationHeading">Designed for a range of patient-facing procedures.</h3>
+          </div>
+          <ul class="application-list">
+            <li>Breast biopsy &amp; women's imaging</li>
+            <li>Oncology infusion</li>
+            <li>Rheumatology &amp; biologic infusion</li>
+            <li>Hospital outpatient infusion</li>
+            <li>General medical infusion</li>
+            <li>Dialysis</li>
+            <li>Interventional radiology</li>
+            <li>Blood draw &amp; vascular access</li>
+          </ul>
         </div>
       </div>
     </div>
