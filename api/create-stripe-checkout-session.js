@@ -1,6 +1,6 @@
 const Stripe = require('stripe');
 const pricing = require('../pricing-config');
-const { rejectWhenPurchaseFlowDisabled } = require('./lib/purchase-flow-gate');
+const { rejectWhenPurchaseFlowDisabled } = require('../lib/server/purchase-flow-gate');
 
 const unitsPerBox = pricing.unitsPerBox;
 const pricePerUnitCents = pricing.pricePerUnitCents;

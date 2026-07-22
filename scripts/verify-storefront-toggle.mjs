@@ -12,7 +12,7 @@ const buyNowPage = await readFile(new URL('../buy-now.html', import.meta.url), '
 const invoicePage = await readFile(new URL('../request-invoice.html', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../style.css', import.meta.url), 'utf8');
 const checkoutToggles = require('../checkout-toggles');
-const { rejectWhenPurchaseFlowDisabled } = require('../api/lib/purchase-flow-gate');
+const { rejectWhenPurchaseFlowDisabled } = require('../lib/server/purchase-flow-gate');
 
 function simulateGate({ enabled, pathname }) {
   const classes = [];

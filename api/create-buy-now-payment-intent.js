@@ -5,7 +5,7 @@ const getFedexRateHandler = require('./get-fedex-rate');
 const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
 const { resolveSiteUrl } = require('../lib/server/site-url');
-const { rejectWhenPurchaseFlowDisabled } = require('./lib/purchase-flow-gate');
+const { rejectWhenPurchaseFlowDisabled } = require('../lib/server/purchase-flow-gate');
 
 const unitsPerBox = pricing.unitsPerBox;
 const pricePerUnitCents = pricing.pricePerUnitCents;
