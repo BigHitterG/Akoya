@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import vm from 'node:vm';
+
+const require = createRequire(import.meta.url);
 
 const togglesSource = await readFile(new URL('../checkout-toggles.js', import.meta.url), 'utf8');
 const gateSource = await readFile(new URL('../storefront-gate.js', import.meta.url), 'utf8');
@@ -8,6 +11,8 @@ const buyPage = await readFile(new URL('../buy.html', import.meta.url), 'utf8');
 const buyNowPage = await readFile(new URL('../buy-now.html', import.meta.url), 'utf8');
 const invoicePage = await readFile(new URL('../request-invoice.html', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../style.css', import.meta.url), 'utf8');
+const checkoutToggles = require('../checkout-toggles');
+const { rejectWhenPurchaseFlowDisabled } = require('../api/lib/purchase-flow-gate');
 
 function simulateGate({ enabled, pathname }) {
   const classes = [];
@@ -64,6 +69,33 @@ assert.match(buyPage, /\+1 \(515\) 587-5863/);
 assert.match(buyPage, /id="buyPageSelectedPrice"/);
 assert.match(buyPage, /id="buyPageCheckoutLink"/);
 assert.doesNotMatch(buyPage, /type="(?:checkbox|radio)"[^>]*purchaseFlow/i);
+
+function createMockResponse() {
+  return {
+    statusCode: null,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body) {
+      this.body = body;
+      return this;
+    }
+  };
+}
+
+checkoutToggles.purchaseFlow.enabled = false;
+const quoteOnlyResponse = createMockResponse();
+assert.equal(rejectWhenPurchaseFlowDisabled(quoteOnlyResponse), true);
+assert.equal(quoteOnlyResponse.statusCode, 503);
+assert.match(quoteOnlyResponse.body.error, /Contact info@akoyamedical\.com/);
+
+checkoutToggles.purchaseFlow.enabled = true;
+const purchaseResponse = createMockResponse();
+assert.equal(rejectWhenPurchaseFlowDisabled(purchaseResponse), false);
+assert.equal(purchaseResponse.statusCode, null);
+checkoutToggles.purchaseFlow.enabled = false;
 
 assert.match(styles, /\[data-purchase-flow\]\s*\{\s*display:\s*none\s*!important/);
 assert.match(styles, /html\.purchase-flow-enabled \[data-purchase-flow\]/);

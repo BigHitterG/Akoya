@@ -1,4 +1,4 @@
-window.AKOYA_CHECKOUT_TOGGLES = {
+var AKOYA_CHECKOUT_TOGGLES = {
   purchaseFlow: {
     enabled: false
   },
@@ -21,3 +21,11 @@ window.AKOYA_CHECKOUT_TOGGLES = {
     }
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.AKOYA_CHECKOUT_TOGGLES = AKOYA_CHECKOUT_TOGGLES;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = AKOYA_CHECKOUT_TOGGLES;
+}

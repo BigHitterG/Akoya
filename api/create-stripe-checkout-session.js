@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const pricing = require('../pricing-config');
+const { rejectWhenPurchaseFlowDisabled } = require('./lib/purchase-flow-gate');
 
 const unitsPerBox = pricing.unitsPerBox;
 const pricePerUnitCents = pricing.pricePerUnitCents;
@@ -152,6 +153,7 @@ async function createFedexShipmentBeforeCheckout(req, baseUrl, payload) {
 }
 
 module.exports = async function handler(req, res) {
+  if (rejectWhenPurchaseFlowDisabled(res)) return;
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
     return;

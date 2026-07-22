@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const { rejectWhenPurchaseFlowDisabled } = require('./lib/purchase-flow-gate');
 const pricing = require('../pricing-config');
 
 const unitsPerBox = pricing.unitsPerBox;
@@ -95,6 +96,7 @@ async function calculateStripeTax(stripe, params) {
 }
 
 module.exports = async function handler(req, res) {
+  if (rejectWhenPurchaseFlowDisabled(res)) return;
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
     return;

@@ -13,6 +13,7 @@ This file documents manual feature toggles and the exact prompt format to ask Co
   - Quote-only mode replaces the purchase card on `buy.html` with the same sales email and phone number used on `contact.html`.
   - Unit price, quantity total, and checkout controls are not rendered to customers in quote-only mode.
   - Direct visits to `buy-now.html` and `request-invoice.html` redirect to `buy.html#quote` while quote-only mode is active.
+  - Payment, invoice, checkout-session, and tax-preview APIs reject requests while quote-only mode is active.
   - The complete payment, invoice, shipping, and quantity architecture remains preserved in the repository.
   - The gate fails closed: if the toggle is missing, quote-only mode remains active.
   - Run `node scripts/verify-storefront-toggle.mjs` after changing the toggle or storefront markup.
