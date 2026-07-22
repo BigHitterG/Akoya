@@ -1167,6 +1167,34 @@
       letter-spacing: 0.02em;
     }
 
+    [data-purchase-flow] {
+      display: none !important;
+    }
+
+    [data-quote-only] {
+      display: block;
+    }
+
+    html.purchase-flow-enabled [data-purchase-flow] {
+      display: block !important;
+    }
+
+    html.purchase-flow-enabled [data-quote-only] {
+      display: none !important;
+    }
+
+    .quote-card {
+      align-self: start;
+    }
+
+    .quote-contact-methods {
+      margin-top: 24px;
+    }
+
+    .quote-card .contact-method-link {
+      font-size: clamp(1.25rem, 2.8vw, 1.85rem);
+    }
+
     .order-summary div {
       display: flex;
       justify-content: space-between;

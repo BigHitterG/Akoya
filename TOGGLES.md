@@ -2,6 +2,21 @@
 
 This file documents manual feature toggles and the exact prompt format to ask Codex/ChatGPT to switch them.
 
+## Public purchase flow toggle
+
+- **File:** `checkout-toggles.js`
+- **Object path:** `window.AKOYA_CHECKOUT_TOGGLES.purchaseFlow`
+- **Primary switch:** `enabled`
+  - `false` = quote-only mode (current production setting)
+  - `true` = restore quantity, pricing, and checkout UI
+- **Notes:**
+  - Quote-only mode replaces the purchase card on `buy.html` with the same sales email and phone number used on `contact.html`.
+  - Unit price, quantity total, and checkout controls are not rendered to customers in quote-only mode.
+  - Direct visits to `buy-now.html` and `request-invoice.html` redirect to `buy.html#quote` while quote-only mode is active.
+  - The complete payment, invoice, shipping, and quantity architecture remains preserved in the repository.
+  - The gate fails closed: if the toggle is missing, quote-only mode remains active.
+  - Run `node scripts/verify-storefront-toggle.mjs` after changing the toggle or storefront markup.
+
 ## Test purchases toggle (Buy Now checkout)
 
 - **File:** `checkout-toggles.js`
@@ -15,6 +30,9 @@ This file documents manual feature toggles and the exact prompt format to ask Co
 
 ```js
 window.AKOYA_CHECKOUT_TOGGLES = {
+  purchaseFlow: {
+    enabled: false
+  },
   testCheckoutOptions: {
     enabled: false,
     defaultMode: 'standard',
@@ -67,6 +85,12 @@ window.AKOYA_CHECKOUT_TOGGLES = {
 ## Prompt templates you can use
 
 Use one of these exact prompts:
+
+- **Restore website purchasing**
+  - `Set the public purchase flow toggle ON by changing checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.purchaseFlow.enabled is true. Verify buy.html, buy-now.html, and request-invoice.html, then commit and deploy.`
+
+- **Return to quote-only mode**
+  - `Set the public purchase flow toggle OFF by changing checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.purchaseFlow.enabled is false. Verify prices and checkout controls are not customer-visible, then commit and deploy.`
 
 - **Turn OFF test purchases toggle**
   - `Set the test purchases toggle OFF by changing checkout-toggles.js so window.AKOYA_CHECKOUT_TOGGLES.testCheckoutOptions.enabled is false. Commit the change and open a PR.`

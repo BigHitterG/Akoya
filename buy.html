@@ -9,10 +9,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <script src="checkout-toggles.js"></script>
+  <script src="storefront-gate.js"></script>
 </head>
 <body>
   <div class="top-banner">
-    <div>Choose quantities in 12-unit increments. Shipping is still calculated by set size at checkout.</div>
+    <div data-purchase-flow>Choose quantities in 12-unit increments. Shipping is still calculated by set size at checkout.</div>
+    <div data-quote-only>Akoya Eye Shield is currently available by quote through our sales team.</div>
     <a href="index.html#product">Back to Product</a>
   </div>
 
@@ -52,7 +55,7 @@
         </div>
       </div>
 
-      <div class="card order-card">
+      <div class="card order-card" data-purchase-flow>
         <div class="card-pad">
           <h2>Purchase option</h2>
 
@@ -80,6 +83,25 @@
             <p class="purchase-note">Tax and shipping are calculated at checkout.</p>
 
             <a href="buy-now.html" class="btn btn-primary order-cta" id="buyPageCheckoutLink">Checkout</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card order-card quote-card" id="quote" data-quote-only>
+        <div class="card-pad">
+          <div class="kicker">Sales support</div>
+          <h2>Contact us for a quote</h2>
+          <p class="contact-intro">Akoya Eye Shield is currently sold through our sales team. Tell us about your clinic, organization, and anticipated needs, and we’ll help with pricing and next steps.</p>
+          <div class="contact-methods quote-contact-methods" aria-label="Contact Akoya Medical for a quote">
+            <div class="contact-method contact-method-primary">
+              <p class="contact-method-label">Email our sales team</p>
+              <a class="contact-method-link" href="mailto:info@akoyamedical.com?subject=Akoya%20Eye%20Shield%20quote%20request">info@akoyamedical.com</a>
+              <p class="form-followup contact-backup">Preferred for quote requests, organization details, and follow-up.</p>
+            </div>
+            <div class="contact-method">
+              <p class="contact-method-label">Call us</p>
+              <a class="contact-method-link" href="tel:+15155875863">+1 (515) 587-5863</a>
+            </div>
           </div>
         </div>
       </div>
