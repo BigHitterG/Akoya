@@ -1,17 +1,4 @@
 {
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.akoyamedical.com"
-        }
-      ],
-      "destination": "https://akoyamedical.com/:path*",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     {
       "source": "/label/:token",
