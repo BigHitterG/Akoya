@@ -141,6 +141,7 @@
       filter: brightness(0.72);
       transform: scale(1.02);
       opacity: 0;
+      pointer-events: none;
       transition: opacity 0.24s ease;
       background: #000000;
     }
@@ -1082,8 +1083,9 @@
 
     .product-gallery-main img {
       width: 100%;
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
+      height: auto;
+      aspect-ratio: 3 / 2;
+      object-fit: contain;
       border-radius: 20px;
       border: 1px solid #dbe5ed;
       background: #f3f7fb;
@@ -1108,8 +1110,9 @@
 
     .product-gallery-thumb img {
       width: 100%;
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
+      height: auto;
+      aspect-ratio: 3 / 2;
+      object-fit: contain;
       border-radius: 12px;
       border: 1px solid #dbe5ed;
       background: #f3f7fb;
@@ -2926,9 +2929,97 @@ header {
     align-items: flex-start;
   }
 
-  .hero-copy h1,
+  .hero {
+    display: block;
+    min-height: 0;
+    background: #07131c;
+  }
+
+  .hero-media {
+    position: relative;
+    inset: auto;
+    height: clamp(280px, 77vw, 340px);
+    background-position: center;
+  }
+
+  .hero-video {
+    min-height: 0;
+    height: 100%;
+    object-position: center;
+    filter: brightness(0.9);
+    transform: scale(1.015);
+  }
+
+  .hero-overlay {
+    background: linear-gradient(180deg, rgba(6, 10, 14, 0.03) 0%, rgba(6, 10, 14, 0.10) 62%, rgba(6, 10, 14, 0.42) 100%);
+  }
+
+  .hero-inner {
+    width: 100%;
+    min-height: 0;
+    align-items: flex-start;
+    padding: 30px max(18px, env(safe-area-inset-right)) 36px max(18px, env(safe-area-inset-left));
+    background: linear-gradient(180deg, #07131c 0%, #0b1e2b 100%);
+  }
+
+  .hero-copy {
+    width: min(100%, 560px);
+    max-width: none;
+    margin: 0 auto;
+  }
+
+  .hero .eyebrow {
+    margin-bottom: 14px;
+  }
+
+  .hero-copy h1 {
+    max-width: 12ch;
+    margin-bottom: 16px;
+    font-size: clamp(2.5rem, 10.8vw, 3.15rem);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+
   .page-hero h1 {
     font-size: clamp(2.7rem, 13vw, 4.3rem);
+  }
+
+  .hero-copy p {
+    margin-bottom: 22px;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .hero .cta-row {
+    max-width: none;
+    gap: 10px;
+    margin-bottom: 0;
+  }
+
+  .hero .btn {
+    min-height: 54px;
+    padding: 0 20px;
+    font-size: 0.84rem;
+    letter-spacing: 0.06em;
+  }
+
+  .hero-facts {
+    gap: 7px;
+    margin-top: 18px;
+  }
+
+  .hero-facts span {
+    padding: 6px 9px;
+    font-size: 0.7rem;
+  }
+
+  .product-gallery {
+    gap: 10px;
+    padding: 0 14px 18px;
+  }
+
+  .product-gallery-thumbs {
+    gap: 8px;
   }
 
   .trust-strip,

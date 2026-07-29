@@ -99,7 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveData = navigator.connection?.saveData === true;
 
     if (!reducedMotion && !saveData) {
-      const revealVideo = () => heroVideo.classList.add('is-ready');
+      const hideVideo = () => heroVideo.classList.remove('is-ready');
+      const revealVideo = () => {
+        if (!heroVideo.paused && heroVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          heroVideo.classList.add('is-ready');
+        }
+      };
       const loadHeroVideo = () => {
         heroVideo.querySelectorAll('source[data-src]').forEach((source) => {
           source.src = source.dataset.src;
@@ -108,16 +113,20 @@ document.addEventListener('DOMContentLoaded', () => {
         heroVideo.load();
       };
 
-      heroVideo.addEventListener('loadeddata', revealVideo, { once: true });
-      heroVideo.addEventListener('canplay', revealVideo, { once: true });
+      heroVideo.muted = true;
+      heroVideo.defaultMuted = true;
+      heroVideo.playsInline = true;
+      heroVideo.addEventListener('playing', revealVideo);
+      heroVideo.addEventListener('pause', hideVideo);
+      heroVideo.addEventListener('error', hideVideo);
+      heroVideo.addEventListener('abort', hideVideo);
+      heroVideo.addEventListener('emptied', hideVideo);
 
       window.setTimeout(() => {
         loadHeroVideo();
         const playbackAttempt = heroVideo.play();
         if (playbackAttempt && typeof playbackAttempt.catch === 'function') {
-          playbackAttempt.catch(() => {
-            // The poster remains visible if autoplay is unavailable.
-          });
+          playbackAttempt.catch(hideVideo);
         }
       }, 350);
     }
@@ -185,6 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const thumbImage = document.createElement('img');
           thumbImage.src = image.src;
           thumbImage.alt = image.alt;
+          thumbImage.width = 600;
+          thumbImage.height = 400;
+          thumbImage.loading = 'lazy';
+          thumbImage.decoding = 'async';
           thumbButton.appendChild(thumbImage);
 
           thumbButton.addEventListener('click', () => {
