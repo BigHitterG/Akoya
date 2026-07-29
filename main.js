@@ -33,35 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.visualViewport?.addEventListener('resize', scheduleViewportHeightSync);
   window.visualViewport?.addEventListener('scroll', scheduleViewportHeightSync);
 
-  const recordSiteVisit = () => {
-    const payload = JSON.stringify({
-      path: window.location.pathname,
-      url: window.location.href,
-      referrer: document.referrer || ''
-    });
-    const endpoint = '/api/address-autocomplete';
-
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(endpoint, new Blob([payload], { type: 'application/json' }));
-      if (sent) {
-        return;
-      }
-    }
-
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: payload,
-      keepalive: true
-    }).catch(() => {
-      // Visit logging should never interrupt the visitor experience.
-    });
-  };
-
-  recordSiteVisit();
-
   const siteToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
   const marketSegmentsSection = document.querySelector('[data-feature-toggle="marketSegments"]');
   const marketSegmentsEnabled = siteToggles.homepage?.marketSegments?.enabled !== false;
@@ -124,20 +95,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroVideo = document.getElementById('heroVideo');
 
   if (heroVideo) {
-    const revealVideo = () => heroVideo.classList.add('is-ready');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const saveData = navigator.connection?.saveData === true;
 
-    if (heroVideo.readyState >= 2) {
-      revealVideo();
-    }
+    if (!reducedMotion && !saveData) {
+      const revealVideo = () => heroVideo.classList.add('is-ready');
+      const loadHeroVideo = () => {
+        heroVideo.querySelectorAll('source[data-src]').forEach((source) => {
+          source.src = source.dataset.src;
+          source.removeAttribute('data-src');
+        });
+        heroVideo.load();
+      };
 
-    heroVideo.addEventListener('loadeddata', revealVideo, { once: true });
-    heroVideo.addEventListener('canplay', revealVideo, { once: true });
+      heroVideo.addEventListener('loadeddata', revealVideo, { once: true });
+      heroVideo.addEventListener('canplay', revealVideo, { once: true });
 
-    const playbackAttempt = heroVideo.play();
-    if (playbackAttempt && typeof playbackAttempt.catch === 'function') {
-      playbackAttempt.catch(() => {
-        // Keep the black background if autoplay is blocked.
-      });
+      window.setTimeout(() => {
+        loadHeroVideo();
+        const playbackAttempt = heroVideo.play();
+        if (playbackAttempt && typeof playbackAttempt.catch === 'function') {
+          playbackAttempt.catch(() => {
+            // The poster remains visible if autoplay is unavailable.
+          });
+        }
+      }, 350);
     }
   }
 
@@ -148,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const lightbox = document.getElementById('productLightbox');
   const lightboxImage = lightbox?.querySelector('.lightbox-image');
   const lightboxCloseButton = lightbox?.querySelector('.lightbox-close');
+  let lightboxTrigger = null;
 
   const closeLightbox = () => {
     if (!lightbox || !lightboxImage) {
@@ -158,14 +141,15 @@ document.addEventListener('DOMContentLoaded', () => {
     lightbox.setAttribute('aria-hidden', 'true');
     lightboxImage.src = '';
     lightboxImage.alt = '';
+    lightboxTrigger?.focus();
   };
 
   if (galleryRoot && primaryImage && thumbContainer) {
     const galleryImages = [
-      { src: 'assets/images/Product%20Image%201.JPG', alt: 'Akoya eyewear product image 1' },
-      { src: 'assets/images/Product%20Image%202.JPG', alt: 'Akoya eyewear product image 2' },
-      { src: 'assets/images/Product%20Image%203.JPG', alt: 'Akoya eyewear product image 3' },
-      { src: 'assets/images/Product%20Image%204.JPG', alt: 'Akoya eyewear product image 4' },
+      { src: 'assets/images/Product%20Image%201.JPG', alt: 'Front view of Akoya Eye Shield showing the opaque lower barrier and open upper viewing area' },
+      { src: 'assets/images/Product%20Image%202.JPG', alt: 'Side view of Akoya Eye Shield showing the adjustable frame and lower interface' },
+      { src: 'assets/images/Product%20Image%203.JPG', alt: 'Three-quarter view of Akoya Eye Shield showing the lower visual barrier' },
+      { src: 'assets/images/Product%20Image%204.JPG', alt: 'Rear view of Akoya Eye Shield showing the patient-facing lower interface' },
     ];
 
     let activeIndex = 0;
@@ -179,6 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
       lightboxImage.alt = galleryImages[activeIndex].alt;
       lightbox.classList.add('is-open');
       lightbox.setAttribute('aria-hidden', 'false');
+      lightboxTrigger = document.activeElement;
+      lightboxCloseButton?.focus();
     };
 
     const renderGallery = () => {
@@ -194,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const thumbButton = document.createElement('button');
           thumbButton.type = 'button';
           thumbButton.className = 'product-gallery-thumb';
-          thumbButton.setAttribute('aria-label', `Show image ${displayIndex + 1}`);
+          thumbButton.setAttribute('aria-label', `Show product view ${displayIndex + 1}`);
 
           const thumbImage = document.createElement('img');
           thumbImage.src = image.src;
@@ -222,6 +208,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           closeLightbox();
+        }
+        if (event.key === 'Tab' && lightbox.classList.contains('is-open')) {
+          event.preventDefault();
+          lightboxCloseButton.focus();
         }
       });
     }

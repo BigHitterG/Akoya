@@ -1,223 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Akoya Medical</title>
-  <meta name="description" content="Akoya Medical creates patented lower-field vision blocking eyewear designed to reduce stress and support calmer clinical procedures." />
-  <meta name="application-name" content="Akoya Medical" />
-  <meta name="apple-mobile-web-app-title" content="Akoya Medical" />
-  <link rel="canonical" href="https://www.akoyamedical.com/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Akoya Medical" />
-  <meta property="og:title" content="Akoya Medical" />
-  <meta property="og:description" content="Patented lower-field vision blocking eyewear designed to reduce stress during treatment." />
-  <meta property="og:url" content="https://www.akoyamedical.com/" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Akoya Medical" />
-  <meta name="twitter:description" content="Patented lower-field vision blocking eyewear designed to reduce stress during treatment." />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akoya Eye Shield | Lower-Field Visual Barrier for Needle-Based Care</title>
+  <meta name="description" content="Akoya Eye Shield is a single-patient-use, nonsterile lower-field visual barrier designed to limit a patient's view of needle-based procedural activity while leaving an upper viewing area open.">
+  <meta name="application-name" content="Akoya Medical">
+  <meta name="apple-mobile-web-app-title" content="Akoya Medical">
+  <link rel="canonical" href="https://akoyamedical.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Akoya Medical">
+  <meta property="og:title" content="Akoya Eye Shield">
+  <meta property="og:description" content="A focused lower-field visual barrier for selected needle-based procedures.">
+  <meta property="og:url" content="https://akoyamedical.com/">
+  <meta property="og:image" content="https://akoyamedical.com/assets/images/Product%20Image%201.JPG">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Akoya Eye Shield">
+  <meta name="twitter:description" content="A focused lower-field visual barrier for selected needle-based procedures.">
+  <meta name="twitter:image" content="https://akoyamedical.com/assets/images/Product%20Image%201.JPG">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Akoya Medical",
-      "alternateName": "Akoya",
-      "url": "https://www.akoyamedical.com/"
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://akoyamedical.com/#organization",
+          "name": "Akoya Medical",
+          "legalName": "Akoya Medical, LLC",
+          "url": "https://akoyamedical.com/",
+          "email": "info@akoyamedical.com",
+          "telephone": "+1-515-587-5863",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "333 Tamiami Trail S, Suite 317",
+            "addressLocality": "Venice",
+            "addressRegion": "FL",
+            "postalCode": "34285",
+            "addressCountry": "US"
+          }
+        },
+        {
+          "@type": "Product",
+          "@id": "https://akoyamedical.com/#akoya-eye-shield",
+          "name": "Akoya Eye Shield",
+          "url": "https://akoyamedical.com/buy.html",
+          "image": "https://akoyamedical.com/assets/images/Product%20Image%201.JPG",
+          "description": "Single-patient-use, nonsterile lower-field visual barrier designed to limit visibility of procedural activity below eye level while leaving an upper viewing area open.",
+          "brand": {
+            "@type": "Brand",
+            "name": "Akoya Medical"
+          },
+          "manufacturer": {
+            "@id": "https://akoyamedical.com/#organization"
+          },
+          "additionalProperty": [
+            {"@type": "PropertyValue", "name": "Use", "value": "Single-patient use"},
+            {"@type": "PropertyValue", "name": "Sterility", "value": "Nonsterile"},
+            {"@type": "PropertyValue", "name": "Latex", "value": "Latex-free"},
+            {"@type": "PropertyValue", "name": "Assembly", "value": "Assembled in the USA"}
+          ]
+        }
+      ]
     }
   </script>
-  <link rel="icon" type="image/png" href="assets/images/IMG_1998.png" />
+  <link rel="icon" type="image/png" href="assets/images/IMG_1998.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css" />
-
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="top-banner">
-    <div>Discover a calmer clinical experience with Akoya Medical.</div>
-    <a href="#contact">Learn More</a>
-  </div>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <header>
     <div class="nav">
       <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
       </button>
-      <div class="brand"><a href="index.html" aria-label="Akoya home"><img class="brand-logo" src="assets/images/IMG_1997.png" alt="Akoya"></a></div>
-      <div></div>
+      <div class="brand">
+        <a href="index.html" aria-label="Akoya Medical home">
+          <img class="brand-logo" src="assets/images/IMG_1997.png" alt="">
+          <span class="brand-name">Akoya Medical</span>
+        </a>
+      </div>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a href="buy.html">Product</a>
+        <a href="healthcare-organizations.html">Healthcare Organizations</a>
+        <a href="clinical-feedback.html">Feedback &amp; Research</a>
+        <a href="our-journey.html">About</a>
+        <a class="nav-cta" href="contact.html">Contact</a>
+      </nav>
     </div>
-    <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
-      <a href="buy.html">Buy</a>
-      <a href="clinical-feedback.html">Clinical Feedback/Research</a>
-      <a href="our-journey.html">About Us</a>
-      <a href="contact.html">Contact Us</a>
-    </div>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile navigation" aria-hidden="true">
+      <a href="buy.html">Product</a>
+      <a href="healthcare-organizations.html">Healthcare Organizations</a>
+      <a href="clinical-feedback.html">Feedback &amp; Research</a>
+      <a href="our-journey.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
   </header>
 
-  <section class="hero">
-    <div class="hero-media">
-      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto">
-        <source src="assets/videos/copy_63EA3C09-3DDC-4B81-9069-BB7E60184C4A.mov">
-        Your browser does not support the hero video.
-      </video>
-      <div class="hero-overlay"></div>
-    </div>
-
-    <div class="hero-inner">
-      <div class="hero-copy">
-        <div class="eyebrow">Akoya Eye Shield</div>
-        <h1>The visual barrier built for calmer procedures.</h1>
-        <p>
-          Patented lower-field vision blocking eyewear designed to reduce stress during treatment.
-        </p>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="buy.html">Buy</a>
-          <a class="btn btn-secondary" href="clinical-feedback.html">Research with Akoya</a>
+  <main id="main-content">
+    <section class="hero" aria-labelledby="home-heading">
+      <div class="hero-media">
+        <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="none" poster="assets/images/clinical-breast-biopsy-womens-imaging.webp" aria-hidden="true">
+          <source data-src="assets/videos/akoya-eye-shield-hero.mp4" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
+      </div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow">Akoya Eye Shield</div>
+          <h1 id="home-heading">A focused visual barrier for needle-based care.</h1>
+          <p>Designed to limit a patient's direct view of procedural activity below eye level while leaving an upper viewing area open for partial forward and upward awareness.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="healthcare-organizations.html">Discuss a Product Evaluation</a>
+            <a class="btn btn-secondary" href="buy.html">View Product Details</a>
+          </div>
+          <div class="hero-facts" aria-label="Product facts">
+            <span>Single-patient use</span>
+            <span>Nonsterile</span>
+            <span>Latex-free</span>
+            <span>Assembled in the USA</span>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="section market-section" id="markets" data-feature-toggle="marketSegments">
-    <div class="container">
-      <div class="card market-card">
-        <div class="market-intro">
-          <div class="kicker">Clinical market segments</div>
-          <h2>Built for procedures where patients see what they would rather not see.</h2>
-          <p class="body-copy">
-            Akoya is developing around clinical settings where lower-field visual blocking can help create
-            a calmer experience during image-guided, infusion, access, and treatment workflows.
-          </p>
+    <section class="trust-section" aria-label="Akoya Medical company and product facts">
+      <div class="container trust-strip">
+        <div class="trust-item"><strong>Founder-led</strong><span>Direct access to Akoya's owners and product team.</span></div>
+        <div class="trust-item"><strong>Issued U.S. patent</strong><span>U.S. Patent No. 12,629,282 B1, issued May 19, 2026.</span></div>
+        <div class="trust-item"><strong>Healthcare-focused</strong><span>Developed around selected vascular-access and interventional workflows.</span></div>
+        <div class="trust-item"><strong>Available by quote</strong><span>Flexible quantities, product samples, and institutional discussions.</span></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="mechanism-heading">
+      <div class="container">
+        <div class="section-intro">
+          <div class="kicker">What the design does</div>
+          <h2 id="mechanism-heading">Limits the procedural view. Preserves an open upper view.</h2>
+          <p>Akoya Eye Shield addresses one narrow source of discomfort: direct visual exposure to needles and procedural activity. Actual visual obstruction depends on fit, positioning, facial anatomy, and gaze direction.</p>
         </div>
-
-        <div class="clinical-carousel" id="clinicalCarousel" aria-label="Akoya in clinical care">
-          <div class="clinical-carousel-viewport">
-            <figure class="clinical-carousel-slide is-active" aria-hidden="false">
-              <img src="assets/images/clinical-breast-biopsy-womens-imaging.webp" alt="Close view of a patient wearing Akoya eyewear in a women's imaging setting">
-              <figcaption>
-                <span>See the design</span>
-                <strong>A clear view forward with the lower field blocked.</strong>
-              </figcaption>
-            </figure>
-            <figure class="clinical-carousel-slide" aria-hidden="true">
-              <img src="assets/images/clinical-oncology-infusion.webp" alt="Patient wearing Akoya eyewear with a nurse nearby in an infusion clinic" loading="lazy">
-              <figcaption>
-                <span>Supported care</span>
-                <strong>Designed to fit naturally into the clinical workflow.</strong>
-              </figcaption>
-            </figure>
-            <figure class="clinical-carousel-slide" aria-hidden="true">
-              <img src="assets/images/clinical-dialysis.webp" alt="Wider view of a patient wearing Akoya eyewear in a treatment environment" loading="lazy">
-              <figcaption>
-                <span>In context</span>
-                <strong>A calmer visual experience in the treatment environment.</strong>
-              </figcaption>
-            </figure>
-          </div>
-
-          <div class="clinical-carousel-controls" aria-label="Clinical image controls">
-            <button class="clinical-carousel-arrow" type="button" data-clinical-previous aria-label="Show previous clinical image">←</button>
-            <div class="clinical-carousel-dots" role="tablist" aria-label="Select a clinical image">
-              <button class="clinical-carousel-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show close product view"></button>
-              <button class="clinical-carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show patient and clinician view"></button>
-              <button class="clinical-carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show wider treatment view"></button>
-            </div>
-            <button class="clinical-carousel-arrow" type="button" data-clinical-next aria-label="Show next clinical image">→</button>
-          </div>
+        <div class="mechanism-grid">
+          <article class="mechanism-card">
+            <h3>Lower-field visual barrier</h3>
+            <p>An opaque lower region and conformable interface are designed to limit visibility of activity occurring below eye level.</p>
+          </article>
+          <article class="mechanism-card">
+            <h3>Open upper viewing area</h3>
+            <p>The upper area remains open, allowing partial forward or upward visibility for awareness and communication.</p>
+          </article>
         </div>
+      </div>
+    </section>
 
-        <div class="application-section" aria-labelledby="applicationHeading">
-          <div>
-            <div class="kicker">Potential applications</div>
-            <h3 id="applicationHeading">Designed for a range of patient-facing procedures.</h3>
-          </div>
-          <ul class="application-list">
-            <li>Breast biopsy &amp; women's imaging</li>
-            <li>Oncology infusion</li>
-            <li>Rheumatology &amp; biologic infusion</li>
-            <li>Hospital outpatient infusion</li>
-            <li>General medical infusion</li>
-            <li>Dialysis</li>
-            <li>Interventional radiology</li>
-            <li>Blood draw &amp; vascular access</li>
+    <section class="section" aria-labelledby="product-heading">
+      <div class="container product-proof">
+        <div class="product-proof-image">
+          <img src="assets/images/Product%20Image%201.JPG" width="1200" height="900" alt="Akoya Eye Shield showing its opaque lower barrier, clear upper opening, pink frame, and conformable interface">
+        </div>
+        <div>
+          <div class="kicker">Akoya Eye Shield</div>
+          <h2 id="product-heading">A simple, physical approach to visual exposure.</h2>
+          <ul class="clean-list">
+            <li>Single-patient use and not intended for reuse</li>
+            <li>Nonsterile and latex-free</li>
+            <li>Assembled in the USA</li>
+            <li>Adjustable frame with a conformable lower interface</li>
+            <li>Available now in quantities aligned with organizational needs</li>
           </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="product">
-    <div class="container">
-      <div class="card">
-        <div class="procedure-carousel" aria-label="Eyewear design highlights">
-          <div class="carousel-slide is-active" aria-hidden="false">
-            <img src="assets/images/IMG_2037.png" alt="Lower opaque lens design with improved visual block">
-            <div class="slide-overlay">
-              <p>Lower opaque lens designed to ensure lower visual block.</p>
-            </div>
-          </div>
-          <div class="carousel-slide" aria-hidden="true">
-            <img src="assets/images/IMG_2038.png" alt="Adjustable earpieces for steady positioning">
-            <div class="slide-overlay">
-              <p>Foam interface focused on a secure, gapless visual block.</p>
-            </div>
-          </div>
-          <div class="carousel-slide" aria-hidden="true">
-            <img src="assets/images/IMG_2015.png" alt="Foam interface design with secure, gapless fit">
-            <div class="slide-overlay">
-              <p>Adjustable earpieces help maintain steady, stable positioning.</p>
-            </div>
-          </div>
-        </div>
-        <div class="carousel-controls" aria-label="Carousel controls">
-          <button class="carousel-play" type="button" id="carouselPlayPause" aria-label="Pause automatic slide rotation">❚❚</button>
-          <div class="carousel-dots" role="tablist" aria-label="Select design slide">
-            <button class="carousel-dot is-active" type="button" role="tab" aria-selected="true" aria-label="Show slide 1"></button>
-            <button class="carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show slide 2"></button>
-            <button class="carousel-dot" type="button" role="tab" aria-selected="false" aria-label="Show slide 3"></button>
+          <div class="cta-row" style="margin-top: 26px;">
+            <a class="btn btn-dark" href="buy.html">Product &amp; Ordering</a>
+            <a class="btn btn-outline-dark" href="contact.html?subject=Product%20sample">Request Product Samples</a>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="two-up">
-        <div class="card">
-          <div class="card-pad">
-            <div class="kicker">How it works</div>
-            <h2>Simple by design.</h2>
-            <div class="steps">
-              <div class="step">
-                <div class="step-num">1</div>
-                <div class="body-copy">Place the eyewear on the patient before the procedure begins.</div>
-              </div>
-              <div class="step">
-                <div class="step-num">2</div>
-                <div class="body-copy">The lower portion ensures lower visual block during treatment.</div>
-              </div>
-              <div class="step">
-                <div class="step-num">3</div>
-                <div class="body-copy">Perform the procedure while the eyewear remains in place.</div>
-              </div>
-            </div>
-          </div>
+    <section class="section evidence-band" aria-labelledby="feedback-heading">
+      <div class="container">
+        <div class="section-intro">
+          <div class="kicker">Early patient-reported feedback</div>
+          <h2 id="feedback-heading">An encouraging starting point—not a clinical effectiveness study.</h2>
         </div>
-
+        <div class="evidence-summary">
+          <div class="evidence-metric"><strong>45</strong><span>Completed questionnaires</span></div>
+          <div class="evidence-metric"><strong>50</strong><span>Patients offered feedback</span></div>
+          <p class="evidence-note">Initial descriptive feedback was collected in a breast-biopsy setting. It was not a randomized or controlled clinical study and does not establish clinical effectiveness or predict results in infusion care.</p>
+        </div>
+        <div class="cta-row" style="margin-top: 24px;">
+          <a class="btn btn-dark" href="clinical-feedback.html">Review Feedback &amp; Context</a>
+        </div>
       </div>
+    </section>
 
-      <div class="cta-block" id="contact">
-        <a class="btn btn-primary" href="contact.html">Contact Akoya</a>
+    <section class="section" aria-labelledby="patent-heading">
+      <div class="container patent-panel">
+        <div>
+          <div class="kicker" style="color:#f3b5ca;">Patent verification</div>
+          <h2 id="patent-heading">Lower-field vision-obstruction technology described in an issued U.S. patent.</h2>
+          <p>The technology and method described in U.S. Patent No. 12,629,282 B1 use an opaque lower region and a conformable interface to limit lower-field visibility while preserving partial forward or upward visibility. A patent documents intellectual property; it does not establish clinical effectiveness or regulatory clearance.</p>
+          <a class="resource-link" style="color:#ffffff;" href="https://patents.justia.com/patent/12629282" target="_blank" rel="noopener">View the public patent record <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="patent-facts">
+          <div class="patent-fact"><span>Patent</span><strong>U.S. 12,629,282 B1</strong></div>
+          <div class="patent-fact"><span>Issued</span><strong>May 19, 2026</strong></div>
+          <div class="patent-fact"><span>Title</span><strong>Method and Eyewear Apparatus for Lower Visual Field Obstruction</strong></div>
+          <div class="patent-fact"><span>Inventors</span><strong>Drew Richard Zaun and Thomas Raymond Goetz</strong></div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <section class="section" aria-labelledby="organizations-heading">
+      <div class="container">
+        <div class="cta-block">
+          <div>
+            <h2 id="organizations-heading">Considering Akoya for a clinical setting?</h2>
+            <p>Start with product samples, a brief staff demonstration, or a limited one-site evaluation.</p>
+          </div>
+          <a class="btn btn-primary" href="healthcare-organizations.html">For Healthcare Organizations</a>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <footer class="section site-footer">
-    <div class="container footer-inner">
-      <div>© 2026 Akoya Medical. All rights reserved.</div>
-      <nav class="footer-legal" aria-label="Legal links">
-        <a href="privacy-policy.html">Privacy Policy</a>
-        <a href="terms-of-use.html">Terms of Use</a>
-      </nav>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <strong>Akoya Medical, LLC</strong>
+          <span>333 Tamiami Trail S, Suite 317<br>Venice, FL 34285</span>
+          <span>Single-patient-use lower-field visual barrier assembled in the USA.</span>
+        </div>
+        <div class="footer-column">
+          <strong>Explore</strong>
+          <a href="buy.html">Product</a>
+          <a href="healthcare-organizations.html">Healthcare Organizations</a>
+          <a href="clinical-feedback.html">Feedback &amp; Research</a>
+          <a href="our-journey.html">About</a>
+        </div>
+        <div class="footer-column">
+          <strong>Contact</strong>
+          <a href="mailto:info@akoyamedical.com">info@akoyamedical.com</a>
+          <a href="tel:+15155875863">515-587-5863</a>
+          <a href="contact.html">Contact Tom or Drew</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Akoya Medical. All rights reserved.</span>
+        <nav aria-label="Legal links">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-use.html">Terms of Use</a>
+        </nav>
+      </div>
     </div>
   </footer>
   <script src="checkout-toggles.js"></script>

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /buy-now.html
+Disallow: /request-invoice.html
+Disallow: /order-confirmation.html
+
+Sitemap: https://akoyamedical.com/sitemap.xml
