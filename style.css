@@ -2678,6 +2678,37 @@ header {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.contact-team-grid {
+  align-items: stretch;
+}
+
+#contact-drew {
+  scroll-margin-top: 84px;
+}
+
+.contact-person-primary {
+  border-top: 5px solid var(--akoya-pink);
+  background: linear-gradient(145deg, #ffffff, #fff7fa);
+}
+
+.contact-person-support {
+  background: var(--akoya-surface);
+}
+
+.contact-primary-label {
+  display: inline-flex;
+  margin-bottom: 13px;
+  border-radius: 999px;
+  background: var(--akoya-pink-soft);
+  color: #9f2f51;
+  padding: 7px 10px;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.065em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .team-card h2,
 .team-card h3,
 .contact-person h2,
@@ -2699,6 +2730,102 @@ header {
   font-weight: 800;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+.email-copy-panel {
+  display: grid;
+  justify-items: start;
+  gap: 9px;
+  margin-top: 22px;
+  border: 1px solid #d9e4e9;
+  border-radius: 17px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.email-copy-label,
+.contact-subject-panel span {
+  color: var(--akoya-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+}
+
+.email-copy-address {
+  color: var(--akoya-navy-dark);
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.copy-email-button {
+  width: fit-content;
+  min-height: 50px;
+  border: 0;
+  padding-inline: 22px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.copy-email-status {
+  min-height: 1.35em;
+  color: #2f6650;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.copy-email-status-light {
+  flex-basis: 100%;
+  color: rgba(255, 255, 255, 0.84);
+  text-align: center;
+}
+
+.cta-email-address {
+  display: block;
+  margin-top: 10px;
+  color: #ffffff;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.contact-details-list {
+  margin-top: 14px;
+}
+
+.contact-subject-panel {
+  display: grid;
+  gap: 6px;
+  margin-top: 22px;
+  border-left: 4px solid var(--akoya-pink);
+  border-radius: 0 14px 14px 0;
+  background: var(--akoya-surface);
+  padding: 14px 16px;
+}
+
+.contact-subject-panel strong {
+  color: var(--akoya-navy-dark);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.contact-email-text {
+  margin: 0;
+  cursor: text;
+  user-select: all;
+}
+
+.contact-email-text:hover {
+  color: #18384e;
+  text-decoration: none;
+}
+
+.care-context-section {
+  background: var(--akoya-surface);
 }
 
 .resource-grid {

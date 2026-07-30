@@ -63,6 +63,76 @@ document.addEventListener('DOMContentLoaded', () => {
     image.addEventListener('error', collapseMissingMarketImage, { once: true });
   });
 
+  const inquiryContext = document.getElementById('contactInquiryContext');
+
+  if (inquiryContext) {
+    const query = new URLSearchParams(window.location.search);
+    const interest = (query.get('interest') || query.get('subject') || '').trim().toLowerCase();
+    const inquirySubjects = new Map([
+      ['evaluation', 'Akoya Eye Shield product evaluation'],
+      ['product evaluation', 'Akoya Eye Shield product evaluation'],
+      ['samples', 'Akoya Eye Shield product sample request'],
+      ['product sample', 'Akoya Eye Shield product sample request'],
+      ['quote', 'Akoya Eye Shield institutional quote request'],
+      ['healthcare', 'Akoya Eye Shield healthcare-organization inquiry'],
+    ]);
+
+    inquiryContext.textContent = inquirySubjects.get(interest) || 'Akoya Eye Shield inquiry';
+  }
+
+  const copyText = async (value) => {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return;
+      } catch (error) {
+        // Some browsers expose the Clipboard API but still deny access.
+      }
+    }
+
+    const helper = document.createElement('textarea');
+    helper.value = value;
+    helper.setAttribute('readonly', '');
+    helper.style.position = 'fixed';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand('copy');
+    helper.remove();
+
+    if (!copied) {
+      throw new Error('Copy command was unavailable');
+    }
+  };
+
+  document.querySelectorAll('[data-copy-email]').forEach((button) => {
+    const defaultLabel = button.textContent;
+    const feedbackContainer = button.closest('.email-copy-panel, .cta-block');
+    const status = feedbackContainer?.querySelector('.copy-email-status');
+    let resetTimer;
+
+    button.addEventListener('click', async () => {
+      window.clearTimeout(resetTimer);
+
+      try {
+        await copyText(button.dataset.copyEmail || '');
+        button.textContent = 'Email copied';
+        if (status) {
+          status.textContent = "Drew's email address has been copied.";
+        }
+      } catch (error) {
+        button.textContent = defaultLabel;
+        if (status) {
+          status.textContent = 'Copy was unavailable. Select dzaun@akoyamedical.com on this page.';
+        }
+      }
+
+      resetTimer = window.setTimeout(() => {
+        button.textContent = defaultLabel;
+      }, 2400);
+    });
+  });
+
   const menuToggle = document.getElementById('menuToggle');
   const mobileMenu = document.getElementById('mobileMenu');
   const mobileMenuLinks = Array.from(document.querySelectorAll('.mobile-menu a'));
