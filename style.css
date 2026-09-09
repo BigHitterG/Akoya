@@ -2989,7 +2989,8 @@ header {
     gap: 15px;
   }
 
-  .primary-nav a {
+  .primary-nav a,
+  .nav-products-toggle {
     font-size: 0.74rem;
   }
 
@@ -3203,6 +3204,7 @@ header {
 
 .brand-name,
 .primary-nav a,
+.nav-products-toggle,
 .mobile-menu a {
   color: var(--akoya-navy-dark);
 }
@@ -3212,6 +3214,84 @@ header {
 .primary-nav a[aria-current="page"] {
   color: #000000;
   text-decoration-color: #000000;
+}
+
+.nav-products {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-products-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 750;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nav-products-toggle:hover,
+.nav-products-toggle:focus-visible,
+.nav-products-toggle.is-current {
+  color: #000000;
+}
+
+.nav-products-toggle span {
+  font-size: .9em;
+  transition: transform .2s ease;
+}
+
+.nav-products.is-open .nav-products-toggle span,
+.nav-products:focus-within .nav-products-toggle span {
+  transform: rotate(180deg);
+}
+
+.nav-products-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: -18px;
+  z-index: 20;
+  display: grid;
+  min-width: 285px;
+  border: 1px solid rgba(8, 24, 35, .13);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 8px;
+  box-shadow: 0 18px 45px rgba(7, 18, 28, .16);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+}
+
+.nav-products-menu a {
+  border-radius: 9px;
+  padding: 11px 12px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.nav-products-menu a:hover,
+.nav-products-menu a:focus-visible,
+.nav-products-menu a[aria-current="page"] {
+  background: #f1f5f7;
+  text-decoration: none;
+}
+
+.nav-products:hover .nav-products-menu,
+.nav-products:focus-within .nav-products-menu,
+.nav-products.is-open .nav-products-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .primary-nav .nav-cta {
@@ -3414,7 +3494,7 @@ header {
 .pediatric-product-photos img {
   width: 100%;
   aspect-ratio: 4 / 3;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .pediatric-product-photos figcaption {
@@ -3563,3 +3643,4 @@ header {
     grid-column: auto;
   }
 }
+

@@ -137,6 +137,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const mobileMenu = document.getElementById('mobileMenu');
   const mobileMenuLinks = Array.from(document.querySelectorAll('.mobile-menu a'));
 
+  document.querySelectorAll('.nav-products').forEach((menu) => {
+    const toggle = menu.querySelector('.nav-products-toggle');
+    if (!toggle) return;
+
+    const setProductsOpen = (isOpen) => {
+      menu.classList.toggle('is-open', isOpen);
+      toggle.setAttribute('aria-expanded', String(isOpen));
+    };
+
+    toggle.addEventListener('click', () => setProductsOpen(!menu.classList.contains('is-open')));
+    menu.addEventListener('focusout', (event) => {
+      if (!menu.contains(event.relatedTarget)) setProductsOpen(false);
+    });
+    document.addEventListener('click', (event) => {
+      if (!menu.contains(event.target)) setProductsOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setProductsOpen(false);
+    });
+  });
+
   if (menuToggle && mobileMenu) {
     const setMenuState = (isOpen) => {
       mobileMenu.classList.toggle('is-open', isOpen);
@@ -195,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startRotation = () => {
       stopRotation();
       if (!paused && slides.length > 1) {
-        rotationTimer = window.setInterval(() => showSlide(activeIndex + 1), 7000);
+        rotationTimer = window.setInterval(() => showSlide(activeIndex + 1), 3000);
       }
     };
 
@@ -211,8 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
       startRotation();
     });
 
-    productHero.addEventListener('mouseenter', stopRotation);
-    productHero.addEventListener('mouseleave', startRotation);
     productHero.addEventListener('focusin', stopRotation);
     productHero.addEventListener('focusout', (event) => {
       if (!productHero.contains(event.relatedTarget)) startRotation();
@@ -473,3 +492,4 @@ document.addEventListener('DOMContentLoaded', () => {
   renderActiveSlide(0);
   startRotation();
 });
+

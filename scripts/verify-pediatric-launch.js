@@ -8,9 +8,9 @@ const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 for (const asset of [
   'assets/images/akoya-logo-black.png',
-  'assets/images/pediatric-character-mask-clinic.png',
-  'assets/images/pediatric-character-mask-front.jpg',
-  'assets/images/pediatric-character-mask-rear.jpg'
+  'assets/images/pediatric-character-mask-clinic-v2.png',
+  'assets/images/pediatric-character-mask-front-studio.png',
+  'assets/images/pediatric-character-mask-rear-studio.png'
 ]) {
   assert(fs.existsSync(path.join(root, asset)), `Missing ${asset}`);
 }
@@ -67,3 +67,4 @@ function response() {
   console.error(error);
   process.exitCode = 1;
 });
+
