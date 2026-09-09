@@ -162,44 +162,101 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  const heroVideo = document.getElementById('heroVideo');
+  const productHero = document.querySelector('[data-product-hero]');
 
-  if (heroVideo) {
+  if (productHero) {
+    const slides = Array.from(productHero.querySelectorAll('[data-hero-slide]'));
+    const dots = Array.from(productHero.querySelectorAll('[data-hero-dot]'));
+    const pauseButton = productHero.querySelector('[data-hero-pause]');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const saveData = navigator.connection?.saveData === true;
+    let activeIndex = 0;
+    let rotationTimer;
+    let paused = reducedMotion;
 
-    if (!reducedMotion && !saveData) {
-      const hideVideo = () => heroVideo.classList.remove('is-ready');
-      const revealVideo = () => {
-        if (!heroVideo.paused && heroVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-          heroVideo.classList.add('is-ready');
-        }
-      };
-      const loadHeroVideo = () => {
-        heroVideo.querySelectorAll('source[data-src]').forEach((source) => {
-          source.src = source.dataset.src;
-          source.removeAttribute('data-src');
+    const showSlide = (nextIndex) => {
+      activeIndex = (nextIndex + slides.length) % slides.length;
+      slides.forEach((slide, index) => {
+        const isActive = index === activeIndex;
+        slide.classList.toggle('is-active', isActive);
+        slide.setAttribute('aria-hidden', String(!isActive));
+        slide.querySelectorAll('a, button, input, select, textarea').forEach((control) => {
+          control.tabIndex = isActive ? 0 : -1;
         });
-        heroVideo.load();
-      };
+      });
+      dots.forEach((dot, index) => {
+        const isActive = index === activeIndex;
+        dot.classList.toggle('is-active', isActive);
+        if (isActive) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
+    };
 
-      heroVideo.muted = true;
-      heroVideo.defaultMuted = true;
-      heroVideo.playsInline = true;
-      heroVideo.addEventListener('playing', revealVideo);
-      heroVideo.addEventListener('pause', hideVideo);
-      heroVideo.addEventListener('error', hideVideo);
-      heroVideo.addEventListener('abort', hideVideo);
-      heroVideo.addEventListener('emptied', hideVideo);
+    const stopRotation = () => window.clearInterval(rotationTimer);
+    const startRotation = () => {
+      stopRotation();
+      if (!paused && slides.length > 1) {
+        rotationTimer = window.setInterval(() => showSlide(activeIndex + 1), 7000);
+      }
+    };
 
-      window.setTimeout(() => {
-        loadHeroVideo();
-        const playbackAttempt = heroVideo.play();
-        if (playbackAttempt && typeof playbackAttempt.catch === 'function') {
-          playbackAttempt.catch(hideVideo);
-        }
-      }, 350);
+    dots.forEach((dot, index) => dot.addEventListener('click', () => {
+      showSlide(index);
+      startRotation();
+    }));
+
+    pauseButton?.addEventListener('click', () => {
+      paused = !paused;
+      pauseButton.textContent = paused ? 'Play' : 'Pause';
+      pauseButton.setAttribute('aria-label', paused ? 'Play product rotation' : 'Pause product rotation');
+      startRotation();
+    });
+
+    productHero.addEventListener('mouseenter', stopRotation);
+    productHero.addEventListener('mouseleave', startRotation);
+    productHero.addEventListener('focusin', stopRotation);
+    productHero.addEventListener('focusout', (event) => {
+      if (!productHero.contains(event.relatedTarget)) startRotation();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopRotation();
+      else startRotation();
+    });
+
+    if (reducedMotion && pauseButton) {
+      pauseButton.textContent = 'Play';
+      pauseButton.setAttribute('aria-label', 'Play product rotation');
     }
+    showSlide(0);
+    startRotation();
+  }
+
+  const pediatricInterestForm = document.getElementById('pediatricInterestForm');
+
+  if (pediatricInterestForm) {
+    const submitButton = pediatricInterestForm.querySelector('button[type="submit"]');
+    const status = document.getElementById('pediatricInterestStatus');
+
+    pediatricInterestForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      submitButton.disabled = true;
+      status.textContent = 'Joining the launch list…';
+
+      try {
+        const response = await fetch('/api/pediatric-interest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.fromEntries(new FormData(pediatricInterestForm)))
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Unable to submit right now.');
+        pediatricInterestForm.reset();
+        status.textContent = 'Thank you. You’re on the pediatric launch list, and our team will follow up as availability is confirmed.';
+      } catch (error) {
+        status.textContent = `${error.message} You can also email dzaun@akoyamedical.com.`;
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
   }
 
   const galleryRoot = document.querySelector('[data-gallery]');
