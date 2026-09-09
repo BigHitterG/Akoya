@@ -3355,6 +3355,11 @@ header {
   object-position: center center;
 }
 
+.product-hero-image-adult {
+  transform: translateX(18%) scale(1.18);
+  transform-origin: center;
+}
+
 .product-hero .hero-overlay {
   z-index: 1;
   background:
@@ -3503,6 +3508,59 @@ header {
   font-size: .88rem;
 }
 
+.pediatric-patterns-section {
+  padding: 28px 0 48px;
+  background: #ffffff;
+}
+
+.pediatric-patterns-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.pediatric-patterns-heading h2 {
+  margin: 5px 0 0;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.pediatric-patterns-heading p {
+  margin: 0 0 4px;
+  color: #64727c;
+  font-size: .92rem;
+}
+
+.pediatric-patterns {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pediatric-patterns figure {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #dce4e8;
+  border-radius: 14px;
+  background: #f7f9fa;
+}
+
+.pediatric-patterns img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.pediatric-patterns figcaption {
+  padding: 8px 10px 9px;
+  color: #2f4654;
+  font-size: .78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .launch-interest-wrap {
   display: grid;
   grid-template-columns: .8fr 1.2fr;
@@ -3585,9 +3643,17 @@ header {
     object-position: 62% center;
   }
 
+  .product-hero-image-adult {
+    transform: translateX(12%) scale(1.14);
+  }
+
   .pediatric-page-grid,
   .launch-interest-wrap {
     grid-template-columns: 1fr;
+  }
+
+  .pediatric-patterns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -3637,6 +3703,14 @@ header {
   .pediatric-product-photos,
   .interest-form {
     grid-template-columns: 1fr;
+  }
+
+  .pediatric-patterns-heading {
+    display: block;
+  }
+
+  .pediatric-patterns-heading p {
+    margin-top: 8px;
   }
 
   .interest-form .form-wide {

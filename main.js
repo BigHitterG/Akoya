@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startRotation = () => {
       stopRotation();
       if (!paused && slides.length > 1) {
-        rotationTimer = window.setInterval(() => showSlide(activeIndex + 1), 3000);
+        rotationTimer = window.setInterval(() => showSlide(activeIndex + 1), 5000);
       }
     };
 
