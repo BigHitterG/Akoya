@@ -3355,11 +3355,6 @@ header {
   object-position: center center;
 }
 
-.product-hero-image-adult {
-  transform: translateX(18%) scale(1.18);
-  transform-origin: center;
-}
-
 .product-hero .hero-overlay {
   z-index: 1;
   background:
@@ -3641,10 +3636,6 @@ header {
   .product-hero-image,
   .product-hero-image-pediatric {
     object-position: 62% center;
-  }
-
-  .product-hero-image-adult {
-    transform: translateX(12%) scale(1.14);
   }
 
   .pediatric-page-grid,
