@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/pediatric-interest",
+      "destination": "/api/create-stripe-invoice?mode=pediatric-interest"
+    },
+    {
       "source": "/label/:token",
       "destination": "/api/label/:token"
     }

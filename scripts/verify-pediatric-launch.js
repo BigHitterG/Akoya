@@ -41,7 +41,7 @@ function response() {
 }
 
 (async () => {
-  const handler = require('../api/pediatric-interest');
+  const handler = require('../lib/server/pediatric-interest');
   const invalid = response();
   await handler({ method: 'POST', body: {} }, invalid);
   assert.equal(invalid.statusCode, 400);

@@ -5,6 +5,7 @@ const { sendCustomerEmail } = require('./lib/customer-email');
 const { getFinalFallbackShippingFeeCents, shouldUseTestShippingProfile } = require('./lib/shipping-packages');
 const createFedexShipmentHandler = require('./create-fedex-shipment');
 const { resolveSiteUrl } = require('../lib/server/site-url');
+const handlePediatricInterest = require('../lib/server/pediatric-interest');
 
 const unitsPerBox = pricing.unitsPerBox;
 const pricePerUnitCents = pricing.pricePerUnitCents;
@@ -494,6 +495,10 @@ function scheduleInvoiceFedexLabelRecovery({
   })();
 }
 module.exports = async function handler(req, res) {
+  if (req.query && req.query.mode === 'pediatric-interest') {
+    return handlePediatricInterest(req, res);
+  }
+
   if (rejectWhenPurchaseFlowDisabled(res)) return;
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });
