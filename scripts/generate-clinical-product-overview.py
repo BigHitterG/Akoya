@@ -200,7 +200,7 @@ def build(output_path):
     pdf.drawString(margin + 12, info_y + 49, "INITIAL PATIENT-REPORTED FEEDBACK")
     pdf.setFillColor(DARK)
     pdf.setFont("Helvetica-Bold", 8.2)
-    pdf.drawString(margin + 12, info_y + 31, "96% recommendation  |  88% anxiety relief")
+    pdf.drawString(margin + 12, info_y + 31, "96% recommendation")
     draw_wrapped(pdf, "45 completed questionnaires among 50 patients in a breast-biopsy setting. Descriptive feedback only; not a controlled clinical study.", margin + 12, info_y + 17, info_w - 24, size=6.7, leading=7.5, color=DARK)
     pdf.setFillColor(white)
     pdf.setFont("Helvetica-Bold", 7.5)
