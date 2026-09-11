@@ -53,7 +53,7 @@ function response() {
       name: 'Test User',
       email: 'buyer@example.com',
       organization: 'Example Clinic',
-      quantity: '25–99 masks',
+      quantity: '25–99 units',
       timing: 'Within 3 months',
       consent: 'on'
     }
