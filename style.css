@@ -3477,6 +3477,67 @@ header {
   font-size: .8rem;
 }
 
+.section-soft {
+  background: var(--akoya-surface);
+}
+
+.homepage-pediatric-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+  align-items: start;
+  gap: clamp(28px, 5vw, 64px);
+  margin-bottom: 42px;
+}
+
+.homepage-pediatric-intro .section-intro {
+  margin-bottom: 0;
+}
+
+.evaluation-kit-summary {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--akoya-line);
+  border-top: 5px solid var(--akoya-pink);
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 24px;
+}
+
+.evaluation-kit-summary span {
+  color: var(--akoya-blue);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.evaluation-kit-summary strong {
+  color: var(--akoya-navy-dark);
+  font-size: clamp(1.3rem, 2.3vw, 1.8rem);
+  line-height: 1.2;
+}
+
+.evaluation-kit-summary p,
+.product-section-copy {
+  color: var(--akoya-muted);
+  line-height: 1.65;
+}
+
+.homepage-character-heading {
+  align-items: center;
+}
+
+.homepage-character-heading h3 {
+  margin-top: 5px;
+  color: var(--akoya-ink);
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.homepage-character-heading p {
+  max-width: 560px;
+  line-height: 1.55;
+}
+
 .pediatric-details-grid,
 .pediatric-product-photos {
   display: grid;
@@ -3533,6 +3594,10 @@ header {
   gap: 10px;
 }
 
+.pediatric-patterns-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .pediatric-patterns figure {
   margin: 0;
   overflow: hidden;
@@ -3563,6 +3628,18 @@ header {
   align-items: start;
 }
 
+#evaluation-request {
+  scroll-margin-top: 76px;
+}
+
+.evaluation-request-wrap .evaluation-kit-summary {
+  margin-top: 24px;
+}
+
+.evaluation-intro p + p {
+  margin-top: 10px;
+}
+
 .interest-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3580,6 +3657,45 @@ header {
   color: #1d303d;
   font-size: .88rem;
   font-weight: 700;
+}
+
+.interest-form fieldset {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.interest-form legend {
+  margin-bottom: 10px;
+  color: #1d303d;
+  font-size: .88rem;
+  font-weight: 700;
+}
+
+.interest-form legend span,
+.field-instruction {
+  color: #64727c;
+  font-size: .82rem;
+  font-weight: 500;
+}
+
+.evaluation-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.evaluation-settings-grid .checkbox-label {
+  min-height: 46px;
+  border: 1px solid #d3dde3;
+  border-radius: 10px;
+  background: #f8fafb;
+  padding: 10px 12px;
+}
+
+.field-instruction {
+  display: block;
 }
 
 .interest-form input,
@@ -3622,6 +3738,33 @@ header {
   left: -9999px;
 }
 
+.interest-form label[aria-hidden="true"] {
+  position: absolute;
+  left: -9999px;
+}
+
+.consent-label {
+  border-top: 1px solid var(--akoya-line);
+  padding-top: 18px;
+}
+
+.product-review-path {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.product-review-path-pediatric {
+  border-top: 5px solid var(--akoya-pink);
+  background: linear-gradient(145deg, #ffffff, #fff7fa);
+}
+
+.product-review-path .btn {
+  margin-top: auto;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
 .interest-form-status {
   min-height: 1.4em;
   color: #2b4b5d;
@@ -3639,12 +3782,17 @@ header {
   }
 
   .pediatric-page-grid,
+  .homepage-pediatric-intro,
   .launch-interest-wrap {
     grid-template-columns: 1fr;
   }
 
   .pediatric-patterns {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pediatric-patterns-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -3656,6 +3804,10 @@ header {
   .product-hero-slide,
   .product-hero .hero-inner {
     min-height: 690px;
+  }
+
+  .pediatric-primary-hero .hero-inner {
+    padding-bottom: 36px;
   }
 
   .product-hero .hero-inner {
@@ -3702,6 +3854,10 @@ header {
 
   .pediatric-patterns-heading p {
     margin-top: 8px;
+  }
+
+  .evaluation-settings-grid {
+    grid-template-columns: 1fr;
   }
 
   .interest-form .form-wide {

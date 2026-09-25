@@ -8,17 +8,25 @@ const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 for (const asset of [
   'assets/images/akoya-logo-black.png',
-  'assets/images/pediatric-character-mask-clinic-v2.png',
+  'assets/images/pediatric-character-mask-clinic-v3.webp',
   'assets/images/pediatric-character-mask-front-studio.png',
-  'assets/images/pediatric-character-mask-rear-studio.png'
+  'assets/images/pediatric-character-mask-rear-studio.png',
+  'assets/images/pediatric-patterns/tiger.webp',
+  'assets/images/pediatric-patterns/lion.webp',
+  'assets/images/pediatric-patterns/kitty.webp',
+  'assets/images/pediatric-patterns/puppy.webp'
 ]) {
   assert(fs.existsSync(path.join(root, asset)), `Missing ${asset}`);
 }
 
-assert(home.includes('data-product-hero'), 'Homepage product hero is missing');
+assert(home.includes('A friendlier view for pediatric procedures.'), 'Homepage pediatric hero is missing');
+assert(home.indexOf('A friendlier view for pediatric procedures.') < home.indexOf('A focused visual barrier for needle-based care.'), 'Pediatric story must precede the adult product');
 assert(!home.includes('heroVideo'), 'Legacy hero video is still present');
-assert(html.includes('id="pediatricInterestForm"'), 'Launch-interest form is missing');
-assert(html.includes('not a binding purchase order'), 'Non-binding disclosure is missing');
+assert(html.includes('id="pediatricEvaluationForm"'), 'Evaluation request form is missing');
+assert(html.includes('does not guarantee free product or shipment of a kit'), 'Evaluation request qualification disclosure is missing');
+assert(html.includes('Four friendly characters.'), 'Four-character collection heading is missing');
+assert(!html.includes('pediatric-patterns/bear.webp'), 'Bear must not be presented in the active collection');
+assert(!html.includes('pediatric-patterns/monkey.webp'), 'Monkey must not be presented in the active collection');
 
 process.env.RESEND_API_KEY = 'test-key';
 process.env.ORDER_NOTIFICATION_FROM = 'Akoya <orders@akoyamedical.com>';
@@ -52,9 +60,17 @@ function response() {
     body: {
       name: 'Test User',
       email: 'buyer@example.com',
-      organization: 'Example Clinic',
-      quantity: '25–99 units',
-      timing: 'Within 3 months',
+      organization: 'Example Health System',
+      role: 'Child Life Specialist',
+      department: 'Child Life',
+      phone: '555-0100',
+      evaluationSettings: ['Child Life', 'Phlebotomy / Lab'],
+      procedureVolume: '100–249',
+      evaluationPlan: 'Review fit and product handling with staff.',
+      utm_source: 'institutional-email',
+      utm_medium: 'email',
+      utm_campaign: 'pediatric-evaluation',
+      utm_content: 'primary-cta',
       consent: 'on'
     }
   }, valid);
@@ -62,7 +78,7 @@ function response() {
   assert.equal(valid.statusCode, 200);
   assert.equal(valid.body.ok, true);
   assert.equal(sentMessages, 2, 'Expected internal and registrant emails');
-  console.log('Pediatric launch flow verified.');
+  console.log('Pediatric evaluation flow verified.');
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

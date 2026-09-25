@@ -34,6 +34,39 @@ document.addEventListener('DOMContentLoaded', () => {
   window.visualViewport?.addEventListener('scroll', scheduleViewportHeightSync);
 
   const siteToggles = window.AKOYA_CHECKOUT_TOGGLES || {};
+  const pageQuery = new URLSearchParams(window.location.search);
+  const attributionKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'];
+  const attribution = {};
+
+  attributionKeys.forEach((key) => {
+    const queryValue = (pageQuery.get(key) || '').trim().slice(0, 200);
+    if (queryValue) {
+      attribution[key] = queryValue;
+      try {
+        window.sessionStorage.setItem(`akoya_${key}`, queryValue);
+      } catch (error) {
+        // Attribution remains available for the current page when storage is unavailable.
+      }
+      return;
+    }
+
+    try {
+      attribution[key] = window.sessionStorage.getItem(`akoya_${key}`) || '';
+    } catch (error) {
+      attribution[key] = '';
+    }
+  });
+
+  if (attributionKeys.some((key) => attribution[key])) {
+    document.querySelectorAll('a[href^="pediatric-character-mask.html"]').forEach((link) => {
+      const target = new URL(link.getAttribute('href'), window.location.href);
+      attributionKeys.forEach((key) => {
+        if (attribution[key]) target.searchParams.set(key, attribution[key]);
+      });
+      link.href = `${target.pathname.split('/').pop()}${target.search}${target.hash}`;
+    });
+  }
+
   const marketSegmentsSection = document.querySelector('[data-feature-toggle="marketSegments"]');
   const marketSegmentsEnabled = siteToggles.homepage?.marketSegments?.enabled !== false;
 
@@ -66,18 +99,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const inquiryContext = document.getElementById('contactInquiryContext');
 
   if (inquiryContext) {
-    const query = new URLSearchParams(window.location.search);
-    const interest = (query.get('interest') || query.get('subject') || '').trim().toLowerCase();
+    const interest = (pageQuery.get('interest') || pageQuery.get('subject') || '').trim().toLowerCase();
     const inquirySubjects = new Map([
-      ['evaluation', 'Akoya Eye Shield product evaluation'],
-      ['product evaluation', 'Akoya Eye Shield product evaluation'],
+      ['pediatric', 'Akoya Pediatric Evaluation Kit inquiry'],
+      ['pediatric evaluation', 'Akoya Pediatric Evaluation Kit inquiry'],
+      ['adult-evaluation', 'Adult Akoya Eye Shield product evaluation'],
+      ['evaluation', 'Akoya Medical product evaluation'],
+      ['product evaluation', 'Akoya Medical product evaluation'],
       ['samples', 'Akoya Eye Shield product sample request'],
       ['product sample', 'Akoya Eye Shield product sample request'],
       ['quote', 'Akoya Eye Shield institutional quote request'],
-      ['healthcare', 'Akoya Eye Shield healthcare-organization inquiry'],
+      ['healthcare', 'Akoya Medical healthcare-organization inquiry'],
     ]);
 
-    inquiryContext.textContent = inquirySubjects.get(interest) || 'Akoya Eye Shield inquiry';
+    inquiryContext.textContent = inquirySubjects.get(interest) || 'Akoya Medical product inquiry';
   }
 
   const copyText = async (value) => {
@@ -249,27 +284,54 @@ document.addEventListener('DOMContentLoaded', () => {
     startRotation();
   }
 
-  const pediatricInterestForm = document.getElementById('pediatricInterestForm');
+  const pediatricEvaluationForm = document.getElementById('pediatricEvaluationForm');
 
-  if (pediatricInterestForm) {
-    const submitButton = pediatricInterestForm.querySelector('button[type="submit"]');
-    const status = document.getElementById('pediatricInterestStatus');
+  if (pediatricEvaluationForm) {
+    const submitButton = pediatricEvaluationForm.querySelector('button[type="submit"]');
+    const status = document.getElementById('pediatricEvaluationStatus');
+    const populateAttributionFields = () => {
+      attributionKeys.forEach((key) => {
+        const input = pediatricEvaluationForm.elements.namedItem(key);
+        if (input) {
+          input.value = attribution[key] || '';
+          input.defaultValue = attribution[key] || '';
+        }
+      });
+    };
 
-    pediatricInterestForm.addEventListener('submit', async (event) => {
+    populateAttributionFields();
+
+    pediatricEvaluationForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       submitButton.disabled = true;
-      status.textContent = 'Joining the launch list…';
+      status.textContent = 'Submitting your evaluation request…';
 
       try {
-        const response = await fetch('/api/pediatric-interest', {
+        const formData = new FormData(pediatricEvaluationForm);
+        const payload = Object.fromEntries(formData);
+        payload.evaluationSettings = formData.getAll('evaluationSetting');
+        attributionKeys.forEach((key) => {
+          payload[key] = attribution[key] || '';
+        });
+        delete payload.evaluationSetting;
+
+        const response = await fetch('/api/pediatric-evaluation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(Object.fromEntries(new FormData(pediatricInterestForm)))
+          body: JSON.stringify(payload)
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Unable to submit right now.');
-        pediatricInterestForm.reset();
-        status.textContent = 'Thank you. You’re on the pediatric launch list, and our team will follow up as availability is confirmed.';
+        pediatricEvaluationForm.reset();
+        populateAttributionFields();
+        status.textContent = 'Thank you. Akoya has received your evaluation request. Drew Zaun or a member of the Akoya team will follow up with you regarding next steps.';
+
+        window.dispatchEvent(new CustomEvent('pediatric_evaluation_request'));
+        if (Array.isArray(window.dataLayer)) {
+          window.dataLayer.push({ event: 'pediatric_evaluation_request' });
+        } else if (typeof window.gtag === 'function') {
+          window.gtag('event', 'pediatric_evaluation_request');
+        }
       } catch (error) {
         status.textContent = `${error.message} You can also email dzaun@akoyamedical.com.`;
       } finally {
