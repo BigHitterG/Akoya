@@ -3865,3 +3865,35 @@ header {
   }
 }
 
+/* Pediatric product gallery and character shelf */
+.pediatric-showcase { background: #fff; }
+.eyewear-product-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .85fr); gap: clamp(28px, 5vw, 70px); align-items: center; }
+.eyewear-gallery { min-width: 0; }
+.eyewear-stage { margin: 0; }
+.eyewear-stage img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; }
+.eyewear-stage figcaption { min-height: 24px; text-align: center; color: #60717b; font-size: .85rem; }
+.eyewear-view-controls { display: flex; justify-content: center; gap: 8px; margin-top: 15px; }
+.eyewear-view-controls button { border: 1px solid #b7c7cf; border-radius: 24px; background: #fff; color: #163847; padding: 10px 25px; font: inherit; cursor: pointer; }
+.eyewear-view-controls button[aria-pressed="true"] { background: #163847; border-color: #163847; color: white; }
+.eyewear-product-copy h1, .eyewear-product-copy h2 { margin: 14px 0 22px; font-size: clamp(2.1rem, 3.8vw, 3.7rem); line-height: 1.06; letter-spacing: -.045em; color: var(--akoya-navy-dark); font-weight: 500; }
+.eyewear-product-copy > p { color: #42515c; line-height: 1.7; font-size: 1.06rem; }
+.eyewear-product-copy .eyewear-use-note { font-size: .86rem; color: #64727c; margin: 20px 0; }
+.character-shelf-heading { margin-top: 56px; text-align: center; }
+.character-shelf-heading h2 { margin: 8px 0; font-size: clamp(1.7rem, 3vw, 2.35rem); }
+.character-shelf-heading p { color: #64727c; margin-bottom: 24px; }
+.character-shelf { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.character-choice { display: block; padding: 0 0 18px; background: #fff; border: 1px solid #dce4e8; border-radius: 16px; overflow: hidden; cursor: pointer; font: inherit; color: #244452; box-shadow: 0 10px 22px -15px #526b7b; transition: transform .18s ease, border-color .18s ease; }
+.character-choice img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; }
+.character-choice span { display: block; font-weight: 700; }
+.character-choice[aria-pressed="true"] { border: 2px solid #244452; padding-bottom: 17px; background: #f3f7f8; }
+.character-choice:hover { transform: translateY(-4px); border-color: #244452; }
+.character-choice:focus-visible, .eyewear-view-controls button:focus-visible { outline: 3px solid #b7527c; outline-offset: 4px; }
+.pediatric-showcase > .container > .illustrative-note { text-align: center; margin-top: 20px; }
+@media (max-width: 800px) {
+  .eyewear-product-grid { grid-template-columns: 1fr; }
+  .eyewear-product-copy { text-align: center; }
+  .eyewear-product-copy .cta-row { justify-content: center; }
+  .character-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .character-shelf-heading { margin-top: 38px; }
+}
+@media (prefers-reduced-motion: reduce) { .character-choice { transition: none; } }

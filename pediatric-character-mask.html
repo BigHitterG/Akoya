@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261005">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -35,96 +35,27 @@
   </header>
 
   <main id="main-content">
-    <section class="pediatric-page-hero">
-      <div class="container pediatric-page-grid">
-        <div class="pediatric-page-copy">
-          <div class="kicker">Akoya Pediatric Character Eyewear · Ages 3+</div>
-          <h1>A friendlier view for pediatric procedures.</h1>
-          <p>Single-patient-use character eyewear designed for brief, directly supervised use in clinical settings. Cushioned spacing holds the eyewear away from the face while the design helps limit the lower field of view.</p>
-          <div class="cta-row">
-            <a class="btn btn-dark" href="#evaluation-request">Request a Pediatric Evaluation Kit</a>
-            <a class="btn btn-outline-dark" href="contact.html?interest=pediatric">Talk With Akoya</a>
-          </div>
-          <div class="hero-facts product-page-facts" aria-label="Product facts">
-            <span>Ages 3+</span><span>Single-patient use</span><span>Nonsterile</span><span>Latex-free</span><span>Assembled in the USA</span>
-          </div>
-        </div>
-        <div>
-          <img class="pediatric-page-image" src="assets/images/pediatric-character-mask-clinic-v3.webp" alt="Child wearing the tiger character eyewear in a pediatric clinic">
-          <p class="illustrative-note">Illustrative product visualization.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-soft" aria-labelledby="pediatric-evaluation-heading">
+<section class="section pediatric-showcase" aria-label="Pediatric eyewear product gallery" data-eyewear-gallery>
       <div class="container">
-        <div class="section-intro evaluation-intro">
-          <div class="kicker">For healthcare organizations</div>
-          <h2 id="pediatric-evaluation-heading">Evaluate Akoya in your pediatric workflow.</h2>
-          <p>Akoya is offering limited evaluation kits to healthcare teams interested in reviewing the Pediatric Character Eyewear in their own clinical setting.</p>
-          <p>Each kit contains six single-patient-use character eyewear units representing Akoya's current pediatric character collection.</p>
-        </div>
-        <div class="path-grid evaluation-steps">
-          <article class="path-card">
-            <span class="path-number">1</span>
-            <h3>Request</h3>
-            <p>Tell us about your organization, department, and intended evaluation setting.</p>
-          </article>
-          <article class="path-card">
-            <span class="path-number">2</span>
-            <h3>Evaluate</h3>
-            <p>Your team determines whether, where, and how the product is appropriate to evaluate under your organization's own clinical, compliance, privacy, and procurement requirements.</p>
-          </article>
-          <article class="path-card">
-            <span class="path-number">3</span>
-            <h3>Follow up</h3>
-            <p>Akoya will follow up with your team to discuss workflow fit, staff observations, product handling, and possible next steps.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="pediatric-details-heading">
-      <div class="container pediatric-details-grid">
-        <div class="section-intro">
-          <div class="kicker">Product design</div>
-          <h2 id="pediatric-details-heading">Built around the clinical moment.</h2>
-          <p>The open upper view supports forward and upward awareness, while the lower portion of the eyewear helps limit a child's direct view of activity below eye level.</p>
-        </div>
-        <div class="card"><div class="card-pad">
-          <h3>Intended setting</h3>
-          <p>For brief use by children ages 3 and older under continuous adult supervision in a clinical setting. Not a toy. Remove after the procedure and do not allow walking while worn.</p>
-          <h3 style="margin-top:22px">Comfort and spacing</h3>
-          <p>Soft foam supports create space between the face and printed eyewear, with an adjustable elastic cord helping maintain position.</p>
-        </div></div>
-      </div>
-    </section>
-
-    <section class="pediatric-patterns-section" aria-labelledby="pediatric-patterns-heading">
-      <div class="container">
-        <div class="pediatric-patterns-heading">
-          <div>
-            <div class="kicker">Character options</div>
-            <h2 id="pediatric-patterns-heading">Four friendly characters.</h2>
+        <div class="eyewear-product-grid">
+          <div class="eyewear-gallery">
+            <figure class="eyewear-stage"><img data-product-image src="assets/images/pediatric-renders/tiger.webp" alt="Front view of Tiger pediatric character eyewear" width="1536" height="1024"><figcaption data-product-caption aria-live="polite">Tiger · Front view</figcaption></figure>
+            <div class="eyewear-view-controls" role="group" aria-label="Product view"><button type="button" data-product-view="front" aria-pressed="true">Front</button><button type="button" data-product-view="back" aria-pressed="false">Back</button></div>
           </div>
-          <p>A small collection gives children a choice while keeping ordering and stocking straightforward for clinical teams.</p>
+          <div class="eyewear-product-copy">
+            <div class="kicker">Akoya Pediatric Character Eyewear · Ages 3+</div>
+            <h1>A friendlier view for pediatric procedures.</h1>
+            <p>Help kids see less of the scary parts. Our character eyewear helps block their view of needles and activity below eye level, helping make procedures feel more comfortable for children and easier for the teams caring for them.</p>
+            <p class="eyewear-use-note">Soft foam supports and an adjustable cord. For brief, directly supervised clinical use. Remove after the procedure; do not send home.</p>
+            <div class="cta-row"><a class="btn btn-dark" href="#evaluation-request">Request a Pediatric Evaluation Kit</a></div>
+          </div>
         </div>
-        <div class="pediatric-patterns pediatric-patterns-four" role="list" aria-label="Current pediatric character collection">
-          <figure role="listitem"><img src="assets/images/pediatric-patterns/tiger.webp" alt="Tiger character pattern"><figcaption>Tiger</figcaption></figure>
-          <figure role="listitem"><img src="assets/images/pediatric-patterns/lion.webp" alt="Lion character pattern"><figcaption>Lion</figcaption></figure>
-          <figure role="listitem"><img src="assets/images/pediatric-patterns/kitty.webp" alt="Kitty character pattern"><figcaption>Kitty</figcaption></figure>
-          <figure role="listitem"><img src="assets/images/pediatric-patterns/puppy.webp" alt="Puppy character pattern"><figcaption>Puppy</figcaption></figure>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-soft" aria-labelledby="real-product-heading">
-      <div class="container">
-        <div class="section-intro"><div class="kicker">Product views</div><h2 id="real-product-heading">The eyewear, front and back.</h2></div>
-        <div class="pediatric-product-photos">
-          <figure><img src="assets/images/pediatric-character-mask-front-studio.png" alt="Studio front view of the orange tiger pediatric character eyewear"><figcaption>Printed character face and lower-field barrier.</figcaption></figure>
-          <figure><img src="assets/images/pediatric-character-mask-rear-studio.png" alt="Studio rear view showing the pediatric eyewear foam supports and elastic cord"><figcaption>Rear foam supports and adjustable elastic cord.</figcaption></figure>
-        </div>
+        <div class="character-shelf-heading"><div class="kicker">Meet the collection</div><h2>Four friendly characters.</h2><p>Pick a character to take a closer look.</p></div>
+        <div class="character-shelf" role="group" aria-label="Choose a character"><button class="character-choice" type="button" data-character="tiger" aria-pressed="true"><img src="assets/images/pediatric-renders/tiger.webp" alt="Tiger character eyewear with foam supports and adjustable cord" width="1536" height="1024" loading="lazy"><span>Tiger</span></button>
+<button class="character-choice" type="button" data-character="lion" aria-pressed="false"><img src="assets/images/pediatric-renders/lion.webp" alt="Lion character eyewear with foam supports and adjustable cord" width="1536" height="1024" loading="lazy"><span>Lion</span></button>
+<button class="character-choice" type="button" data-character="kitty" aria-pressed="false"><img src="assets/images/pediatric-renders/kitty.webp" alt="Kitty character eyewear with foam supports and adjustable cord" width="1536" height="1024" loading="lazy"><span>Kitty</span></button>
+<button class="character-choice" type="button" data-character="puppy" aria-pressed="false"><img src="assets/images/pediatric-renders/puppy.webp" alt="Puppy character eyewear with foam supports and adjustable cord" width="1536" height="1024" loading="lazy"><span>Puppy</span></button></div>
+        <p class="illustrative-note">Illustrative product visualizations. Evaluation kits contain six assorted units.</p>
       </div>
     </section>
 
@@ -177,7 +108,7 @@
   <footer class="section site-footer">
     <div class="container footer-inner"><div>© 2026 Akoya Medical. All rights reserved.</div><nav class="footer-legal" aria-label="Legal links"><a href="privacy-policy.html">Privacy Policy</a><a href="terms-of-use.html">Terms of Use</a></nav></div>
   </footer>
-  <script src="main.js?v=20260924" defer></script>
+  <script src="main.js?v=20261005" defer></script>
 </body>
 </html>
 

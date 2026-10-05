@@ -555,3 +555,20 @@ document.addEventListener('DOMContentLoaded', () => {
   startRotation();
 });
 
+// Shared pediatric product gallery: choose a character or inspect the rear view.
+document.querySelectorAll('[data-eyewear-gallery]').forEach((gallery) => {
+  let character = 'tiger';
+  let view = 'front';
+  const image = gallery.querySelector('[data-product-image]');
+  const caption = gallery.querySelector('[data-product-caption]');
+  const render = () => {
+    const name = character.charAt(0).toUpperCase() + character.slice(1);
+    image.src = `assets/images/pediatric-renders/${view === 'back' ? 'back' : character}.webp`;
+    image.alt = view === 'back' ? 'Back of pediatric eyewear showing foam supports, adjustable cord and printed care guidelines' : `Front view of ${name} pediatric character eyewear`;
+    caption.textContent = view === 'back' ? 'Back view · Foam supports and adjustable cord' : `${name} · Front view`;
+    gallery.querySelectorAll('[data-product-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.productView === view)));
+    gallery.querySelectorAll('[data-character]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.character === character)));
+  };
+  gallery.querySelectorAll('[data-product-view]').forEach((button) => button.addEventListener('click', () => { view = button.dataset.productView; render(); }));
+  gallery.querySelectorAll('[data-character]').forEach((button) => button.addEventListener('click', () => { character = button.dataset.character; view = 'front'; render(); }));
+});

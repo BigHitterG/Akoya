@@ -20,7 +20,7 @@ for (const asset of [
 }
 
 assert(home.includes('A friendlier view for pediatric procedures.'), 'Homepage pediatric hero is missing');
-assert(home.indexOf('A friendlier view for pediatric procedures.') < home.indexOf('A focused visual barrier for needle-based care.'), 'Pediatric story must precede the adult product');
+assert(!home.includes('adult-product-heading'), 'Adult product feature must not appear on the homepage');
 assert(!home.includes('heroVideo'), 'Legacy hero video is still present');
 assert(html.includes('id="pediatricEvaluationForm"'), 'Evaluation request form is missing');
 assert(html.includes('does not guarantee free product or shipment of a kit'), 'Evaluation request qualification disclosure is missing');
