@@ -3893,7 +3893,12 @@ header {
   .eyewear-product-grid { grid-template-columns: 1fr; }
   .eyewear-product-copy { text-align: center; }
   .eyewear-product-copy .cta-row { justify-content: center; }
-  .character-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .character-shelf-heading { margin-top: 38px; }
+  .character-shelf { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
+  .character-choice { border-radius: 10px; padding-bottom: 8px; min-height: 64px; font-size: .75rem; }
+  .character-choice[aria-pressed="true"] { padding-bottom: 7px; }
+  .character-choice:hover { transform: none; }
+  .character-shelf-heading { display: none; }
+  .eyewear-view-controls { margin-top: 8px; }
+  .eyewear-stage img { max-height: 42svh; }
 }
 @media (prefers-reduced-motion: reduce) { .character-choice { transition: none; } }

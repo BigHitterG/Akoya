@@ -557,6 +557,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Shared pediatric product gallery: choose a character or inspect the rear view.
 document.querySelectorAll('[data-eyewear-gallery]').forEach((gallery) => {
+  const shelf = gallery.querySelector('.character-shelf');
+  const shelfHome = document.createComment('Desktop character shelf position');
+  shelf.before(shelfHome);
+  const mobileLayout = window.matchMedia('(max-width: 800px)');
+  const placeCharacterChoices = () => {
+    if (mobileLayout.matches) {
+      gallery.querySelector('.eyewear-gallery').append(shelf);
+    } else {
+      shelfHome.after(shelf);
+    }
+  };
+  placeCharacterChoices();
+  mobileLayout.addEventListener('change', placeCharacterChoices);
   let character = 'tiger';
   let view = 'front';
   const image = gallery.querySelector('[data-product-image]');
