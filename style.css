@@ -3902,3 +3902,20 @@ header {
   .eyewear-stage img { max-height: 42svh; }
 }
 @media (prefers-reduced-motion: reduce) { .character-choice { transition: none; } }
+
+/* Pediatric safety documentation */
+.testing-badge{display:inline-flex;align-items:center;gap:9px;color:#163847;background:#f3f7f8;border:1px solid #dce4e8;border-radius:24px;padding:9px 15px;font-size:.82rem;font-weight:600;margin:8px 0 18px}
+a.testing-badge:hover{border-color:#163847}
+a.testing-badge:focus-visible,.safety-back:focus-visible{outline:3px solid #b7527c;outline-offset:4px}
+.safety-section{background:#f5f8fa;scroll-margin-top:100px}
+.safety-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.safety-grid p{color:#42515c;line-height:1.75;margin:14px 0}
+.safety-card{border:1px solid #dce4e8;border-radius:24px;padding:32px;background:#fff}
+.safety-card h2,.safety-card h3{color:#163847;font-size:1.45rem;line-height:1.25}
+.safety-page{background:#fff}
+.safety-page h1{font-size:clamp(2.3rem,5vw,3.6rem);color:#163847;letter-spacing:-.04em;margin:12px 0}
+.safety-page .safety-lead{color:#64727c;font-size:1.15rem;margin:0 0 36px}
+.safety-back{display:inline-block;color:#42515c;font-size:.9rem;margin-bottom:32px}
+.safety-detail{font-size:.9rem;border-top:1px solid #dce4e8;padding-top:18px}
+.safety-use{color:#64727c;font-size:.88rem;line-height:1.7;max-width:800px;margin-top:28px}
+@media(max-width:720px){.safety-grid{grid-template-columns:1fr;gap:20px}.safety-card{padding:24px}.safety-card .btn{white-space:normal;text-align:center}}
