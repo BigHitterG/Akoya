@@ -102,6 +102,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261005-mobile">
+  <link rel="stylesheet" href="adult-eyewear.css?v=20261008">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -122,6 +123,7 @@
           <button class="nav-products-toggle" type="button" aria-expanded="false">Products <span aria-hidden="true">⌄</span></button>
           <div class="nav-products-menu">
             <a href="pediatric-character-mask.html">Akoya Pediatric Character Eyewear</a>
+      <a href="buy.html">Akoya Eye Shield</a>
           </div>
         </div>
         <a href="healthcare-organizations.html">Healthcare Organizations</a>
@@ -132,6 +134,7 @@
     </div>
     <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile navigation" aria-hidden="true">
       <a href="pediatric-character-mask.html">Akoya Pediatric Character Eyewear</a>
+      <a href="buy.html">Akoya Eye Shield</a>
       <a href="healthcare-organizations.html">Healthcare Organizations</a>
       <a href="clinical-feedback.html">Feedback &amp; Research</a>
       <a href="our-journey.html">About</a>
@@ -185,19 +188,41 @@
       </div>
     </section>
 
-    <section class="section section-soft" aria-labelledby="adult-product-heading">
-      <div class="container product-proof">
-        <a class="product-proof-image" href="buy.html" aria-label="Explore the adult Akoya Eye Shield">
-          <img src="assets/images/Product%20Image%201.JPG" width="1200" height="900" loading="lazy" alt="Adult Akoya Eye Shield with a pink frame and white lower visual barrier">
-        </a>
-        <div>
-          <div class="kicker">Also from Akoya</div>
-          <h2 id="adult-product-heading">Try our adult version.</h2>
-          <p class="product-section-copy">The Akoya Eye Shield brings the same idea to adult care: less visibility of activity below eye level, with an open upper view for awareness and communication.</p>
-          <div class="cta-row" style="margin-top:24px"><a class="btn btn-dark" href="buy.html">Explore Adult Eyewear</a></div>
+    <section class="hero product-hero adult-primary-hero" aria-labelledby="adult-product-heading">
+  <article class="product-hero-slide is-active">
+    <img class="product-hero-image" src="assets/images/clinical-hospital-outpatient-infusion.webp" alt="Woman wearing the Akoya Eye Shield with her glasses in a clinical setting" loading="lazy">
+    <div class="hero-overlay"></div>
+    <div class="hero-inner"><div class="hero-copy">
+      <div class="eyebrow">Also from Akoya · Akoya Eye Shield</div>
+      <h2 id="adult-product-heading">Try our adult eye shield.</h2>
+      <p>The same thoughtful idea, designed for adult care. Help patients see less of the procedure while staying connected with their care team.</p>
+      <div class="cta-row"><a class="btn btn-primary" href="buy.html#evaluation-request">Request an Adult Evaluation Kit</a><a class="btn btn-secondary" href="buy.html">View Adult Product</a></div>
+      <div class="hero-facts" aria-label="Adult product facts"><span>Single-patient use</span><span>Nonsterile</span><span>Latex-free</span><span>Assembled in the USA</span></div>
+    </div></div>
+  </article>
+</section>
+
+<section class="section adult-showcase" aria-label="Adult eye shield product gallery" data-adult-gallery>
+  <div class="container">
+    <div class="eyewear-product-grid">
+      <div class="eyewear-gallery">
+        <figure class="eyewear-stage"><button class="adult-image-zoom" type="button" aria-label="Enlarge adult eye shield image"><img data-adult-image src="assets/images/adult-renders/view-1.webp" alt="Three-quarter view of the Akoya Eye Shield" width="1536" height="1024"></button><figcaption data-adult-caption aria-live="polite">Three-quarter view · Select image to enlarge</figcaption></figure>
+        <div class="adult-view-choices" role="group" aria-label="Choose an adult eye shield view">
+          <button type="button" data-adult-view="1" aria-pressed="true"><img src="assets/images/adult-renders/view-1.webp" alt="" loading="lazy"><span>Three-quarter</span></button><button type="button" data-adult-view="2" aria-pressed="false"><img src="assets/images/adult-renders/view-2.webp" alt="" loading="lazy"><span>Front</span></button><button type="button" data-adult-view="3" aria-pressed="false"><img src="assets/images/adult-renders/view-3.webp" alt="" loading="lazy"><span>Side</span></button><button type="button" data-adult-view="4" aria-pressed="false"><img src="assets/images/adult-renders/view-4.webp" alt="" loading="lazy"><span>Back</span></button>
         </div>
       </div>
-    </section>
+      <div class="eyewear-product-copy">
+        <div class="kicker">Akoya Eye Shield · Adult eyewear</div>
+        <h2>A more comfortable view of adult care.</h2>
+        <p>Help adults see less of the procedure. The Akoya Eye Shield helps limit the view of needles and activity below eye level while leaving an upper viewing area open for awareness and communication.</p>
+        <p class="eyewear-use-note">A soft, conformable foam interface and lightweight frame. Single-patient use. Nonsterile. Latex-free. Assembled in the USA.</p>
+        <div class="cta-row"><a class="btn btn-dark" href="buy.html#evaluation-request">Request an Adult Evaluation Kit</a><a class="btn btn-outline-dark" href="buy.html">View Adult Product</a></div>
+      </div>
+    </div>
+    <p class="illustrative-note">Actual visual obstruction depends on fit, positioning, facial anatomy, and gaze direction.</p>
+  </div>
+  <dialog class="adult-lightbox" aria-label="Adult eye shield enlarged view"><button class="adult-lightbox-close" type="button" aria-label="Close enlarged image">×</button><img alt=""></dialog>
+</section>
 
     <section class="section" aria-labelledby="mechanism-heading">
       <div class="container">
@@ -243,6 +268,7 @@
         <div class="footer-column">
           <strong>Explore</strong>
           <a href="pediatric-character-mask.html">Pediatric Character Eyewear</a>
+          <a href="buy.html">Akoya Eye Shield</a>
           <a href="healthcare-organizations.html">Healthcare Organizations</a>
           <a href="clinical-feedback.html">Feedback &amp; Research</a>
           <a href="our-journey.html">About</a>
@@ -265,6 +291,7 @@
   </footer>
   <script src="checkout-toggles.js"></script>
   <script src="main.js?v=20261005-mobile" defer></script>
+  <script src="adult-eyewear.js?v=20261008" defer></script>
 </body>
 </html>
 

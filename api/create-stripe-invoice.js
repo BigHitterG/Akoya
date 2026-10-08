@@ -499,6 +499,10 @@ module.exports = async function handler(req, res) {
     return handlePediatricInterest(req, res);
   }
 
+  if (req.query && req.query.mode === 'adult-interest') {
+    return require('../lib/server/adult-interest')(req, res);
+  }
+
   if (rejectWhenPurchaseFlowDisabled(res)) return;
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed.' });

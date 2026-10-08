@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Akoya Eye Shield | Product Details and Institutional Pricing</title>
-  <meta name="description" content="Review Akoya Eye Shield product facts, images, single-patient-use information, and options for samples or institutional pricing.">
+  <title>Akoya Eye Shield | Adult Evaluation Kits for Healthcare Teams</title>
+  <meta name="description" content="Explore the adult Akoya Eye Shield and request an evaluation kit for your healthcare team.">
   <link rel="canonical" href="https://www.akoyamedical.com/buy.html">
   <meta property="og:type" content="product">
   <meta property="og:site_name" content="Akoya Medical">
@@ -18,17 +18,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
-  <script src="checkout-toggles.js"></script>
-  <script src="storefront-gate.js"></script>
+  <link rel="stylesheet" href="adult-eyewear.css?v=20261008">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <div class="top-banner">
-    <div data-purchase-flow>Choose quantities in 12-unit increments. Shipping is still calculated by set size at checkout.</div>
-    <div data-quote-only>Akoya Eye Shield is currently available by quote through our sales team.</div>
-    <a href="healthcare-organizations.html">Healthcare Organizations</a>
-  </div>
-
   <header>
     <div class="nav">
       <button class="hamburger" id="menuToggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
@@ -62,84 +55,67 @@
   </header>
 
   <main id="main-content">
-  <section class="section" id="order">
-    <div class="container order-grid">
-      <div class="card">
-        <div class="card-pad">
-          <div class="kicker">Akoya Medical</div>
-          <h1 style="font-size:clamp(2.6rem,5vw,4.8rem);line-height:1;letter-spacing:-0.055em;color:#17232d;">Akoya Eye Shield</h1>
-        </div>
-        <div class="product-gallery" data-gallery>
-          <button class="product-gallery-main" type="button" aria-label="View full screen image">
-            <img src="assets/images/Product%20Image%201.JPG" width="5760" height="3840" alt="Akoya Eye Shield front view showing the opaque lower barrier and open upper viewing area" id="productGalleryPrimaryImage">
-          </button>
-          <div class="product-gallery-thumbs" id="productGalleryThumbs" aria-label="Select product image"></div>
-        </div>
-        <div class="card-pad">
-          <p class="body-copy">Akoya Eye Shield combines an opaque lower region with a conformable interface designed to limit visibility of procedural activity below eye level while leaving an upper viewing area open. Actual obstruction depends on fit, positioning, facial anatomy, and gaze direction.</p>
-          <ul class="clean-list">
-            <li>Single-patient use; not intended for reuse</li>
-            <li>Nonsterile</li>
-            <li>Latex-free</li>
-            <li>Assembled in the USA</li>
-            <li>Currently available in quantities aligned with organizational needs</li>
-          </ul>
+<section class="section adult-showcase" aria-label="Adult eye shield product gallery" data-adult-gallery>
+  <div class="container">
+    <div class="eyewear-product-grid">
+      <div class="eyewear-gallery">
+        <figure class="eyewear-stage"><button class="adult-image-zoom" type="button" aria-label="Enlarge adult eye shield image"><img data-adult-image src="assets/images/adult-renders/view-1.webp" alt="Three-quarter view of the Akoya Eye Shield" width="1536" height="1024"></button><figcaption data-adult-caption aria-live="polite">Three-quarter view · Select image to enlarge</figcaption></figure>
+        <div class="adult-view-choices" role="group" aria-label="Choose an adult eye shield view">
+          <button type="button" data-adult-view="1" aria-pressed="true"><img src="assets/images/adult-renders/view-1.webp" alt="" loading="lazy"><span>Three-quarter</span></button><button type="button" data-adult-view="2" aria-pressed="false"><img src="assets/images/adult-renders/view-2.webp" alt="" loading="lazy"><span>Front</span></button><button type="button" data-adult-view="3" aria-pressed="false"><img src="assets/images/adult-renders/view-3.webp" alt="" loading="lazy"><span>Side</span></button><button type="button" data-adult-view="4" aria-pressed="false"><img src="assets/images/adult-renders/view-4.webp" alt="" loading="lazy"><span>Back</span></button>
         </div>
       </div>
-
-      <div class="card order-card" data-purchase-flow>
-        <div class="card-pad">
-          <h2>Purchase option</h2>
-
-          <div class="purchase-card">
-            <p class="purchase-product-name">Akoya Eye Shield</p>
-            <div class="order-summary">
-              <div><span>Price per unit</span><strong id="buyPageSelectedPrice">$12.00</strong></div>
-            </div>
-            <label class="buy-quantity-label" for="buyPageQuantityRequested">Quantity</label>
-            <div class="buy-quantity-row">
-              <select id="buyPageQuantityRequested" name="buyPageQuantityRequested">
-                <option value="1">12</option>
-                <option value="2">24</option>
-                <option value="3">36</option>
-                <option value="4">48</option>
-                <option value="5">60</option>
-                <option value="6">72</option>
-                <option value="7">84</option>
-                <option value="8">96</option>
-                <option value="9">108</option>
-                <option value="10">120</option>
-              </select>
-              <p class="buy-quantity-preview" id="buyPageQuantityPreview" aria-live="polite"></p>
-            </div>
-            <p class="purchase-note">Tax and shipping are calculated at checkout.</p>
-
-            <a href="buy-now.html" class="btn btn-primary order-cta" id="buyPageCheckoutLink">Checkout</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="card order-card quote-card" id="quote" data-quote-only>
-        <div class="card-pad">
-          <div class="kicker">Sales support</div>
-          <h2>Contact us for a quote</h2>
-          <p class="contact-intro">Akoya Eye Shield is currently available by quote. Tell us about your clinic, organization, anticipated quantity, or interest in samples, and Drew will help with pricing and next steps.</p>
-          <div class="contact-methods quote-contact-methods" aria-label="Contact Akoya Medical for a quote">
-            <div class="contact-method contact-method-primary">
-              <p class="contact-method-label">Email Drew</p>
-              <p class="contact-method-link contact-email-text">dzaun@akoyamedical.com</p>
-              <p class="form-followup contact-backup">Product samples, institutional pricing, and purchasing discussions.</p>
-              <a class="resource-link" href="contact.html?interest=quote#contact-drew">Start a quote request</a>
-            </div>
-            <div class="contact-method">
-              <p class="contact-method-label">Call us</p>
-              <a class="contact-method-link" href="tel:+15155875863">+1 (515) 587-5863</a>
-            </div>
-          </div>
-        </div>
+      <div class="eyewear-product-copy">
+        <div class="kicker">Akoya Eye Shield · Adult eyewear</div>
+        <h1>A more comfortable view of adult care.</h1>
+        <p>Help adults see less of the procedure. The Akoya Eye Shield helps limit the view of needles and activity below eye level while leaving an upper viewing area open for awareness and communication.</p>
+        <p class="eyewear-use-note">A soft, conformable foam interface and lightweight frame. Single-patient use. Nonsterile. Latex-free. Assembled in the USA.</p>
+        <div class="cta-row"><a class="btn btn-dark" href="#evaluation-request">Request an Adult Evaluation Kit</a></div>
       </div>
     </div>
-  </section>
+    <p class="illustrative-note">Actual visual obstruction depends on fit, positioning, facial anatomy, and gaze direction.</p>
+  </div>
+  <dialog class="adult-lightbox" aria-label="Adult eye shield enlarged view"><button class="adult-lightbox-close" type="button" aria-label="Close enlarged image">×</button><img alt=""></dialog>
+</section>
+    <section class="section" id="evaluation-request" aria-labelledby="evaluation-request-heading">
+      <div class="container launch-interest-wrap evaluation-request-wrap">
+        <div class="section-intro">
+          <div class="kicker">Akoya Adult Evaluation Kit</div>
+          <h2 id="evaluation-request-heading">Request a limited product evaluation.</h2>
+          <p>Akoya reviews each request and will follow up about availability and next steps; submitting this form does not guarantee free product or shipment of a kit.</p>
+          <div class="evaluation-kit-summary"><span>For healthcare teams</span><strong>Evaluate the Akoya Eye Shield</strong><p>Tell us about your clinical setting. Our team will follow up to coordinate your adult evaluation kit.</p></div>
+        </div>
+        <form class="interest-form" id="adultEvaluationForm">
+          <label>Full name*<input name="name" autocomplete="name" required maxlength="100"></label>
+          <label>Work email*<input name="email" type="email" autocomplete="email" required maxlength="160"></label>
+          <label>Organization / health system*<input name="organization" autocomplete="organization" required maxlength="160"></label>
+          <label>Role / job title*<input name="role" autocomplete="organization-title" required maxlength="120"></label>
+          <label class="form-wide">Department / service line*<input name="department" required maxlength="160"></label>
+          <label class="form-wide">Phone <span>(optional)</span><input name="phone" type="tel" autocomplete="tel" maxlength="40"></label>
+          <fieldset class="form-wide evaluation-settings">
+            <legend>Evaluation setting <span>(choose one or more)</span></legend>
+            <div class="evaluation-settings-grid">
+              <label class="checkbox-label"><input name="evaluationSetting" value="Primary Care" type="checkbox"> <span>Primary Care</span></label>
+              <label class="checkbox-label"><input name="evaluationSetting" value="Infusion / Oncology" type="checkbox"> <span>Infusion / Oncology</span></label>
+              <label class="checkbox-label"><input name="evaluationSetting" value="Vascular Access / IV Team" type="checkbox"> <span>Vascular Access / IV Team</span></label>
+              <label class="checkbox-label"><input name="evaluationSetting" value="Phlebotomy / Lab" type="checkbox"> <span>Phlebotomy / Lab</span></label>
+              <label class="checkbox-label"><input name="evaluationSetting" value="Ambulatory / Procedure Clinic" type="checkbox"> <span>Ambulatory / Procedure Clinic</span></label>
+              <label class="checkbox-label"><input name="evaluationSetting" value="Other" type="checkbox"> <span>Other</span></label>
+            </div>
+          </fieldset>
+          <label class="form-wide">Approximate adult needle-based procedures per month<select name="procedureVolume"><option value="">Select</option><option>Fewer than 25</option><option>25–99</option><option>100–249</option><option>250+</option><option>Not sure</option></select></label>
+          <label class="form-wide">Tell us how your team would like to evaluate Akoya.<span class="field-instruction">Please do not include patient-identifying information.</span><textarea name="evaluationPlan" rows="5" maxlength="1500"></textarea></label>
+          <label class="form-wide checkbox-label consent-label"><input name="consent" type="checkbox" required> <span>I agree that Akoya Medical may contact me regarding product evaluation, availability, ordering, and related product information.</span></label>
+          <input name="utm_source" type="hidden">
+          <input name="utm_medium" type="hidden">
+          <input name="utm_campaign" type="hidden">
+          <input name="utm_content" type="hidden">
+          <label aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+          <div class="form-wide"><button class="btn btn-dark" type="submit">Request Evaluation Kit</button></div>
+          <p class="form-wide interest-form-status" id="adultEvaluationStatus" role="status" aria-live="polite"></p>
+          <p class="form-wide illustrative-note">By submitting, you acknowledge Akoya's <a href="privacy-policy.html" style="text-decoration:underline">Privacy Policy</a>.</p>
+        </form>
+      </div>
+    </section>
   </main>
 
   <footer class="section site-footer">
@@ -173,12 +149,9 @@
       </div>
     </div>
   </footer>
-  <div class="lightbox" id="productLightbox" role="dialog" aria-modal="true" aria-label="Product image viewer" aria-hidden="true">
-    <button class="lightbox-close" type="button" aria-label="Close full screen image">×</button>
-    <img class="lightbox-image" src="" alt="">
-  </div>
-  <script src="pricing-config.js"></script>
+
   <script src="main.js" defer></script>
+  <script src="adult-eyewear.js?v=20261008" defer></script>
 </body>
 </html>
 

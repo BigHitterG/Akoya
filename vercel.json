@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/adult-evaluation",
+      "destination": "/api/create-stripe-invoice?mode=adult-interest"
+    },
+    {
       "source": "/api/pediatric-evaluation",
       "destination": "/api/create-stripe-invoice?mode=pediatric-interest"
     },

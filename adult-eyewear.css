@@ -1,0 +1,22 @@
+/* Adult-only presentation; the pediatric styles remain unchanged. */
+.adult-showcase { background: #fff; }
+.adult-image-zoom { display: block; width: 100%; padding: 0; border: 0; background: #fff; cursor: zoom-in; }
+.adult-view-choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 22px 0 0; }
+.adult-view-choices button { min-width: 0; padding: 6px 4px 10px; border: 1px solid transparent; border-radius: 12px; background: white; color: #42515c; font: inherit; font-size: .8rem; cursor: pointer; }
+.adult-view-choices button[aria-pressed="true"] { border-color: #163847; color: #163847; }
+.adult-view-choices img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; }
+.adult-image-zoom:focus-visible, .adult-view-choices button:focus-visible { outline: 3px solid #b7527c; outline-offset: 4px; }
+.adult-lightbox { width: min(1200px, 96vw); max-width: 96vw; max-height: 94svh; padding: 40px 12px 12px; border: 0; border-radius: 12px; background: white; }
+.adult-lightbox::backdrop { background: rgb(15 29 40 / .75); }
+.adult-lightbox img { display: block; width: 100%; max-height: 80svh; object-fit: contain; }
+.adult-lightbox-close { position: absolute; top: 4px; right: 10px; width: 40px; height: 40px; border: 0; background: white; color: #163847; font-size: 30px; cursor: pointer; }
+.adult-primary-hero .product-hero-image { object-position: center 38%; }
+@media (max-width: 640px) {
+  .adult-view-choices { gap: 4px; margin-top: 12px; }
+  .adult-view-choices button { font-size: .7rem; }
+  .adult-primary-hero .product-hero-image { object-position: 38% 25%; }
+}
+@media (min-width: 621px) {
+  .adult-primary-hero .hero-copy { margin-left: auto; max-width: 560px; }
+  .adult-primary-hero .hero-overlay { background: linear-gradient(270deg, rgba(5,15,23,.94) 0%, rgba(5,15,23,.78) 36%, rgba(5,15,23,.12) 70%, rgba(5,15,23,.05) 100%); }
+}
