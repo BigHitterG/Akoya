@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await copyText(button.dataset.copyEmail || '');
         button.textContent = 'Email copied';
         if (status) {
-          status.textContent = "Drew's email address has been copied.";
+          status.textContent = "Akoya’s contact email has been copied.";
         }
       } catch (error) {
         button.textContent = defaultLabel;
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) throw new Error(result.error || 'Unable to submit right now.');
         pediatricEvaluationForm.reset();
         populateAttributionFields();
-        status.textContent = 'Thank you. Akoya has received your evaluation request. Drew Zaun or a member of the Akoya team will follow up with you regarding next steps.';
+        status.textContent = 'Thank you. Akoya has received your evaluation request. A member of the Akoya team will follow up with you regarding next steps.';
 
         window.dispatchEvent(new CustomEvent('pediatric_evaluation_request'));
         if (Array.isArray(window.dataLayer)) {

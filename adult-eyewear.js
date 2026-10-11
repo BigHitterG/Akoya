@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) throw new Error(result.error || 'Unable to submit right now.');
         adultEvaluationForm.reset();
         populateAttributionFields();
-        status.textContent = 'Thank you. Akoya has received your evaluation request. Drew Zaun or a member of the Akoya team will follow up with you regarding next steps.';
+        status.textContent = 'Thank you. Akoya has received your evaluation request. A member of the Akoya team will follow up with you regarding next steps.';
 
         window.dispatchEvent(new CustomEvent('adult_evaluation_request'));
         if (Array.isArray(window.dataLayer)) {
