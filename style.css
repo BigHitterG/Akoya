@@ -2566,7 +2566,7 @@ header {
   line-height: 1.65;
 }
 
-.patent-panel {
+.product-status-panel {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(250px, 0.9fr);
   gap: 24px;
@@ -2576,29 +2576,29 @@ header {
   padding: clamp(26px, 5vw, 46px);
 }
 
-.patent-panel p {
+.product-status-panel p {
   color: rgba(255, 255, 255, 0.74);
   line-height: 1.65;
 }
 
-.patent-facts {
+.product-status-facts {
   display: grid;
   gap: 11px;
   align-content: start;
 }
 
-.patent-fact {
+.product-status-fact {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
   padding: 13px 15px;
 }
 
-.patent-fact span,
-.patent-fact strong {
+.product-status-fact span,
+.product-status-fact strong {
   display: block;
 }
 
-.patent-fact span {
+.product-status-fact span {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.72rem;
   font-weight: 750;
@@ -2606,7 +2606,7 @@ header {
   text-transform: uppercase;
 }
 
-.patent-fact strong {
+.product-status-fact strong {
   margin-top: 4px;
   font-size: 0.96rem;
 }
@@ -3025,7 +3025,7 @@ header {
   }
 
   .product-proof,
-  .patent-panel {
+  .product-status-panel {
     grid-template-columns: 1fr;
   }
 

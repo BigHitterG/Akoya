@@ -190,7 +190,7 @@ def build(output_path):
         pdf.drawString(x + 34, path_cards_y + 51, title)
         draw_wrapped(pdf, body, x + 11, path_cards_y + 35, path_w - 22, size=7, leading=8.5)
 
-    # Feedback and patent
+    # Feedback and product support
     info_y = path_cards_y - 81
     info_w = (width - 2 * margin - 14) / 2
     rounded_card(pdf, margin, info_y, info_w, 66, fill=PINK_SOFT, stroke=PINK_SOFT)
@@ -204,8 +204,8 @@ def build(output_path):
     draw_wrapped(pdf, "45 completed questionnaires among 50 patients in a breast-biopsy setting. Descriptive feedback only; not a controlled clinical study.", margin + 12, info_y + 17, info_w - 24, size=6.7, leading=7.5, color=DARK)
     pdf.setFillColor(white)
     pdf.setFont("Helvetica-Bold", 7.5)
-    pdf.drawString(margin + info_w + 26, info_y + 49, "PATENT INFORMATION")
-    draw_wrapped(pdf, "Technology and method described in U.S. Patent No. 12,629,282 B1, issued May 19, 2026.", margin + info_w + 26, info_y + 35, info_w - 24, size=7.3, leading=9, color=white)
+    pdf.drawString(margin + info_w + 26, info_y + 49, "PRODUCT SUPPORT")
+    draw_wrapped(pdf, "Contact Akoya for product information, evaluation guidance, and purchasing support.", margin + info_w + 26, info_y + 35, info_w - 24, size=7.3, leading=9, color=white)
 
     # Contact footer
     footer_y = 52
@@ -228,7 +228,7 @@ def build(output_path):
     pdf.drawString(margin, footer_y - 1, "dzaun@akoyamedical.com")
     pdf.setFillColor(MUTED)
     pdf.setFont("Helvetica", 7.1)
-    pdf.drawString(252, footer_y - 1, "Response target: two business days")
+    pdf.drawString(252, footer_y - 1, "Support for your clinical team")
     pdf.setFillColor(NAVY)
     pdf.setFont("Helvetica-Bold", 7.8)
     pdf.drawRightString(width - margin, footer_y + 26, "515-587-5863")
