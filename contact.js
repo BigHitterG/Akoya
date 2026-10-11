@@ -11,7 +11,8 @@
   const interest = new URLSearchParams(window.location.search).get('interest');
   const subjects = {
     'adult-evaluation': 'Adult product evaluation',
-    healthcare: 'Healthcare organization inquiry'
+    healthcare: 'Healthcare organization inquiry',
+    research: 'Product evaluation and research inquiry'
   };
   if (subjects[interest]) form.elements.subject.value = subjects[interest];
 
