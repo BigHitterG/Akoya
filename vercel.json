@@ -48,5 +48,12 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/assets/docs/Akoya-Medical-Clinical-Product-Overview.pdf",
+      "destination": "/healthcare-organizations.html",
+      "permanent": false
+    }
   ]
 }
