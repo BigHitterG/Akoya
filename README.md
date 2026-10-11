@@ -67,6 +67,10 @@ CUSTOMER_EMAIL_FROM=orders@yourdomain.com
 ORDER_NOTIFICATION_EMAIL=ops@yourdomain.com
 ORDER_NOTIFICATION_FROM=orders@yourdomain.com
 
+# Optional dedicated contact-form inbox(es), comma-separated
+# Otherwise uses the existing evaluation/order notification recipients
+CONTACT_NOTIFICATION_EMAILS=info@yourdomain.com
+
 # Optional product context included in Stripe receipts/invoices and customer emails
 PRODUCT_SKU=AKOYA-EYE-SHIELD
 PRODUCT_LOT=LOT-2026-001
@@ -242,3 +246,21 @@ Upgrade Supabase to a plan that does not auto-pause projects. Use heartbeat anyw
 - Keep current design: Supabase remains source of truth for token + metadata + label object path.
 - Optional backup: replicate label files to S3/R2 for disaster recovery, but keep `shipping_labels` token mapping so `/api/label/[token]` continues to work.
 
+
+## Contact form
+
+`contact.html` posts email, subject, and message to `/api/contact`. The route is
+consolidated in `api/create-stripe-invoice.js?mode=contact` and handled by
+`lib/server/contact-inquiry.js`, without adding a serverless function.
+
+Resend sends a plain-text notification to `CONTACT_NOTIFICATION_EMAILS`, falling
+back to `PEDIATRIC_NOTIFICATION_EMAILS`, then `ORDER_NOTIFICATION_EMAIL`, then
+the existing Akoya contact address. The sender is `ORDER_NOTIFICATION_FROM` or
+`CUSTOMER_EMAIL_FROM`; the visitor's email is Reply-To. No automatic email is
+sent to the visitor. Only confirmed provider acceptance displays the thank-you.
+A failed send keeps the message available for retry with the same idempotency key.
+
+The endpoint validates lengths and headers, rejects cross-origin browser posts,
+and uses a hidden spam field. These are basic controls, not durable rate limiting.
+Run `node --test scripts/verify-contact.js` to check delivery behavior with a mocked
+provider; this does not send real email.

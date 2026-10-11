@@ -495,6 +495,10 @@ function scheduleInvoiceFedexLabelRecovery({
   })();
 }
 module.exports = async function handler(req, res) {
+  if (req.query && req.query.mode === 'contact') {
+    return require('../lib/server/contact-inquiry')(req, res);
+  }
+
   if (req.query && req.query.mode === 'pediatric-interest') {
     return handlePediatricInterest(req, res);
   }

@@ -3920,3 +3920,26 @@ a.testing-badge:focus-visible,.safety-back:focus-visible{outline:3px solid #b752
 .safety-detail{font-size:.9rem;border-top:1px solid #dce4e8;padding-top:18px}
 .safety-use{color:#64727c;font-size:.88rem;line-height:1.7;max-width:800px;margin-top:28px}
 @media(max-width:720px){.safety-grid{grid-template-columns:1fr;gap:20px}.safety-card{padding:24px}.safety-card .btn{white-space:normal;text-align:center}}
+
+/* Contact: a short message form and direct phone support. */
+.contact-section { padding-top: 32px; }
+.contact-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 24px; align-items: start; }
+.contact-form-card { padding: clamp(24px, 4vw, 36px); }
+.contact-form { display: grid; gap: 20px; margin-top: 24px; }
+.contact-form[hidden] { display: none; }
+.contact-form label { display: grid; gap: 8px; color: var(--akoya-ink); font-size: .95rem; font-weight: 600; }
+.contact-form input, .contact-form textarea { width: 100%; border: 1px solid #bac7cf; border-radius: 10px; padding: 12px 14px; color: #0b1c27; background: #fff; font: inherit; font-weight: 400; }
+.contact-form textarea { resize: vertical; min-height: 150px; }
+.contact-form input:focus, .contact-form textarea:focus { outline: 3px solid rgba(236, 119, 162, .23); border-color: #9e3e63; }
+.contact-form button { justify-self: start; min-width: 120px; cursor: pointer; font: inherit; font-weight: 600; }
+.contact-form button:disabled { opacity: .65; cursor: wait; }
+.contact-honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.contact-status:empty { display: none; }
+.contact-form-card .contact-status { margin: 20px 0 0; }
+.contact-status[data-state="error"] { color: #982f43; }
+.contact-status[data-state="success"] { padding: 22px; border: 1px solid #bed3c8; border-radius: 12px; background: #f2f8f5; color: #204d39; }
+.contact-phone-card { background: #f3f7f8; }
+@media (max-width: 760px) {
+  .contact-layout { grid-template-columns: minmax(0, 1fr); }
+  .contact-form button { width: 100%; }
+}

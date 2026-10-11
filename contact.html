@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261011-contact">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -56,27 +56,38 @@
   <main id="main-content">
     <section class="page-hero">
       <div class="container">
-        <div class="kicker">Contact Akoya</div>
-        <h1>Let’s connect.</h1>
-        <p>Personal support for healthcare teams.</p>
+        <h1>Support for your team</h1>
+        <p>Have a question? We’re here to help.</p>
       </div>
     </section>
-    <section class="section" id="contact-team" aria-label="Contact Akoya" style="padding-top:32px;">
-      <div class="container">
-        <span id="contact-drew" aria-hidden="true"></span>
-        <div class="team-grid">
-          <article class="team-card contact-person-primary">
-            <span class="contact-primary-label">Clinical collaboration</span>
-            <h2>Support for your team</h2>
-            <p>From an initial product question to evaluation requests and purchasing, Akoya provides direct guidance tailored to your clinical setting.</p>
-            <a class="team-email" href="mailto:dzaun@akoyamedical.com">Contact Akoya</a>
-          </article>
-          <article class="team-card">
-            <h2>Give us a call</h2>
-            <p>We’re here to help during normal business hours.</p>
-            <a class="team-email" href="tel:+15155875863">515-587-5863</a>
-          </article>
-        </div>
+    <section class="section contact-section" id="contact-team" aria-label="Contact Akoya">
+      <div class="container contact-layout">
+        <article class="team-card contact-form-card">
+          <h2 id="email-us-heading">Email us</h2>
+          <form id="contact-form" class="contact-form" aria-labelledby="email-us-heading" action="/api/contact" method="post">
+            <label for="contact-email">Your email
+              <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" required>
+            </label>
+            <label for="contact-subject">Subject
+              <input id="contact-subject" name="subject" type="text" maxlength="160" required>
+            </label>
+            <label for="contact-message">Message
+              <textarea id="contact-message" name="message" rows="6" maxlength="5000" required></textarea>
+            </label>
+            <div class="contact-honeypot" aria-hidden="true">
+              <label for="contact-website">Leave this field empty</label>
+              <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+            <button class="btn btn-dark" type="submit">Send</button>
+          </form>
+          <p id="contact-status" class="contact-status" role="status" aria-live="polite" tabindex="-1"></p>
+          <noscript><p>Please enable JavaScript to use this form, or <a class="team-email" href="mailto:dzaun@akoyamedical.com">email us directly</a>.</p></noscript>
+        </article>
+        <article class="team-card contact-phone-card">
+          <h2>Give us a call</h2>
+          <p>We’re here to help during normal business hours.</p>
+          <a class="team-email" href="tel:+15155875863">515-587-5863</a>
+        </article>
       </div>
     </section>
   </main>
@@ -112,6 +123,7 @@
     </div>
   </footer>
   <script src="main.js?v=20261011" defer></script>
+  <script src="contact.js?v=20261011" defer></script>
 </body>
 </html>
 
