@@ -576,7 +576,7 @@ document.querySelectorAll('[data-eyewear-gallery]').forEach((gallery) => {
   const caption = gallery.querySelector('[data-product-caption]');
   const render = () => {
     const name = character.charAt(0).toUpperCase() + character.slice(1);
-    image.src = `assets/images/pediatric-renders/${view === 'back' ? 'back' : character}.webp`;
+    image.src = `assets/images/pediatric-renders/${view === 'back' ? 'back.webp?v=20261016-approved' : `${character}.webp`}`;
     image.alt = view === 'back' ? 'Back of pediatric eyewear showing foam supports, adjustable cord and printed care guidelines' : `Front view of ${name} pediatric character eyewear`;
     caption.textContent = view === 'back' ? 'Back view · Foam supports and adjustable cord' : `${name} · Front view`;
     gallery.querySelectorAll('[data-product-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.productView === view)));
