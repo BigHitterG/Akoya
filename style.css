@@ -3997,3 +3997,18 @@ a.testing-badge:focus-visible,.safety-back:focus-visible{outline:3px solid #b752
   .research-entry-title > strong { font-size: 1.03rem; }
   .feedback-next > .container { align-items: flex-start; flex-direction: column; gap: 24px; }
 }
+
+/* Approved v1.1 outlined identity: preserve the master proportions and colors. */
+.brand { height: 66px; }
+.brand a { gap: 0; }
+.brand .brand-wordmark { width: auto; height: 66px; max-width: 100%; transform: none; }
+.brand .brand-shell { display: none; transform: none; }
+@media (min-width: 901px) and (max-width: 1080px) {
+  .brand .brand-wordmark { display: none; }
+  .brand .brand-shell { display: block; width: 66px; height: 66px; }
+}
+@media (max-width: 900px) {
+  .brand { min-width: 0; width: 100%; }
+  .brand a { max-width: 100%; }
+  .brand .brand-wordmark { width: 100%; height: auto; max-height: 66px; }
+}
